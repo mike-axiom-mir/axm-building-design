@@ -13,11 +13,11 @@ SPEC.loader.exec_module(mod)
 
 
 class PanelRotationalSymmetryTests(unittest.TestCase):
-    def test_exact_current_panel_is_reversible_at_both_receivers(self):
+    def test_exact_current_panel_is_reversible_across_explicit_variants(self):
         receipt = mod.verify(exact_head="TEST_HEAD")
         self.assertEqual(
             receipt["result"],
-            "PASS_BUILDING_PANEL_180_DEGREE_MECHANICAL_REVERSIBILITY_CURRENT_SOURCE",
+            "PASS_BUILDING_PANEL_180_DEGREE_REVERSIBILITY_ACROSS_EXPLICIT_EMISSION_VARIANTS_CURRENT_SOURCE",
         )
         self.assertEqual(receipt["exact_hard_surface_head"], "TEST_HEAD")
         self.assertEqual(receipt["source_mount_pattern_180_residual_m"], 0.0)
@@ -27,12 +27,27 @@ class PanelRotationalSymmetryTests(unittest.TestCase):
         self.assertEqual(receipt["named_build_result"]["topology_revision"], "closed-outward-12-triangle-v1")
         self.assertEqual(receipt["named_build_result"]["topology_object_count"], 19)
         self.assertEqual(len(receipt["receiver_results"]), 2)
-        for result in receipt["receiver_results"]:
-            self.assertEqual(result["zero_degree_mount_pattern_residual_m"], 0.0)
-            self.assertEqual(result["one_eighty_degree_unordered_mount_pattern_residual_m"], 0.0)
+        variants = receipt["emission_variant_results"]
+        self.assertEqual([row["variant_id"] for row in variants], list(mod.EXPECTED_VARIANT_IDS))
+        self.assertEqual(
+            [(row["emitted_box_count"], row["vertex_count"], row["triangle_count"]) for row in variants],
+            [(19, 152, 228), (23, 184, 276)],
+        )
+        self.assertEqual([row["positive_volume_intersection_count"] for row in variants], [4, 0])
+        self.assertEqual(
+            [row["downstream_adoption"] for row in variants],
+            ["CURRENT_DEFAULT_UNCHANGED", "OPT_IN_ONLY"],
+        )
+        for variant in variants:
+            self.assertEqual(variant["receiver_mount_residual_max_m"], 0.0)
+            self.assertEqual(len(variant["receiver_reversibility"]), 2)
+            for row in variant["receiver_reversibility"]:
+                self.assertEqual(row["zero_degree_mount_pattern_residual_m"], 0.0)
+                self.assertEqual(row["one_eighty_degree_unordered_mount_pattern_residual_m"], 0.0)
         self.assertFalse(receipt["physical_orientation_key_present"])
         self.assertTrue(receipt["receiver_frame_metadata_orientation_preserved"])
         self.assertFalse(receipt["geometry_changed"])
+        self.assertFalse(receipt["downstream_variant_adoption_changed"])
 
     def test_one_millimetre_asymmetric_mount_drift_breaks_reversibility(self):
         panel = mod.load(mod.PANEL)
@@ -58,6 +73,21 @@ class PanelRotationalSymmetryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing required Building build-result fields"):
             mod.validate_named_result(named, mod.load(mod.PAVILION), mod.load(mod.PANEL))
 
+    def test_emission_variant_schema_drift_fails_closed(self):
+        contract = mod.load(mod.CONTRACT)
+        contract["source_authority"]["emission_variants_schema"] = "axm.building-emission-variants/DRIFT"
+        with self.assertRaisesRegex(ValueError, "declared emission-variants schema drift"):
+            mod.verify(contract=contract)
+
+    def test_undeclared_emission_variant_fails_closed(self):
+        contract = mod.load(mod.CONTRACT)
+        contract["observed_mechanical_state"]["tested_emission_variant_ids"] = [
+            "base-closed-outward-19",
+            "silent-best-effort",
+        ]
+        with self.assertRaisesRegex(ValueError, "tested emission-variant allowlist drift"):
+            mod.verify(contract=contract)
+
     def test_negative_controls_are_retained(self):
         controls = mod.run_negative_controls()
         self.assertEqual(
@@ -67,6 +97,8 @@ class PanelRotationalSymmetryTests(unittest.TestCase):
                 "unsupported_keyed_claim",
                 "source_identity_drift",
                 "missing_named_receiver_dependency",
+                "emission_variant_schema_drift",
+                "undeclared_emission_variant",
             },
         )
         self.assertTrue(all(value.startswith("REJECTED") for value in controls.values()))

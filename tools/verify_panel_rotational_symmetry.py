@@ -13,12 +13,17 @@ PANEL = ROOT / "assets/utility_access_panel_001.json"
 PAVILION = ROOT / "assets/service_pavilion_001.json"
 CONTRACT = ROOT / "assets/utility_panel_rotational_symmetry_001.json"
 BUILD_RESULT_TOOL = ROOT / "tools/service_pavilion_build_result.py"
+EMISSION_VARIANTS_TOOL = ROOT / "tools/service_pavilion_emission_variants.py"
 EPS = 1e-9
 
 EXPECTED_PANEL_SHA256 = "df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253"
 EXPECTED_PAVILION_SHA256 = "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a"
-EXPECTED_BASE_HEAD = "34124101e616c423c5a3ed5e122ddf09b98a1650"
+EXPECTED_BASE_HEAD = "547bd21073332c8f856f07017cf9d279aa157bfa"
+EXPECTED_CONTRACT_SCHEMA = "axm.building-panel-rotational-symmetry/v0.2"
 EXPECTED_BUILD_RESULT_SCHEMA = "axm.building-build-result/v0.1"
+EXPECTED_EMISSION_VARIANTS_SCHEMA = "axm.building-emission-variants/v0.1"
+EXPECTED_EMISSION_SELECTION_POLICY = "EXPLICIT_VARIANT_ID_NO_FALLBACK"
+EXPECTED_VARIANT_IDS = ("base-closed-outward-19", "header-segmented-23")
 
 
 def load(path):
@@ -29,11 +34,21 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def load_build_result_tool():
-    spec = importlib.util.spec_from_file_location("service_pavilion_build_result", BUILD_RESULT_TOOL)
+def load_module(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load module: {path}")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def load_build_result_tool():
+    return load_module(BUILD_RESULT_TOOL, "service_pavilion_build_result")
+
+
+def load_emission_variants_tool():
+    return load_module(EMISSION_VARIANTS_TOOL, "service_pavilion_emission_variants_for_panel")
 
 
 def rotate_mount_points_180(points):
@@ -50,6 +65,34 @@ def best_pattern_residual(reference, candidate):
         residual = max(math.dist(a, b) for a, b in zip(reference, perm))
         best = min(best, residual)
     return best
+
+
+def validate_contract(contract):
+    if contract.get("schema") != EXPECTED_CONTRACT_SCHEMA:
+        raise ValueError("panel rotational-symmetry contract schema drift")
+    authority = contract.get("source_authority", {})
+    if authority.get("hard_surface_pr2_head") != EXPECTED_BASE_HEAD:
+        raise ValueError("hard-surface source-authority head drift")
+    if authority.get("build_result_schema") != EXPECTED_BUILD_RESULT_SCHEMA:
+        raise ValueError("declared named build-result schema drift")
+    if authority.get("emission_variants_schema") != EXPECTED_EMISSION_VARIANTS_SCHEMA:
+        raise ValueError("declared emission-variants schema drift")
+    if authority.get("emission_variant_selection_policy") != EXPECTED_EMISSION_SELECTION_POLICY:
+        raise ValueError("declared emission-variant selection policy drift")
+    state = contract.get("observed_mechanical_state", {})
+    if state.get("tested_in_plane_rotations_degrees") != [0, 180]:
+        raise ValueError("unsupported rotation evidence set")
+    if tuple(state.get("tested_emission_variant_ids", ())) != EXPECTED_VARIANT_IDS:
+        raise ValueError("tested emission-variant allowlist drift")
+    if state.get("physical_orientation_key_present"):
+        raise ValueError("unsupported physical orientation-key claim in exact current source")
+    if not state.get("receiver_frame_metadata_orientation_remains_authoritative"):
+        raise ValueError("receiver metadata orientation cannot be discarded")
+    if contract.get("geometry_changed"):
+        raise ValueError("rotational-symmetry evidence must not change source geometry")
+    if contract.get("downstream_variant_adoption_changed"):
+        raise ValueError("rotational-symmetry evidence cannot silently adopt a downstream emission variant")
+    return authority, state
 
 
 def validate_named_result(named, pavilion, panel):
@@ -76,11 +119,7 @@ def verify(panel=None, pavilion=None, contract=None, named_result=None, exact_he
 
     if panel["asset_id"] != contract["applies_to_asset_id"]:
         raise ValueError("contract asset identity mismatch")
-    authority = contract["source_authority"]
-    if authority["hard_surface_pr2_head"] != EXPECTED_BASE_HEAD:
-        raise ValueError("hard-surface source-authority head drift")
-    if authority["build_result_schema"] != EXPECTED_BUILD_RESULT_SCHEMA:
-        raise ValueError("declared named build-result schema drift")
+    authority, state = validate_contract(contract)
     if authority["panel_source_sha256"] != EXPECTED_PANEL_SHA256:
         raise ValueError("declared panel source identity drift")
     if authority["pavilion_source_sha256"] != EXPECTED_PAVILION_SHA256:
@@ -89,16 +128,6 @@ def verify(panel=None, pavilion=None, contract=None, named_result=None, exact_he
         raise ValueError("panel source bytes drift")
     if load(PAVILION) == pavilion and sha256(PAVILION) != EXPECTED_PAVILION_SHA256:
         raise ValueError("pavilion source bytes drift")
-
-    state = contract["observed_mechanical_state"]
-    if state["tested_in_plane_rotations_degrees"] != [0, 180]:
-        raise ValueError("unsupported rotation evidence set")
-    if state["physical_orientation_key_present"]:
-        raise ValueError("unsupported physical orientation-key claim in exact current source")
-    if not state["receiver_frame_metadata_orientation_remains_authoritative"]:
-        raise ValueError("receiver metadata orientation cannot be discarded")
-    if contract["geometry_changed"]:
-        raise ValueError("rotational-symmetry evidence must not change source geometry")
 
     points = panel["mount_points_local_m"]
     rotated = rotate_mount_points_180(points)
@@ -142,9 +171,70 @@ def verify(panel=None, pavilion=None, contract=None, named_result=None, exact_he
         raise ValueError("contract contradicts exact reversible mount evidence")
     if not state["current_box_proof_geometry_is_180_degree_reversible"]:
         raise ValueError("contract contradicts exact current box proof geometry")
+    if not state["reversibility_invariant_across_tested_emission_variants"]:
+        raise ValueError("contract contradicts tested emission-variant invariance")
+
+    emission_variants = load_emission_variants_tool()
+    source_variant_contract = emission_variants.load_contract()
+    if source_variant_contract.get("schema") != authority["emission_variants_schema"]:
+        raise ValueError("source-owned emission-variant schema no longer matches panel contract")
+    if source_variant_contract.get("selection_policy") != authority["emission_variant_selection_policy"]:
+        raise ValueError("source-owned emission-variant selection policy no longer matches panel contract")
+
+    expected_receiver_ids = [fit["interface_id"] for fit in fits]
+    variant_results = []
+    for variant_id in state["tested_emission_variant_ids"]:
+        payload = emission_variants.build_variant(variant_id, exact_head)
+        if payload["schema"] != EXPECTED_EMISSION_VARIANTS_SCHEMA:
+            raise ValueError(f"{variant_id}: emission schema drift")
+        if payload["selection_policy"] != EXPECTED_EMISSION_SELECTION_POLICY:
+            raise ValueError(f"{variant_id}: emission selection policy drift")
+        if payload["receiver_ids"] != expected_receiver_ids:
+            raise ValueError(f"{variant_id}: receiver identity drift")
+        if payload["receiver_mount_residual_max_m"] > EPS:
+            raise ValueError(f"{variant_id}: receiver fit residual drift")
+        per_receiver = []
+        for row in receiver_results:
+            if row["zero_degree_mount_pattern_residual_m"] > EPS:
+                raise ValueError(f"{variant_id}/{row['interface_id']}: zero-degree residual drift")
+            if row["one_eighty_degree_unordered_mount_pattern_residual_m"] > EPS:
+                raise ValueError(f"{variant_id}/{row['interface_id']}: 180-degree residual drift")
+            per_receiver.append({
+                "interface_id": row["interface_id"],
+                "zero_degree_mount_pattern_residual_m": row["zero_degree_mount_pattern_residual_m"],
+                "one_eighty_degree_unordered_mount_pattern_residual_m": row["one_eighty_degree_unordered_mount_pattern_residual_m"],
+            })
+        variant_results.append({
+            "variant_id": variant_id,
+            "representation": payload["representation"],
+            "downstream_adoption": payload["downstream_adoption"],
+            "emitted_box_count": payload["emitted_box_count"],
+            "vertex_count": payload["vertex_count"],
+            "triangle_count": payload["triangle_count"],
+            "positive_volume_intersection_count": payload["positive_volume_intersection_count"],
+            "receiver_ids": payload["receiver_ids"],
+            "receiver_mount_residual_max_m": payload["receiver_mount_residual_max_m"],
+            "receiver_reversibility": per_receiver,
+        })
+
+    expected_counts = {
+        "base-closed-outward-19": (19, 152, 228, 4, "CURRENT_DEFAULT_UNCHANGED"),
+        "header-segmented-23": (23, 184, 276, 0, "OPT_IN_ONLY"),
+    }
+    for row in variant_results:
+        expected = expected_counts[row["variant_id"]]
+        observed = (
+            row["emitted_box_count"],
+            row["vertex_count"],
+            row["triangle_count"],
+            row["positive_volume_intersection_count"],
+            row["downstream_adoption"],
+        )
+        if observed != expected:
+            raise ValueError(f"{row['variant_id']}: exact emission signature drift {observed} != {expected}")
 
     return {
-        "result": "PASS_BUILDING_PANEL_180_DEGREE_MECHANICAL_REVERSIBILITY_CURRENT_SOURCE",
+        "result": "PASS_BUILDING_PANEL_180_DEGREE_REVERSIBILITY_ACROSS_EXPLICIT_EMISSION_VARIANTS_CURRENT_SOURCE",
         "exact_hard_surface_head": exact_head,
         "scope": contract["scope"],
         "source_authority": authority,
@@ -158,14 +248,17 @@ def verify(panel=None, pavilion=None, contract=None, named_result=None, exact_he
             "opaque_trailing_extension_count": named["opaque_trailing_extension_count"],
             "topology_revision": named["topology_summary"]["revision"],
             "topology_object_count": named["topology_summary"]["object_count"],
-            "receiver_ids": [row["interface_id"] for row in fits],
+            "receiver_ids": expected_receiver_ids,
         },
         "receiver_results": receiver_results,
+        "emission_variant_results": variant_results,
         "physical_orientation_key_present": False,
         "receiver_frame_metadata_orientation_preserved": True,
         "geometry_changed": False,
+        "downstream_variant_adoption_changed": False,
         "preservation_policy": contract["preservation_policy"],
         "inherited_hard_surface_prerequisite": "PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF",
+        "emission_variant_prerequisite": "PASS_EXPLICIT_SOURCE_OWNED_BUILDING_EMISSION_VARIANT_SELECTION",
         "truth_boundary": contract["truth_boundary"],
     }
 
@@ -208,6 +301,25 @@ def run_negative_controls():
     except ValueError as exc:
         results["missing_named_receiver_dependency"] = "REJECTED: " + str(exc)
 
+    bad_contract = copy.deepcopy(contract)
+    bad_contract["source_authority"]["emission_variants_schema"] = "axm.building-emission-variants/DRIFT"
+    try:
+        verify(panel=panel, pavilion=pavilion, contract=bad_contract)
+        results["emission_variant_schema_drift"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        results["emission_variant_schema_drift"] = "REJECTED: " + str(exc)
+
+    bad_contract = copy.deepcopy(contract)
+    bad_contract["observed_mechanical_state"]["tested_emission_variant_ids"] = [
+        "base-closed-outward-19",
+        "silent-best-effort",
+    ]
+    try:
+        verify(panel=panel, pavilion=pavilion, contract=bad_contract)
+        results["undeclared_emission_variant"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        results["undeclared_emission_variant"] = "REJECTED: " + str(exc)
+
     if any(not value.startswith("REJECTED") for value in results.values()):
         raise ValueError("negative control unexpectedly passed")
     return results
@@ -215,7 +327,7 @@ def run_negative_controls():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", default="evidence/utility-panel-rotational-symmetry-002")
+    parser.add_argument("--output-dir", default="evidence/utility-panel-rotational-symmetry-003")
     parser.add_argument("--exact-head", default="LOCAL_UNBOUND")
     args = parser.parse_args()
     out = Path(args.output_dir)

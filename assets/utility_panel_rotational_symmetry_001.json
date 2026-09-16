@@ -1,24 +1,29 @@
 {
-  "schema": "axm.building-panel-rotational-symmetry/v0.1",
+  "schema": "axm.building-panel-rotational-symmetry/v0.2",
   "contract_id": "utility-panel-rotational-symmetry-001",
   "applies_to_asset_id": "utility-access-panel-001",
   "units": "meters",
   "source_authority": {
-    "hard_surface_pr2_head": "34124101e616c423c5a3ed5e122ddf09b98a1650",
+    "hard_surface_pr2_head": "547bd21073332c8f856f07017cf9d279aa157bfa",
     "pavilion_source_sha256": "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a",
     "panel_source_sha256": "df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253",
-    "build_result_schema": "axm.building-build-result/v0.1"
+    "build_result_schema": "axm.building-build-result/v0.1",
+    "emission_variants_schema": "axm.building-emission-variants/v0.1",
+    "emission_variant_selection_policy": "EXPLICIT_VARIANT_ID_NO_FALLBACK"
   },
-  "scope": "CURRENT_FOUR_POINT_MOUNT_PATTERN_AND_BOX_PROOF_GEOMETRY_ONLY",
+  "scope": "CURRENT_FOUR_POINT_MOUNT_PATTERN_AND_BOX_PROOF_GEOMETRY_ACROSS_EXPLICIT_SOURCE_OWNED_EMISSION_VARIANTS",
   "observed_mechanical_state": {
     "tested_in_plane_rotations_degrees": [0, 180],
+    "tested_emission_variant_ids": ["base-closed-outward-19", "header-segmented-23"],
     "mount_pattern_is_180_degree_reversible": true,
     "current_box_proof_geometry_is_180_degree_reversible": true,
+    "reversibility_invariant_across_tested_emission_variants": true,
     "physical_orientation_key_present": false,
     "receiver_frame_metadata_orientation_remains_authoritative": true
   },
   "preservation_policy": "PRESERVE_CURRENT_MECHANICAL_REVERSIBILITY_UNTIL_BUILDING_SOURCE_DECLARES_A_PHYSICAL_ORIENTATION_REQUIREMENT",
   "geometry_changed": false,
-  "reuse_boundary": "A symmetric mount is not automatically a defect. Object required an asymmetric registration datum because its source-owned module had an orientation-disambiguation need. This Building panel currently has no source-owned physical key requirement, so the reversible pattern is retained rather than copied from Object by analogy. This consumer binds the source-owned named build-result interface rather than legacy tuple arity.",
-  "truth_boundary": "This contract proves only that the exact current four-point Building panel mount pattern and current box proof geometry are compatible with an in-plane 180-degree reversal at both existing receiver frames while preserving the current source identities, source-owned named build-result contract and receiver-frame metadata. It does not prove that a production panel should be reversible, that future controls/text/hinges/connectors are orientation-neutral, or any fastener, seal, load, manufacturing, runtime, gameplay, visual, CANON or production-readiness claim."
+  "downstream_variant_adoption_changed": false,
+  "reuse_boundary": "A symmetric mount is not automatically a defect. Object required an asymmetric registration datum because its source-owned module had an orientation-disambiguation need. This Building panel currently has no source-owned physical key requirement, so the reversible pattern is retained rather than copied from Object by analogy. This consumer binds the source-owned named build-result interface and explicitly evaluates each source-owned Building emission variant rather than binding tuple arity or silently adopting a preferred representation.",
+  "truth_boundary": "This contract proves only that the exact current four-point Building panel mount pattern and current box proof geometry are compatible with an in-plane 180-degree reversal at both existing receiver frames across the two explicitly declared source-owned Building emission variants while preserving current source identities, named build-result semantics, receiver-frame metadata and explicit variant selection. Exercising header-segmented-23 here is Hard-Surface interface evidence only and is not Map, Environment, Materials, Runtime or other downstream adoption. It does not prove that a production panel should remain reversible, that future controls/text/hinges/connectors are orientation-neutral, or any fastener, seal, load, manufacturing, runtime, gameplay, visual, CANON or production-readiness claim."
 }

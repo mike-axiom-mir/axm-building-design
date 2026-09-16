@@ -24,7 +24,7 @@ jobs:
         run: |
           echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
-          git merge-base --is-ancestor 34124101e616c423c5a3ed5e122ddf09b98a1650 HEAD
+          git merge-base --is-ancestor 547bd21073332c8f856f07017cf9d279aa157bfa HEAD
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -32,30 +32,48 @@ jobs:
         run: python -m compileall tools tests
       - name: Test complete receiving suite
         run: python -m unittest discover -s tests -v
-      - name: Build exact current-source rotational-symmetry evidence
+      - name: Build exact current-source cross-variant rotational-symmetry evidence
         if: matrix.python-version == '3.11'
-        run: python tools/verify_panel_rotational_symmetry.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/utility-panel-rotational-symmetry-002
-      - name: Verify retained exact binding
+        run: python tools/verify_panel_rotational_symmetry.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/utility-panel-rotational-symmetry-003
+      - name: Verify retained exact binding and cross-variant invariance
         if: matrix.python-version == '3.11'
         run: |
           python - <<'PY'
           import json, os, pathlib
-          receipt = json.loads(pathlib.Path('evidence/utility-panel-rotational-symmetry-002/receipt.json').read_text())
+          root = pathlib.Path('evidence/utility-panel-rotational-symmetry-003')
+          receipt = json.loads((root / 'receipt.json').read_text())
           assert receipt['exact_hard_surface_head'] == os.environ['AXM_EXACT_HEAD']
-          assert receipt['source_authority']['hard_surface_pr2_head'] == '34124101e616c423c5a3ed5e122ddf09b98a1650'
-          assert receipt['result'] == 'PASS_BUILDING_PANEL_180_DEGREE_MECHANICAL_REVERSIBILITY_CURRENT_SOURCE'
+          assert (root / 'exact-head.txt').read_text().strip() == os.environ['AXM_EXACT_HEAD']
+          assert receipt['source_authority']['hard_surface_pr2_head'] == '547bd21073332c8f856f07017cf9d279aa157bfa'
+          assert receipt['source_authority']['emission_variants_schema'] == 'axm.building-emission-variants/v0.1'
+          assert receipt['source_authority']['emission_variant_selection_policy'] == 'EXPLICIT_VARIANT_ID_NO_FALLBACK'
+          assert receipt['result'] == 'PASS_BUILDING_PANEL_180_DEGREE_REVERSIBILITY_ACROSS_EXPLICIT_EMISSION_VARIANTS_CURRENT_SOURCE'
           assert receipt['named_build_result']['schema'] == 'axm.building-build-result/v0.1'
           assert receipt['named_build_result']['legacy_output_count_observed'] == 9
           assert receipt['named_build_result']['topology_revision'] == 'closed-outward-12-triangle-v1'
           assert receipt['named_build_result']['topology_object_count'] == 19
           assert receipt['source_mount_pattern_180_residual_m'] == 0.0
           assert receipt['current_box_proof_geometry_180_residual_m'] == 0.0
+          assert receipt['downstream_variant_adoption_changed'] is False
+          variants = receipt['emission_variant_results']
+          assert [row['variant_id'] for row in variants] == ['base-closed-outward-19', 'header-segmented-23']
+          assert [(row['emitted_box_count'], row['vertex_count'], row['triangle_count']) for row in variants] == [(19, 152, 228), (23, 184, 276)]
+          assert [row['positive_volume_intersection_count'] for row in variants] == [4, 0]
+          assert [row['downstream_adoption'] for row in variants] == ['CURRENT_DEFAULT_UNCHANGED', 'OPT_IN_ONLY']
+          for variant in variants:
+              assert variant['receiver_mount_residual_max_m'] == 0.0
+              assert len(variant['receiver_reversibility']) == 2
+              for row in variant['receiver_reversibility']:
+                  assert row['zero_degree_mount_pattern_residual_m'] == 0.0
+                  assert row['one_eighty_degree_unordered_mount_pattern_residual_m'] == 0.0
           assert receipt['negative_controls']['missing_named_receiver_dependency'].startswith('REJECTED:')
+          assert receipt['negative_controls']['emission_variant_schema_drift'].startswith('REJECTED:')
+          assert receipt['negative_controls']['undeclared_emission_variant'].startswith('REJECTED:')
           PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
-          name: utility-panel-rotational-symmetry-002-evidence
-          path: evidence/utility-panel-rotational-symmetry-002
+          name: utility-panel-rotational-symmetry-003-evidence
+          path: evidence/utility-panel-rotational-symmetry-003
           if-no-files-found: error
