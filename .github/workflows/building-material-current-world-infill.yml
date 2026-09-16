@@ -1,0 +1,328 @@
+name: Building material current-world infill repair evidence
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+    paths:
+      - "lookdev/building_material_profile_001.json"
+      - "tools/build_current_world_infill_repair.py"
+      - ".github/workflows/building-material-current-world-infill.yml"
+  pull_request:
+    paths:
+      - "lookdev/building_material_profile_001.json"
+      - "tools/build_current_world_infill_repair.py"
+      - ".github/workflows/building-material-current-world-infill.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact-current-world-infill-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact Materials lane head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind exact receiving head
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > exact-head.txt
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          python -m py_compile tools/build_current_world_infill_repair.py tools/build_building_material_lookdev_evidence.py
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install image measurement dependencies
+        run: python -m pip install --disable-pip-version-check pillow numpy
+
+      - name: Checkout exact source-owned Building successor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 57f66b1245812f0c3d402232a046b86c0b5c72d8
+          path: .hard-surface
+          fetch-depth: 1
+
+      - name: Checkout exact predecessor Materials profile
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ca92ef79d65a2ba287b7a76464bedceb6a31a1b6
+          path: .materials-predecessor
+          fetch-depth: 1
+
+      - name: Checkout exact current Map receiving host
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-map-design
+          ref: 43d89a7cac48e57ebede0db8fc9983e8144222a0
+          path: .map-current
+          fetch-depth: 1
+
+      - name: Verify donor heads and profile delta
+        run: |
+          set -euo pipefail
+          test "$(git -C .hard-surface rev-parse HEAD)" = 57f66b1245812f0c3d402232a046b86c0b5c72d8
+          test "$(git -C .materials-predecessor rev-parse HEAD)" = ca92ef79d65a2ba287b7a76464bedceb6a31a1b6
+          test "$(git -C .map-current rev-parse HEAD)" = 43d89a7cac48e57ebede0db8fc9983e8144222a0
+          echo "e8dd0c33b9b2aea108194af57a8fe8de39c7e67bb86109af6dbf3895f22c010b  .materials-predecessor/lookdev/building_material_profile_001.json" | sha256sum --check --strict
+          echo "03a35755be3a46f693423ccb04a950e7e049b71dba4dc4d4d8359d5b74d26ef1  lookdev/building_material_profile_001.json" | sha256sum --check --strict
+          python - <<'PY'
+          import json
+          old=json.load(open('.materials-predecessor/lookdev/building_material_profile_001.json'))
+          new=json.load(open('lookdev/building_material_profile_001.json'))
+          changed=[]
+          for role in old['candidate']:
+              if old['candidate'][role] != new['candidate'][role]: changed.append(role)
+          assert changed == ['infill_coating'], changed
+          assert old['candidate']['infill_coating']['metallic'] == new['candidate']['infill_coating']['metallic'] == 0.16
+          assert old['candidate']['infill_coating']['roughness'] == new['candidate']['infill_coating']['roughness'] == 0.68
+          assert old['candidate']['infill_coating']['albedo'] == '#344047FF'
+          assert new['candidate']['infill_coating']['albedo'] == '#46535AFF'
+          assert old['component_materials'] == new['component_materials']
+          print('PASS_EXACT_INFILL_ALBEDO_ONLY_PROFILE_DELTA')
+          PY
+
+      - name: Download exact retained Map current-source donor
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          out=evidence/building_current_world_infill_repair_001
+          mkdir -p "$out/donor"
+          curl --fail --location --retry 3 --retry-delay 2 \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/mike-axiom-mir/axm-map-design/actions/artifacts/10448628965/zip" \
+            --output "$out/donor.zip"
+          echo "7d48e308e62eec1d0e9f0e072d05f3d45411810ce17a3141f0bc4a32b79cda33  $out/donor.zip" | sha256sum --check --strict
+          unzip -q "$out/donor.zip" -d "$out/donor"
+          test "$(cat "$out/donor/exact-head.txt")" = 43d89a7cac48e57ebede0db8fc9983e8144222a0
+          python - <<'PY'
+          import json
+          root='evidence/building_current_world_infill_repair_001/donor'
+          p=json.load(open(root+'/successor_current_world.json'))
+          assert p['schema']=='axm.environment-current-world-building-source-successor-evidence/v0.1',p
+          assert p['status']=='PASS_CURRENT_WORLD_BUILDING_SOURCE_SUCCESSOR_STRUCTURE',p
+          assert p['receiving_head']=='43d89a7cac48e57ebede0db8fc9983e8144222a0',p
+          assert p['building_source_head']=='57f66b1245812f0c3d402232a046b86c0b5c72d8',p
+          assert p['building_material_profile_sha256']=='e8dd0c33b9b2aea108194af57a8fe8de39c7e67bb86109af6dbf3895f22c010b',p
+          assert len(p['states'])==17,p
+          print('PASS_EXACT_MAP_CURRENT_SOURCE_DONOR')
+          PY
+
+      - name: Rebuild exact current Building material payload
+        run: |
+          set -euo pipefail
+          out=evidence/building_current_world_infill_repair_001/building-material
+          python tools/build_building_material_lookdev_evidence.py \
+            --source-root .hard-surface \
+            --source-head 57f66b1245812f0c3d402232a046b86c0b5c72d8 \
+            --profile lookdev/building_material_profile_001.json \
+            --out "$out"
+          python - <<'PY'
+          import json
+          r=json.load(open('evidence/building_current_world_infill_repair_001/building-material/build_receipt.json'))
+          assert r['result']=='PASS_SOURCE_BOUND_BUILDING_SURFACE_PAYLOAD',r
+          assert r['hard_surface_source_head']=='57f66b1245812f0c3d402232a046b86c0b5c72d8',r
+          assert r['source_revision']=='service-pavilion-001/closed-outward-box-shells-002',r
+          assert r['box_topology_revision']=='closed-outward-12-triangle-v1',r
+          assert r['material_profile_sha256']=='03a35755be3a46f693423ccb04a950e7e049b71dba4dc4d4d8359d5b74d26ef1',r
+          PY
+
+      - name: Build exact current-world infill-only candidate
+        run: |
+          set -euo pipefail
+          out=evidence/building_current_world_infill_repair_001
+          python tools/build_current_world_infill_repair.py \
+            --donor "$out/donor/successor_current_world.json" \
+            --donor-observer "$out/donor/successor_observer.json" \
+            --old-profile .materials-predecessor/lookdev/building_material_profile_001.json \
+            --new-profile lookdev/building_material_profile_001.json \
+            --material-payload "$out/building-material/building_material_payload.json" \
+            --material-receipt "$out/building-material/build_receipt.json" \
+            --material-head "$(cat exact-head.txt)" \
+            --output "$out/candidate_current_world.json" \
+            --observer-output "$out/candidate_observer.json"
+          cp exact-head.txt "$out/exact-head.txt"
+
+      - name: Exercise fail-closed material-scope controls
+        run: |
+          python - <<'PY'
+          import copy, importlib.util, json
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('repair','tools/build_current_world_infill_repair.py')
+          m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          root=Path('evidence/building_current_world_infill_repair_001')
+          donor=json.load(open(root/'donor/successor_current_world.json'))
+          observer=json.load(open(root/'donor/successor_observer.json'))
+          old=json.load(open('.materials-predecessor/lookdev/building_material_profile_001.json'))
+          new=json.load(open('lookdev/building_material_profile_001.json'))
+          payload=json.load(open(root/'building-material/building_material_payload.json'))
+          receipt=json.load(open(root/'building-material/build_receipt.json'))
+          profile_sha=m.file_sha(Path('lookdev/building_material_profile_001.json'))
+          head=Path('exact-head.txt').read_text().strip()
+          cases=[]
+          bad=copy.deepcopy(new); bad['candidate']['roof_membrane']['albedo']='#303030FF'; cases.append(('roof change',bad))
+          bad=copy.deepcopy(new); bad['candidate']['infill_coating']['roughness']=0.5; cases.append(('infill roughness change',bad))
+          bad=copy.deepcopy(new); bad['component_materials']['rear-infill-left']='frame_galvanized'; cases.append(('mapping change',bad))
+          for label,bad in cases:
+              try:
+                  m.build(donor,observer,old,bad,profile_sha,payload,receipt,head)
+              except ValueError:
+                  print('PASS_NEGATIVE_CONTROL',label)
+              else:
+                  raise AssertionError(label)
+          PY
+
+      - name: Download pinned Godot 4.7.2
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+      - name: Observe exact infill candidate in real current world
+        run: |
+          set -euo pipefail
+          out=evidence/building_current_world_infill_repair_001
+          mkdir -p .map-current/environment-proof/generated "$out/rendered-candidate"
+          cp "$out/candidate_observer.json" .map-current/environment-proof/generated/current_world_weather_variant.json
+          rm -f .map-current/environment-proof/atmosphere-current-world-weather-variant-runtime.json .map-current/environment-proof/building-material-*.png
+          xvfb-run --auto-servernum --server-args="-screen 0 1100x720x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path .map-current/environment-proof \
+            --script atmosphere_current_world_weather_variant_building_material_observe.gd
+          cp .map-current/environment-proof/atmosphere-current-world-weather-variant-runtime.json "$out/candidate_runtime.json"
+          cp .map-current/environment-proof/building-material-*.png "$out/rendered-candidate/"
+
+      - name: Measure target-host A-B and hierarchy diagnostics
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          import numpy as np
+          from PIL import Image
+
+          root=Path('evidence/building_current_world_infill_repair_001')
+          p=json.load(open(root/'candidate_current_world.json'))
+          r=json.load(open(root/'candidate_runtime.json'))
+          head=(root/'exact-head.txt').read_text().strip()
+          assert p['status']=='PASS_BUILDING_CURRENT_WORLD_INFILL_REPAIR_STRUCTURE' and all(p['checks'].values()),p
+          assert p['receiving_head']==head,p
+          assert r['state']=='PASS_CURRENT_WORLD_WEATHER_VARIANT_LIVE_OBSERVATION',r
+          assert r['receiving_head']==head,r
+          assert len(r['samples'])==17,r
+
+          contexts=['path_eye','elevated_oblique']
+          diagnostics={}
+          frame_hashes={c:[] for c in contexts}
+          for sample in r['samples']:
+              rows=[x for x in sample['static_source_meshes'] if x.get('asset_id')=='source:building:service-pavilion-001']
+              assert len(rows)==1,rows
+              b=rows[0]
+              assert b['vertices']==152 and b['triangles']==228 and b['surface_count']==5,b
+              assert b['material_ids']==['frame_galvanized','infill_coating','roof_membrane','slab_mineral','utility_panel_ochre'],b
+              assert b['material_profile_sha256']=='03a35755be3a46f693423ccb04a950e7e049b71dba4dc4d4d8359d5b74d26ef1',b
+              assert b['receiving_policy']=='EXACT_CURRENT_SOURCE_INFILL_ALBEDO_ONLY_REPAIR_FIXED_WORLD',b
+
+          for context in contexts:
+              old_values=[]; new_values=[]; changed_counts=[]; bboxes=[]
+              for i in range(17):
+                  old_path=root/'donor/rendered-successor'/f'building-material-{context}-{i:02d}.png'
+                  new_path=root/'rendered-candidate'/f'building-material-{context}-{i:02d}.png'
+                  assert old_path.stat().st_size>2000 and new_path.stat().st_size>2000,(old_path,new_path)
+                  old=np.asarray(Image.open(old_path).convert('RGB'),dtype=np.int16)
+                  new=np.asarray(Image.open(new_path).convert('RGB'),dtype=np.int16)
+                  mask=np.any(old!=new,axis=2)
+                  count=int(mask.sum()); assert count>0,(context,i)
+                  ys,xs=np.where(mask); bboxes.append([int(xs.min()),int(ys.min()),int(xs.max()),int(ys.max())])
+                  changed_counts.append(count)
+                  old_luma=0.2126*old[:,:,0]+0.7152*old[:,:,1]+0.0722*old[:,:,2]
+                  new_luma=0.2126*new[:,:,0]+0.7152*new[:,:,1]+0.0722*new[:,:,2]
+                  old_values.append(old_luma[mask]); new_values.append(new_luma[mask])
+                  frame_hashes[context].append(hashlib.sha256(new_path.read_bytes()).hexdigest())
+              old_all=np.concatenate(old_values); new_all=np.concatenate(new_values)
+              diag={
+                  'changed_pixels_per_frame_min':int(min(changed_counts)),
+                  'changed_pixels_per_frame_max':int(max(changed_counts)),
+                  'changed_pixels_per_frame_unique':sorted(set(changed_counts)),
+                  'bbox_per_frame_unique':sorted({tuple(x) for x in bboxes}),
+                  'predecessor_changed_pixel_median_luma':float(np.median(old_all)),
+                  'candidate_changed_pixel_median_luma':float(np.median(new_all)),
+                  'predecessor_changed_pixel_below_32_fraction':float(np.mean(old_all<32.0)),
+                  'candidate_changed_pixel_below_32_fraction':float(np.mean(new_all<32.0)),
+                  'candidate_minus_predecessor_mean_luma':float(np.mean(new_all-old_all)),
+              }
+              assert diag['candidate_changed_pixel_median_luma'] > diag['predecessor_changed_pixel_median_luma'],diag
+              assert diag['candidate_changed_pixel_below_32_fraction'] < diag['predecessor_changed_pixel_below_32_fraction'],diag
+              diagnostics[context]=diag
+
+          report={
+              'schema':'axm.building-material-current-world-infill-repair-target-host/v0.1',
+              'status':'PASS_BUILDING_CURRENT_WORLD_INFILL_REPAIR_TARGET_HOST_DIAGNOSTICS',
+              'receiving_head':head,
+              'map_donor_head':p['map_donor_head'],
+              'building_source_head':p['building_source_head'],
+              'predecessor_material_profile_sha256':p['predecessor_material_profile_sha256'],
+              'material_profile_sha256':p['material_profile_sha256'],
+              'proof_runtime':'Godot 4.7.2 GL Compatibility',
+              'contexts':diagnostics,
+              'candidate_frame_sha256':frame_hashes,
+              'checks':{
+                  'all_17_samples_reach_target_host':True,
+                  'all_34_candidate_frames_retained':all(len(v)==17 for v in frame_hashes.values()),
+                  'only_infill_profile_delta_declared':p['checks']['only_infill_surface_material_changed'],
+                  'candidate_infill_luma_increases_both_contexts':all(v['candidate_changed_pixel_median_luma']>v['predecessor_changed_pixel_median_luma'] for v in diagnostics.values()),
+                  'candidate_low_luma_fraction_decreases_both_contexts':all(v['candidate_changed_pixel_below_32_fraction']<v['predecessor_changed_pixel_below_32_fraction'] for v in diagnostics.values()),
+              },
+              'truth_boundary':'Target-host PASS proves only that pinned Godot GL Compatibility consumed the exact infill-albedo-only current-world candidate, retained all 34 fixed-camera frames, and measured a brighter changed-pixel response than the exact predecessor under the same world. The luma diagnostics are scoped evidence, not final Art Direction or Visual QA acceptance.',
+              'non_claims':['FINAL_ART_DIRECTION_OR_VISUAL_QA_ACCEPTANCE','PHYSICAL_MATERIAL_ACCURACY','UV_TEXTURE_DECAL_OR_WEATHERING_QUALITY','RENDERER_EQUIVALENCE','TARGET_DEVICE_PERFORMANCE','GAMEPLAY_CANON_PRODUCTION_READY_OR_MASTERY']
+          }
+          assert all(report['checks'].values()),report
+          (root/'target_host.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(report,indent=2,sort_keys=True))
+          PY
+
+      - name: Retain exact current-world infill repair evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-material-current-world-infill-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            exact-head.txt
+            lookdev/building_material_profile_001.json
+            evidence/building_current_world_infill_repair_001/building-material/building_material_payload.json
+            evidence/building_current_world_infill_repair_001/building-material/build_receipt.json
+            evidence/building_current_world_infill_repair_001/candidate_current_world.json
+            evidence/building_current_world_infill_repair_001/candidate_observer.json
+            evidence/building_current_world_infill_repair_001/candidate_runtime.json
+            evidence/building_current_world_infill_repair_001/target_host.json
+            evidence/building_current_world_infill_repair_001/rendered-candidate/*.png
+          if-no-files-found: warn
+          retention-days: 30
