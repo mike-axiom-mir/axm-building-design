@@ -1,0 +1,32 @@
+{
+  "schema": "axm.building-emission-variants/v0.1",
+  "asset_id": "service-pavilion-001",
+  "owner": "Building Hard Surface",
+  "purpose": "Expose source-owned proof-geometry emission choices by stable variant ID without changing the historical build result or silently adopting the header-segmented successor downstream.",
+  "provenance": {
+    "predecessor_hard_surface_head": "34124101e616c423c5a3ed5e122ddf09b98a1650",
+    "base_build_result_schema": "axm.building-build-result/v0.1",
+    "base_source_revision": "service-pavilion-001/closed-outward-box-shells-002",
+    "header_segmentation_schema": "axm.building-header-segmentation/v0.1",
+    "header_segmentation_revision": "service-pavilion-001/interpenetration-free-header-segmentation-003"
+  },
+  "default_variant_id": "base-closed-outward-19",
+  "selection_policy": "EXPLICIT_VARIANT_ID_NO_FALLBACK",
+  "variants": {
+    "base-closed-outward-19": {
+      "representation": "logical-source-boxes-with-panels-v1",
+      "expected_box_count": 19,
+      "expected_vertex_count": 152,
+      "expected_triangle_count": 228,
+      "downstream_adoption": "CURRENT_DEFAULT_UNCHANGED"
+    },
+    "header-segmented-23": {
+      "representation": "segmented-headers-around-source-post-volumes-v1",
+      "expected_box_count": 23,
+      "expected_vertex_count": 184,
+      "expected_triangle_count": 276,
+      "downstream_adoption": "OPT_IN_ONLY"
+    }
+  },
+  "truth_boundary": "This contract names two already-source-owned Building proof-geometry representations and requires explicit selection. It does not change the historical build tuple, the v0.1 named build result, logical component semantics, receiver semantics, material mapping, Map adoption, runtime acceptance, final visual acceptance, architectural/manufacturing validity, CANON or production readiness."
+}
