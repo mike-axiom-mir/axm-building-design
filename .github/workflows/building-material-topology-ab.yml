@@ -23,13 +23,30 @@ jobs:
     steps:
       - name: Checkout Building Materials lane
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Checkout exact Geometry donor
+      - name: Checkout exact historical Geometry donor
         uses: actions/checkout@v4
         with:
           repository: mike-axiom-mir/axm-building-design
           ref: 407d3aaf36c26829a64d964143e34587df6d8ea1
           path: geometry-donor
+          fetch-depth: 1
+
+      - name: Checkout exact current Hard-Surface source
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 57f66b1245812f0c3d402232a046b86c0b5c72d8
+          path: hard-surface-donor
+          fetch-depth: 1
+
+      - name: Verify exact donors
+        run: |
+          set -euo pipefail
+          test "$(git -C geometry-donor rev-parse HEAD)" = 407d3aaf36c26829a64d964143e34587df6d8ea1
+          test "$(git -C hard-surface-donor rev-parse HEAD)" = 57f66b1245812f0c3d402232a046b86c0b5c72d8
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,15 +58,16 @@ jobs:
           python -m compileall -q tools tests
           python -m unittest discover -s tests -v
 
-      - name: Build exact Materials topology A-B payload
+      - name: Build exact current-source Materials topology A-B payload
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           python tools/build_building_material_topology_ab_evidence.py \
             --geometry-donor geometry-donor \
+            --hard-surface-donor hard-surface-donor \
             --exact-head "$HEAD_SHA"
 
-      - name: Validate source and donor binding
+      - name: Validate source-owned successor and historical donor binding
         run: |
           python - <<'PY'
           import json
@@ -57,15 +75,27 @@ jobs:
           root=Path('lookdev-topology-proof/generated')
           r=json.loads((root/'build_receipt.json').read_text())
           p=json.loads((root/'building_material_topology_payload.json').read_text())
-          assert r['result']=='PASS_SOURCE_BOUND_BUILDING_TOPOLOGY_LOOKDEV_PAYLOAD',r
+          assert r['result']=='PASS_SOURCE_OWNED_BUILDING_TOPOLOGY_MATERIAL_REBIND_PAYLOAD',r
+          assert r['hard_surface_source_head']=='57f66b1245812f0c3d402232a046b86c0b5c72d8',r
           assert r['geometry_donor_head']=='407d3aaf36c26829a64d964143e34587df6d8ea1',r
+          assert r['source_schema']=='axm.building-hard-surface/v0.2',r
+          assert r['source_revision']=='service-pavilion-001/closed-outward-box-shells-002',r
+          assert r['box_topology_revision']=='closed-outward-12-triangle-v1',r
+          assert r['current_source_equals_geometry_candidate'] is True,r
+          assert r['topology_summary']['object_count']==19,r
+          assert r['topology_summary']['triangle_count']==228,r
+          assert r['topology_summary']['outward_triangle_count']==228,r
+          assert r['topology_summary']['inward_triangle_count']==0,r
           assert r['component_count']==19,r
           assert r['receiver_count']==2,r
           assert r['historical_face_count_per_component']==12,r
           assert r['candidate_face_count_per_component']==12,r
           assert p['truth_boundary']['same_source_vertices_all_variants'] is True,p
           assert p['truth_boundary']['same_material_profile_all_variants'] is True,p
-          assert p['truth_boundary']['source_migration'] is False,p
+          assert p['truth_boundary']['closed_outward_candidate_matches_current_source'] is True,p
+          assert p['truth_boundary']['current_source_matches_exact_geometry_candidate'] is True,p
+          assert p['truth_boundary']['source_migration'] is True,p
+          assert p['truth_boundary']['map_receiving_equivalence'] is False,p
           assert set(p['contexts'])=={'front_service','east_service','three_quarter'},p
           assert len(p['materials'])==5,p
           print(json.dumps(r,indent=2))
@@ -91,7 +121,7 @@ jobs:
             sudo apt-get install -y xvfb
           fi
 
-      - name: Render historical topology, closed-outward candidate and BoxMesh reference
+      - name: Render historical predecessor, current source and BoxMesh reference
         run: |
           set -euo pipefail
           rm -f lookdev-topology-proof/material-topology-lookdev-runtime-receipt.json lookdev-topology-proof/*.png
@@ -102,7 +132,7 @@ jobs:
             --path lookdev-topology-proof \
             --script observe.gd
 
-      - name: Validate target-host topology lookdev captures
+      - name: Validate target-host source-owned topology lookdev captures
         run: |
           python - <<'PY'
           import json
@@ -125,11 +155,11 @@ jobs:
           print(json.dumps(r,indent=2))
           PY
 
-      - name: Retain exact Building topology material evidence
+      - name: Retain exact current-source Building topology material evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: building-material-topology-ab-${{ github.event.pull_request.head.sha || github.sha }}
+          name: building-material-topology-current-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             lookdev/building_material_profile_001.json
             lookdev-topology-proof/generated/building_material_topology_payload.json
