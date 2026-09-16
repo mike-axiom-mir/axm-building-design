@@ -1,0 +1,18 @@
+{
+  "schema": "axm.building-header-segment-expansion-family/v0.1",
+  "family_id": "service-pavilion-header-segment-expansion-001",
+  "source_asset_id": "service-pavilion-001",
+  "logical_family_id": "service-pavilion-symmetric-component-rows-001",
+  "logical_row_id": "front-rear-header-pair",
+  "successor_contract_schema": "axm.building-header-segmentation/v0.1",
+  "successor_revision": "service-pavilion-001/interpenetration-free-header-segmentation-003",
+  "source_hard_surface_head": "34124101e616c423c5a3ed5e122ddf09b98a1650",
+  "successor_contract_sha256": "84075473c7320bde6d40d7c7aa6501f88b1e172d05dd5877ab4dc20e1b7a084f",
+  "segment_axis": "x",
+  "segment_centers_m": [-2.475, 0.0, 2.475],
+  "segment_lengths_m": [2.25, 2.30, 2.25],
+  "segment_id_suffixes": ["::segment-0", "::segment-1", "::segment-2"],
+  "authority": "DERIVE_ONLY_EXACT_SOURCE_OWNED_SEGMENTED_HEADER_REPETITION",
+  "failure_policy": "FAIL_CLOSED_NO_SOURCE_REWRITE_NO_INFERRED_SEGMENTS_NO_PATTERN_WIDENING",
+  "truth_boundary": "This Procedural family compresses only the repeated six-box emission pattern already source-owned by Building Hard Surface for front-header and rear-header. It derives segment centers and X lengths from one bounded three-station pattern while inheriting each logical header's Y/Z center and cross-section from the existing exact logical row generator. The Hard-Surface successor contract remains authority. This does not invent segmentation semantics, alter occupied union, generalize to arbitrary members, replace Hard-Surface ownership, or establish architecture, manufacturing, runtime, gameplay, visual acceptance, CANON or production readiness."
+}
