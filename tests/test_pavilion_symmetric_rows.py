@@ -11,16 +11,16 @@ SPEC.loader.exec_module(mod)
 
 
 class PavilionSymmetricRowTests(unittest.TestCase):
-    def test_generator_reproduces_three_materially_different_source_rows(self):
+    def test_generator_reproduces_five_materially_different_source_rows(self):
         summary = mod.build()
         self.assertEqual(summary["result"], "PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR")
-        self.assertEqual(summary["row_count"], 3)
-        self.assertEqual(summary["generated_component_count"], 11)
+        self.assertEqual(summary["row_count"], 5)
+        self.assertEqual(summary["generated_component_count"], 15)
         self.assertEqual(summary["source_component_count"], 17)
-        self.assertEqual(summary["generated_source_coverage"], "11/17")
-        self.assertEqual(summary["distinct_row_digests"], 3)
-        self.assertGreaterEqual(summary["distinct_component_sizes"], 2)
-        self.assertEqual(summary["distinct_station_counts"], [3, 4])
+        self.assertEqual(summary["generated_source_coverage"], "15/17")
+        self.assertEqual(summary["distinct_row_digests"], 5)
+        self.assertGreaterEqual(summary["distinct_component_sizes"], 4)
+        self.assertEqual(summary["distinct_station_counts"], [2, 3, 4])
 
     def test_exact_source_components_are_reproduced_without_rewrite(self):
         pavilion = mod.load(mod.PAVILION)
@@ -28,18 +28,29 @@ class PavilionSymmetricRowTests(unittest.TestCase):
         rows, generated_ids, manual_ids = mod.verify_profile(
             pavilion, profile, mod.sha256(mod.PAVILION)
         )
-        self.assertEqual(len(rows), 3)
-        self.assertEqual(len(generated_ids), 11)
-        self.assertEqual(
-            manual_ids,
-            ["slab", "roof", "front-header", "rear-header", "west-header", "east-header"],
-        )
+        self.assertEqual(len(rows), 5)
+        self.assertEqual(len(generated_ids), 15)
+        self.assertEqual(manual_ids, ["slab", "roof"])
         front = mod.generate_row(profile["rows"][0])
         self.assertEqual(
             [item["center"][0] for item in front], [-3.7, -1.25, 1.25, 3.7]
         )
         infill = mod.generate_row(profile["rows"][2])
         self.assertEqual([item["center"][0] for item in infill], [-2.45, 0.0, 2.45])
+        front_rear_headers = mod.generate_row(profile["rows"][3])
+        self.assertEqual(
+            [item["center"][1] for item in front_rear_headers], [-0.9, 0.9]
+        )
+        self.assertEqual(
+            [item["id"] for item in front_rear_headers], ["front-header", "rear-header"]
+        )
+        west_east_headers = mod.generate_row(profile["rows"][4])
+        self.assertEqual(
+            [item["center"][0] for item in west_east_headers], [-3.7, 3.7]
+        )
+        self.assertEqual(
+            [item["id"] for item in west_east_headers], ["west-header", "east-header"]
+        )
 
     def test_source_identity_and_inherited_hard_surface_gate_remain_exact(self):
         summary = mod.build()
@@ -61,6 +72,7 @@ class PavilionSymmetricRowTests(unittest.TestCase):
             "unsupported_axis",
             "duplicate_component_id",
             "source_pattern_drift_0p001m",
+            "header_pattern_drift_0p001m",
             "source_identity_drift",
         })
         self.assertTrue(
