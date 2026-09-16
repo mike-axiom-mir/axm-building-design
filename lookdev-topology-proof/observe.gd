@@ -7,7 +7,7 @@ var payload: Dictionary = {}
 var receipt := {
     "schema": "axm.building-material-topology-lookdev-runtime/v0.1",
     "promotion_effect": "NONE",
-    "coordinate_conversion": "Source (x,y,z) -> Godot (x,z,-y) is orientation reversing, so every source triangle reverses vertex order exactly once before target-host rendering.",
+    "coordinate_conversion": "Source (x,y,z) -> Godot (x,z,-y) is orientation preserving. Source triangle order is retained; the proof observer supplies renderer-facing flat normals as (c-a)x(b-a) for its Godot SurfaceTool representation.",
     "renderer_boundary": "Godot 4.7.2 GL Compatibility. Same Building source vertices and same refined scalar-PBR profile are rendered as exact historical face-table defect reproduction, exact Geometry PR #6 closed/outward candidate, and the existing BoxMesh lookdev reference. This is Materials renderer evidence only."
 }
 
@@ -73,12 +73,14 @@ func make_face_table_component(component: Dictionary, face_key: String) -> MeshI
     surface.set_material(make_material(String(component["material_id"])))
     for raw_face in faces:
         var face := raw_face as Array
-        # source_vec3 is a handedness-reversing coordinate conversion. Reverse
-        # source winding exactly once so source-outward remains Godot-outward.
+        # The source->Godot transform is a rotation (determinant +1), so keep
+        # exact source winding. SurfaceTool's renderer-facing flat normal for
+        # this proof representation is the opposite of the mathematical
+        # counter-clockwise cross used by the source topology observer.
         var a := source_vec3(vertices[int(face[0])] as Array)
-        var b := source_vec3(vertices[int(face[2])] as Array)
-        var c := source_vec3(vertices[int(face[1])] as Array)
-        var normal := (b - a).cross(c - a).normalized()
+        var b := source_vec3(vertices[int(face[1])] as Array)
+        var c := source_vec3(vertices[int(face[2])] as Array)
+        var normal := (c - a).cross(b - a).normalized()
         surface.set_normal(normal)
         surface.add_vertex(a)
         surface.set_normal(normal)
