@@ -7,7 +7,7 @@ var payload: Dictionary = {}
 var receipt := {
     "schema": "axm.building-material-topology-lookdev-runtime/v0.1",
     "promotion_effect": "NONE",
-    "coordinate_conversion": "Source (x,y,z) -> Godot (x,z,-y) is orientation preserving. Source triangle order is retained; the proof observer supplies renderer-facing flat normals as (c-a)x(b-a) for its Godot SurfaceTool representation.",
+    "coordinate_conversion": "Source (x,y,z) -> Godot (x,z,-y) is orientation preserving. The source outward normal is preserved from source triangle order, while SurfaceTool emission reverses b/c once so the target-host front-face/culling convention presents that same physical exterior.",
     "renderer_boundary": "Godot 4.7.2 GL Compatibility. Same Building source vertices and same refined scalar-PBR profile are rendered as exact historical face-table defect reproduction, exact Geometry PR #6 closed/outward candidate, and the existing BoxMesh lookdev reference. This is Materials renderer evidence only."
 }
 
@@ -73,20 +73,19 @@ func make_face_table_component(component: Dictionary, face_key: String) -> MeshI
     surface.set_material(make_material(String(component["material_id"])))
     for raw_face in faces:
         var face := raw_face as Array
-        # The source->Godot transform is a rotation (determinant +1), so keep
-        # exact source winding. SurfaceTool's renderer-facing flat normal for
-        # this proof representation is the opposite of the mathematical
-        # counter-clockwise cross used by the source topology observer.
         var a := source_vec3(vertices[int(face[0])] as Array)
-        var b := source_vec3(vertices[int(face[1])] as Array)
-        var c := source_vec3(vertices[int(face[2])] as Array)
-        var normal := (c - a).cross(b - a).normalized()
+        var source_b := source_vec3(vertices[int(face[1])] as Array)
+        var source_c := source_vec3(vertices[int(face[2])] as Array)
+        # Preserve the source-owned outward normal independently from target-host
+        # front-face order. The Godot SurfaceTool representation emits source
+        # b/c reversed once so CULL_BACK exposes the same physical exterior.
+        var normal := (source_b - a).cross(source_c - a).normalized()
         surface.set_normal(normal)
         surface.add_vertex(a)
         surface.set_normal(normal)
-        surface.add_vertex(b)
+        surface.add_vertex(source_c)
         surface.set_normal(normal)
-        surface.add_vertex(c)
+        surface.add_vertex(source_b)
     node.mesh = surface.commit()
     return node
 
