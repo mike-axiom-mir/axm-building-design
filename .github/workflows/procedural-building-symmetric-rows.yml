@@ -40,10 +40,13 @@ jobs:
           root = Path('evidence/service-pavilion-symmetric-rows-001')
           data = json.loads((root / 'summary.json').read_text())
           assert data['result'] == 'PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR'
-          assert data['row_count'] == 3
-          assert data['generated_component_count'] == 11
-          assert data['distinct_row_digests'] == 3
-          assert data['distinct_station_counts'] == [3, 4]
+          assert data['row_count'] == 5
+          assert data['generated_component_count'] == 15
+          assert data['generated_source_coverage'] == '15/17'
+          assert data['distinct_row_digests'] == 5
+          assert data['distinct_component_sizes'] >= 4
+          assert data['distinct_station_counts'] == [2, 3, 4]
+          assert data['manual_component_ids_outside_family'] == ['slab', 'roof']
           assert all(v.startswith('HOLD:') for v in data['negative_controls'].values())
           PY
       - name: Retain evidence
