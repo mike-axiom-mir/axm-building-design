@@ -11,6 +11,8 @@ EXPANSION_BUILDER = ROOT / "tools/build_pavilion_header_segment_expansion.py"
 EXPANSION_PROFILE = ROOT / "procedural/service_pavilion_header_segment_expansion_001.json"
 EMISSION_MODULE = ROOT / "tools/service_pavilion_emission_variants.py"
 EMISSION_CONTRACT = ROOT / "assets/service_pavilion_001_emission_variants.json"
+CURRENT_POLICY_MODULE = ROOT / "tools/service_pavilion_current_emission_policy.py"
+CURRENT_POLICY_CONTRACT = ROOT / "assets/service_pavilion_001_current_emission_policy.json"
 EPS = 1e-9
 
 
@@ -61,62 +63,91 @@ def header_rows(variant, logical_id):
     return sorted(rows, key=lambda row: row["id"])
 
 
-def verify_binding(profile, contract, observed_contract_sha256):
-    if profile.get("schema") != "axm.building-header-segment-expansion-family/v0.2":
+def verify_binding(profile, emission_contract, emission_sha, current_policy, policy_sha):
+    if profile.get("schema") != "axm.building-header-segment-expansion-family/v0.3":
         raise ValueError("procedural header family schema drift")
-    if contract.get("schema") != profile.get("emission_variant_contract_schema"):
+
+    if emission_contract.get("schema") != profile.get("emission_variant_contract_schema"):
         raise ValueError("emission variant contract schema drift")
-    if observed_contract_sha256 != profile.get("emission_variant_contract_sha256"):
+    if emission_sha != profile.get("emission_variant_contract_sha256"):
         raise ValueError("emission variant contract SHA-256 drift")
-    if contract.get("selection_policy") != profile.get("emission_selection_policy"):
+    if emission_contract.get("selection_policy") != profile.get("emission_selection_policy"):
         raise ValueError("emission variant selection policy drift")
-    if contract.get("default_variant_id") != profile.get("default_variant_id"):
-        raise ValueError("default emission variant drift")
-    variants = contract.get("variants", {})
-    default_id = profile.get("default_variant_id")
-    segmented_id = profile.get("segmented_variant_id")
-    if set(variants) != {default_id, segmented_id}:
+    if emission_contract.get("default_variant_id") != profile.get("legacy_emission_default_variant_id"):
+        raise ValueError("historical emission default drift")
+
+    legacy_id = profile.get("legacy_compatibility_variant_id")
+    current_id = profile.get("current_source_variant_id")
+    variants = emission_contract.get("variants", {})
+    if set(variants) != {legacy_id, current_id}:
         raise ValueError("emission variant allowlist drift")
-    if variants[default_id].get("downstream_adoption") != profile.get("default_variant_adoption"):
-        raise ValueError("default variant adoption policy drift")
-    if variants[segmented_id].get("downstream_adoption") != profile.get("segmented_variant_adoption"):
-        raise ValueError("segmented variant adoption policy drift")
+    if variants[legacy_id].get("downstream_adoption") != profile.get("legacy_emission_default_adoption"):
+        raise ValueError("legacy emission adoption metadata drift")
+    if variants[current_id].get("downstream_adoption") != profile.get("segmented_variant_legacy_adoption"):
+        raise ValueError("historical segmented adoption metadata drift")
+
+    if current_policy.get("schema") != profile.get("current_source_policy_schema"):
+        raise ValueError("current-source policy schema drift")
+    if policy_sha != profile.get("current_source_policy_sha256"):
+        raise ValueError("current-source policy SHA-256 drift")
+    if current_policy.get("current_source_variant_id") != current_id:
+        raise ValueError("current-source policy no longer selects procedural segmented variant")
+    if current_policy.get("legacy_compatibility_variant_id") != legacy_id:
+        raise ValueError("legacy compatibility identity drift")
+    if current_id == legacy_id:
+        raise ValueError("current and legacy procedural identities collapsed")
+    if current_policy.get("selection_policy") != profile.get("current_source_selection_policy"):
+        raise ValueError("current-source selection policy drift")
+    if current_policy.get("historical_build_result_policy") != profile.get("historical_build_result_policy"):
+        raise ValueError("historical build-result policy drift")
+    if profile.get("source_hard_surface_head") != profile.get("current_source_policy_hard_surface_head"):
+        raise ValueError("procedural source head no longer matches current-source policy head")
+    if profile.get("procedural_current_source_binding") != "EXPLICIT_REBIND_TO_HEADER_SEGMENTED_23__LEGACY_19_BOX_COMPATIBILITY_RETAINED":
+        raise ValueError("procedural current-source binding decision drift")
 
 
-def run_negative_controls(profile, contract, contract_sha, emission_mod):
+def _hold(name, fn, controls):
+    try:
+        fn()
+        controls[name] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        controls[name] = "HOLD: " + str(exc)
+
+
+def run_negative_controls(profile, emission_contract, emission_sha, current_policy, policy_sha, emission_mod):
     controls = {}
 
     bad = copy.deepcopy(profile)
     bad["emission_variant_contract_sha256"] = "0" * 64
-    try:
-        verify_binding(bad, contract, contract_sha)
-        controls["emission_contract_identity_drift"] = "UNEXPECTED_PASS"
-    except ValueError as exc:
-        controls["emission_contract_identity_drift"] = "HOLD: " + str(exc)
+    _hold("emission_contract_identity_drift", lambda: verify_binding(bad, emission_contract, emission_sha, current_policy, policy_sha), controls)
 
-    bad_contract = copy.deepcopy(contract)
+    bad_contract = copy.deepcopy(emission_contract)
     bad_contract["selection_policy"] = "IMPLICIT_BEST_EFFORT"
-    try:
-        verify_binding(profile, bad_contract, contract_sha)
-        controls["selection_policy_drift"] = "UNEXPECTED_PASS"
-    except ValueError as exc:
-        controls["selection_policy_drift"] = "HOLD: " + str(exc)
+    _hold("emission_selection_policy_drift", lambda: verify_binding(profile, bad_contract, emission_sha, current_policy, policy_sha), controls)
 
-    bad_contract = copy.deepcopy(contract)
-    bad_contract["default_variant_id"] = profile["segmented_variant_id"]
-    try:
-        verify_binding(profile, bad_contract, contract_sha)
-        controls["default_variant_drift"] = "UNEXPECTED_PASS"
-    except ValueError as exc:
-        controls["default_variant_drift"] = "HOLD: " + str(exc)
+    bad_contract = copy.deepcopy(emission_contract)
+    bad_contract["default_variant_id"] = profile["current_source_variant_id"]
+    _hold("legacy_emission_default_drift", lambda: verify_binding(profile, bad_contract, emission_sha, current_policy, policy_sha), controls)
 
-    bad_contract = copy.deepcopy(contract)
-    bad_contract["variants"][profile["segmented_variant_id"]]["downstream_adoption"] = "AUTO_ADOPT"
-    try:
-        verify_binding(profile, bad_contract, contract_sha)
-        controls["segmented_adoption_policy_drift"] = "UNEXPECTED_PASS"
-    except ValueError as exc:
-        controls["segmented_adoption_policy_drift"] = "HOLD: " + str(exc)
+    bad = copy.deepcopy(profile)
+    bad["current_source_policy_sha256"] = "0" * 64
+    _hold("current_policy_identity_drift", lambda: verify_binding(bad, emission_contract, emission_sha, current_policy, policy_sha), controls)
+
+    bad_policy = copy.deepcopy(current_policy)
+    bad_policy["current_source_variant_id"] = profile["legacy_compatibility_variant_id"]
+    _hold("current_source_regression", lambda: verify_binding(profile, emission_contract, emission_sha, bad_policy, policy_sha), controls)
+
+    bad_policy = copy.deepcopy(current_policy)
+    bad_policy["selection_policy"] = "BEST_EFFORT_FALLBACK_ALLOWED"
+    _hold("current_source_selection_policy_drift", lambda: verify_binding(profile, emission_contract, emission_sha, bad_policy, policy_sha), controls)
+
+    bad_policy = copy.deepcopy(current_policy)
+    bad_policy["legacy_compatibility_variant_id"] = profile["current_source_variant_id"]
+    _hold("current_legacy_identity_collapse", lambda: verify_binding(profile, emission_contract, emission_sha, bad_policy, policy_sha), controls)
+
+    bad_policy = copy.deepcopy(current_policy)
+    bad_policy["historical_build_result_policy"] = "REWRITE_BUILD_RESULT_TO_CURRENT_SOURCE"
+    _hold("historical_build_result_policy_drift", lambda: verify_binding(profile, emission_contract, emission_sha, bad_policy, policy_sha), controls)
 
     try:
         emission_mod.build_variant("silent-best-effort", profile["source_hard_surface_head"])
@@ -125,21 +156,28 @@ def run_negative_controls(profile, contract, contract_sha, emission_mod):
         controls["unknown_variant_fallback"] = "HOLD: " + str(exc)
 
     if any(not value.startswith("HOLD:") for value in controls.values()):
-        raise ValueError("emission-variant negative control unexpectedly passed")
+        raise ValueError("current-source policy negative control unexpectedly passed")
     return controls
 
 
 def build():
-    expansion_mod = load_module(EXPANSION_BUILDER, "pavilion_header_expansion_for_variant_rebind")
+    expansion_mod = load_module(EXPANSION_BUILDER, "pavilion_header_expansion_for_current_source_rebind")
     emission_mod = load_module(EMISSION_MODULE, "service_pavilion_emission_variants_for_procedural")
+    policy_mod = load_module(CURRENT_POLICY_MODULE, "service_pavilion_current_emission_policy_for_procedural")
     profile = load(EXPANSION_PROFILE)
-    contract = load(EMISSION_CONTRACT)
-    contract_sha = sha256(EMISSION_CONTRACT)
+    emission_contract = load(EMISSION_CONTRACT)
+    current_policy = load(CURRENT_POLICY_CONTRACT)
+    emission_sha = sha256(EMISSION_CONTRACT)
+    policy_sha = sha256(CURRENT_POLICY_CONTRACT)
 
     expansion = expansion_mod.build()
     if expansion.get("result") != "PASS_SOURCE_EXACT_HEADER_SEGMENT_EXPANSION_FAMILY":
         raise ValueError("header expansion prerequisite is not PASS")
-    verify_binding(profile, contract, contract_sha)
+    verify_binding(profile, emission_contract, emission_sha, current_policy, policy_sha)
+
+    policy_receipt = policy_mod.build_evidence(profile["source_hard_surface_head"])
+    if policy_receipt.get("result") != "PASS_SEGMENTED_BUILDING_PROMOTED_TO_CURRENT_SOURCE_POLICY_WITH_LEGACY_COMPATIBILITY":
+        raise ValueError("source current-emission policy prerequisite is not PASS")
 
     logical_mod = expansion_mod.load_logical_builder()
     logical_profile = expansion_mod.load(expansion_mod.LOGICAL_PROFILE)
@@ -150,76 +188,87 @@ def build():
         for row in expansion["expansion_rows"]
     }
 
-    default_id = profile["default_variant_id"]
-    segmented_id = profile["segmented_variant_id"]
-    base = emission_mod.build_variant(default_id, profile["source_hard_surface_head"])
-    segmented = emission_mod.build_variant(segmented_id, profile["source_hard_surface_head"])
+    legacy_id = profile["legacy_compatibility_variant_id"]
+    current_id = profile["current_source_variant_id"]
+    legacy = emission_mod.build_variant(legacy_id, profile["source_hard_surface_head"])
+    current = emission_mod.build_variant(current_id, profile["source_hard_surface_head"])
 
     rows = []
     for logical_id in ("front-header", "rear-header"):
-        base_rows = header_rows(base, logical_id)
-        segmented_rows = header_rows(segmented, logical_id)
-        expected_base = [logical_by_id[logical_id]]
-        expected_segmented = expanded_by_id[logical_id]
-        if not close(base_rows, expected_base):
-            raise ValueError(f"{logical_id}: default source variant no longer matches logical procedural header")
-        if not close(segmented_rows, expected_segmented):
-            raise ValueError(f"{logical_id}: segmented source variant no longer matches procedural expansion")
+        legacy_rows = header_rows(legacy, logical_id)
+        current_rows = header_rows(current, logical_id)
+        expected_legacy = [logical_by_id[logical_id]]
+        expected_current = expanded_by_id[logical_id]
+        if not close(legacy_rows, expected_legacy):
+            raise ValueError(f"{logical_id}: legacy compatibility variant no longer matches logical procedural header")
+        if not close(current_rows, expected_current):
+            raise ValueError(f"{logical_id}: current source variant no longer matches procedural expansion")
         rows.append({
             "logical_component_id": logical_id,
-            "default_variant_header_count": len(base_rows),
-            "segmented_variant_header_count": len(segmented_rows),
-            "default_variant_header_digest": digest_json(base_rows),
-            "segmented_variant_header_digest": digest_json(segmented_rows),
-            "default_variant_headers": base_rows,
-            "segmented_variant_headers": segmented_rows,
+            "legacy_compatibility_header_count": len(legacy_rows),
+            "current_source_header_count": len(current_rows),
+            "legacy_compatibility_header_digest": digest_json(legacy_rows),
+            "current_source_header_digest": digest_json(current_rows),
+            "legacy_compatibility_headers": legacy_rows,
+            "current_source_headers": current_rows,
         })
 
-    default_digest = digest_json([row["default_variant_headers"] for row in rows])
-    segmented_digest = digest_json([row["segmented_variant_headers"] for row in rows])
-    if default_digest == segmented_digest:
-        raise ValueError("default and segmented procedural header outputs are not materially distinct")
+    legacy_digest = digest_json([row["legacy_compatibility_headers"] for row in rows])
+    current_digest = digest_json([row["current_source_headers"] for row in rows])
+    if legacy_digest == current_digest:
+        raise ValueError("current and legacy procedural header outputs are not materially distinct")
 
-    if base["emitted_box_count"] != 19 or segmented["emitted_box_count"] != 23:
+    if legacy["emitted_box_count"] != 19 or current["emitted_box_count"] != 23:
         raise ValueError("source emission box-count identity drift")
-    if base["positive_volume_intersection_count"] != 4:
-        raise ValueError("default source overlap signature drift")
-    if segmented["positive_volume_intersection_count"] != 0:
-        raise ValueError("segmented source overlap signature drift")
-    if base["bounds"] != segmented["bounds"]:
+    if legacy["positive_volume_intersection_count"] != 4:
+        raise ValueError("legacy source overlap signature drift")
+    if current["positive_volume_intersection_count"] != 0:
+        raise ValueError("current segmented source overlap signature drift")
+    if legacy["bounds"] != current["bounds"]:
         raise ValueError("source emission variants changed assembled bounds")
-    if base["receiver_ids"] != segmented["receiver_ids"]:
+    if legacy["receiver_ids"] != current["receiver_ids"]:
         raise ValueError("source emission variants changed receiver identities")
-    if abs(base["occupied_union_volume_m3"] - segmented["occupied_union_volume_m3"]) > EPS:
+    if abs(legacy["occupied_union_volume_m3"] - current["occupied_union_volume_m3"]) > EPS:
         raise ValueError("source emission variants changed occupied union volume")
 
-    negatives = run_negative_controls(profile, contract, contract_sha, emission_mod)
+    negatives = run_negative_controls(
+        profile,
+        emission_contract,
+        emission_sha,
+        current_policy,
+        policy_sha,
+        emission_mod,
+    )
 
     return {
-        "result": "PASS_PROCEDURAL_HEADER_FAMILY_REBOUND_TO_EXPLICIT_EMISSION_VARIANTS",
-        "decision": "PRESERVE_DEFAULT_BASE__SEGMENTED_OPT_IN_ONLY__NO_AUTO_ADOPTION",
+        "result": "PASS_PROCEDURAL_HEADER_FAMILY_REBOUND_TO_CURRENT_SOURCE_POLICY",
+        "decision": "PASS_EXPLICIT_CURRENT_SOURCE_REBIND__SEGMENTED_23_CURRENT__LEGACY_19_COMPATIBILITY_HELD",
         "family_id": profile["family_id"],
         "family_schema": profile["schema"],
         "source_hard_surface_head": profile["source_hard_surface_head"],
-        "emission_variant_contract_schema": contract["schema"],
-        "emission_variant_contract_sha256": contract_sha,
-        "selection_policy": contract["selection_policy"],
-        "default_variant_id": default_id,
-        "default_variant_adoption": base["downstream_adoption"],
-        "segmented_variant_id": segmented_id,
-        "segmented_variant_adoption": segmented["downstream_adoption"],
-        "default_emitted_box_count": base["emitted_box_count"],
-        "segmented_emitted_box_count": segmented["emitted_box_count"],
-        "default_positive_volume_intersection_count": base["positive_volume_intersection_count"],
-        "segmented_positive_volume_intersection_count": segmented["positive_volume_intersection_count"],
-        "occupied_union_volume_residual_m3": round(segmented["occupied_union_volume_m3"] - base["occupied_union_volume_m3"], 12),
-        "bounds_equal": base["bounds"] == segmented["bounds"],
-        "receiver_ids_equal": base["receiver_ids"] == segmented["receiver_ids"],
-        "logical_header_output_count": sum(row["default_variant_header_count"] for row in rows),
-        "segmented_header_output_count": sum(row["segmented_variant_header_count"] for row in rows),
-        "distinct_variant_header_output_digests": len({default_digest, segmented_digest}),
-        "default_header_output_digest": default_digest,
-        "segmented_header_output_digest": segmented_digest,
+        "current_source_policy_schema": current_policy["schema"],
+        "current_source_policy_sha256": policy_sha,
+        "current_source_policy_result": policy_receipt["result"],
+        "current_source_selection_policy": current_policy["selection_policy"],
+        "historical_build_result_policy": current_policy["historical_build_result_policy"],
+        "emission_variant_contract_schema": emission_contract["schema"],
+        "emission_variant_contract_sha256": emission_sha,
+        "emission_variant_selection_policy": emission_contract["selection_policy"],
+        "historical_emission_default_variant_id": emission_contract["default_variant_id"],
+        "current_source_variant_id": current_id,
+        "legacy_compatibility_variant_id": legacy_id,
+        "current_source_emitted_box_count": current["emitted_box_count"],
+        "legacy_compatibility_emitted_box_count": legacy["emitted_box_count"],
+        "current_source_positive_volume_intersection_count": current["positive_volume_intersection_count"],
+        "legacy_compatibility_positive_volume_intersection_count": legacy["positive_volume_intersection_count"],
+        "occupied_union_volume_residual_m3": round(current["occupied_union_volume_m3"] - legacy["occupied_union_volume_m3"], 12),
+        "bounds_equal": legacy["bounds"] == current["bounds"],
+        "receiver_ids_equal": legacy["receiver_ids"] == current["receiver_ids"],
+        "legacy_compatibility_header_output_count": sum(row["legacy_compatibility_header_count"] for row in rows),
+        "current_source_header_output_count": sum(row["current_source_header_count"] for row in rows),
+        "distinct_current_legacy_header_output_digests": len({legacy_digest, current_digest}),
+        "legacy_compatibility_header_output_digest": legacy_digest,
+        "current_source_header_output_digest": current_digest,
         "headers": rows,
         "header_expansion_prerequisite_result": expansion["result"],
         "header_expansion_distinct_front_rear_digests": expansion["distinct_expansion_digests"],
@@ -228,11 +277,12 @@ def build():
         "failure_policy": profile["failure_policy"],
         "truth_boundary": profile["truth_boundary"],
         "non_claims": [
-            "automatic downstream adoption of header-segmented-23",
-            "Map, Materials, Environment or Runtime acceptance of the segmented variant",
+            "silent rewrite of axm.building-build-result/v0.1 or the historical 19-box tuple",
+            "automatic migration of Map, Materials, Environment, Runtime or any other consumer",
             "arbitrary building-member segmentation",
             "boolean-unioned or global-manifold pavilion topology",
             "architecture, structural engineering or manufacturing validity",
+            "final material or visual acceptance",
             "Universal Creation or Profession Fabric promotion",
             "CANON, production/game readiness, or Procedural Design mastery"
         ]
@@ -252,6 +302,9 @@ def main():
         )
         (args.output_dir / "source-emission-variant-contract.json").write_text(
             EMISSION_CONTRACT.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        (args.output_dir / "source-current-emission-policy.json").write_text(
+            CURRENT_POLICY_CONTRACT.read_text(encoding="utf-8"), encoding="utf-8"
         )
         (args.output_dir / "procedural-header-family-profile.json").write_text(
             EXPANSION_PROFILE.read_text(encoding="utf-8"), encoding="utf-8"
