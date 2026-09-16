@@ -46,6 +46,7 @@ jobs:
           git merge-base --is-ancestor 595217be3cb9de25d3dc48b19447654533a20599 HEAD
           git merge-base --is-ancestor 34124101e616c423c5a3ed5e122ddf09b98a1650 HEAD
           git merge-base --is-ancestor 547bd21073332c8f856f07017cf9d279aa157bfa HEAD
+          git merge-base --is-ancestor a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3 HEAD
       - name: Compile
         run: python -m compileall tools tests
       - name: Test
@@ -74,8 +75,8 @@ jobs:
           done
           echo "57f66b1245812f0c3d402232a046b86c0b5c72d8" > evidence/service-pavilion-symmetric-rows-001/source-hard-surface-head.txt
           echo "595217be3cb9de25d3dc48b19447654533a20599" > evidence/service-pavilion-symmetric-rows-001/build-result-contract-hard-surface-head.txt
-          echo "547bd21073332c8f856f07017cf9d279aa157bfa" > evidence/service-pavilion-header-segment-expansion-001/source-hard-surface-head.txt
-          echo "547bd21073332c8f856f07017cf9d279aa157bfa" > evidence/service-pavilion-header-emission-variant-rebind-001/source-hard-surface-head.txt
+          echo "a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3" > evidence/service-pavilion-header-segment-expansion-001/source-hard-surface-head.txt
+          echo "a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3" > evidence/service-pavilion-header-emission-variant-rebind-001/source-hard-surface-head.txt
           echo "34124101e616c423c5a3ed5e122ddf09b98a1650" > evidence/service-pavilion-utility-panel-receivers-001/source-hard-surface-head.txt
           echo "bd51542bc68534a6e6f3a11d421dc70216b2abf9" > evidence/service-pavilion-shared-frame-equivalence-001/shared-donor-head.txt
           echo "3aa93b0132eea9becefb20c716c6ec1a023ad28b" > evidence/service-pavilion-sticker-fabric-rebind-001/shared-home-head.txt
@@ -124,7 +125,7 @@ jobs:
 
           expansion = read('service-pavilion-header-segment-expansion-001')
           assert expansion['result'] == 'PASS_SOURCE_EXACT_HEADER_SEGMENT_EXPANSION_FAMILY'
-          assert expansion['source_hard_surface_head'] == '547bd21073332c8f856f07017cf9d279aa157bfa'
+          assert expansion['source_hard_surface_head'] == 'a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3'
           assert expansion['successor_contract_schema'] == 'axm.building-header-segmentation/v0.1'
           assert expansion['successor_revision'] == 'service-pavilion-001/interpenetration-free-header-segmentation-003'
           assert expansion['successor_contract_sha256'] == '84075473c7320bde6d40d7c7aa6501f88b1e172d05dd5877ab4dc20e1b7a084f'
@@ -141,28 +142,33 @@ jobs:
           assert all(v.startswith('HOLD:') for v in expansion['negative_controls'].values())
 
           variant_rebind = read('service-pavilion-header-emission-variant-rebind-001')
-          assert variant_rebind['result'] == 'PASS_PROCEDURAL_HEADER_FAMILY_REBOUND_TO_EXPLICIT_EMISSION_VARIANTS'
-          assert variant_rebind['decision'] == 'PRESERVE_DEFAULT_BASE__SEGMENTED_OPT_IN_ONLY__NO_AUTO_ADOPTION'
-          assert variant_rebind['source_hard_surface_head'] == '547bd21073332c8f856f07017cf9d279aa157bfa'
+          assert variant_rebind['result'] == 'PASS_PROCEDURAL_HEADER_FAMILY_REBOUND_TO_CURRENT_SOURCE_POLICY'
+          assert variant_rebind['decision'] == 'PASS_EXPLICIT_CURRENT_SOURCE_REBIND__SEGMENTED_23_CURRENT__LEGACY_19_COMPATIBILITY_HELD'
+          assert variant_rebind['family_schema'] == 'axm.building-header-segment-expansion-family/v0.3'
+          assert variant_rebind['source_hard_surface_head'] == 'a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3'
+          assert variant_rebind['current_source_policy_schema'] == 'axm.building-current-emission-policy/v0.1'
+          assert variant_rebind['current_source_policy_sha256'] == 'c26f25c789404919bdb8e40f35d517c444e35f0a7aaf9358ad399296a7afe47a'
+          assert variant_rebind['current_source_policy_result'] == 'PASS_SEGMENTED_BUILDING_PROMOTED_TO_CURRENT_SOURCE_POLICY_WITH_LEGACY_COMPATIBILITY'
+          assert variant_rebind['current_source_selection_policy'] == 'CURRENT_SOURCE_IS_NAMED__CONSUMER_REBIND_REQUIRED__NO_SILENT_DEFAULT_REWRITE'
+          assert variant_rebind['historical_build_result_policy'] == 'KEEP_AXM_BUILDING_BUILD_RESULT_V0_1_AT_19_BOXES_FOR_COMPATIBILITY'
           assert variant_rebind['emission_variant_contract_schema'] == 'axm.building-emission-variants/v0.1'
           assert variant_rebind['emission_variant_contract_sha256'] == '5d453757c4eac2609fe4661b66e260185b3e4e57377c4dc834d3c221a23c8049'
-          assert variant_rebind['selection_policy'] == 'EXPLICIT_VARIANT_ID_NO_FALLBACK'
-          assert variant_rebind['default_variant_id'] == 'base-closed-outward-19'
-          assert variant_rebind['default_variant_adoption'] == 'CURRENT_DEFAULT_UNCHANGED'
-          assert variant_rebind['segmented_variant_id'] == 'header-segmented-23'
-          assert variant_rebind['segmented_variant_adoption'] == 'OPT_IN_ONLY'
-          assert variant_rebind['default_emitted_box_count'] == 19
-          assert variant_rebind['segmented_emitted_box_count'] == 23
-          assert variant_rebind['default_positive_volume_intersection_count'] == 4
-          assert variant_rebind['segmented_positive_volume_intersection_count'] == 0
+          assert variant_rebind['emission_variant_selection_policy'] == 'EXPLICIT_VARIANT_ID_NO_FALLBACK'
+          assert variant_rebind['historical_emission_default_variant_id'] == 'base-closed-outward-19'
+          assert variant_rebind['current_source_variant_id'] == 'header-segmented-23'
+          assert variant_rebind['legacy_compatibility_variant_id'] == 'base-closed-outward-19'
+          assert variant_rebind['current_source_emitted_box_count'] == 23
+          assert variant_rebind['legacy_compatibility_emitted_box_count'] == 19
+          assert variant_rebind['current_source_positive_volume_intersection_count'] == 0
+          assert variant_rebind['legacy_compatibility_positive_volume_intersection_count'] == 4
           assert variant_rebind['occupied_union_volume_residual_m3'] == 0.0
           assert variant_rebind['bounds_equal'] is True
           assert variant_rebind['receiver_ids_equal'] is True
-          assert variant_rebind['logical_header_output_count'] == 2
-          assert variant_rebind['segmented_header_output_count'] == 6
-          assert variant_rebind['distinct_variant_header_output_digests'] == 2
+          assert variant_rebind['current_source_header_output_count'] == 6
+          assert variant_rebind['legacy_compatibility_header_output_count'] == 2
+          assert variant_rebind['distinct_current_legacy_header_output_digests'] == 2
           assert variant_rebind['header_expansion_distinct_front_rear_digests'] == 2
-          assert len(variant_rebind['negative_controls']) == 5
+          assert len(variant_rebind['negative_controls']) == 9
           assert all(v.startswith('HOLD:') for v in variant_rebind['negative_controls'].values())
 
           panel = read('service-pavilion-utility-panel-receivers-001')
