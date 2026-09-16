@@ -81,6 +81,13 @@ def generate_row(row):
 def verify_profile(pavilion, profile, observed_source_sha256):
     if profile.get("source_asset_id") != pavilion.get("asset_id"):
         raise ValueError("source asset identity mismatch")
+    if profile.get("source_schema") != pavilion.get("schema"):
+        raise ValueError("source schema drift")
+    if profile.get("source_revision") != pavilion.get("source_revision"):
+        raise ValueError("source revision drift")
+    contract = pavilion.get("generated_geometry_contract", {})
+    if profile.get("required_box_shell_topology") != contract.get("box_shell_topology"):
+        raise ValueError("source box-shell topology contract drift")
     if profile.get("source_sha256") != observed_source_sha256:
         raise ValueError("source SHA-256 drift")
     rows = profile.get("rows")
@@ -177,6 +184,22 @@ def run_negative_controls(pavilion, profile, observed_source_sha256):
     except ValueError as exc:
         controls["header_pattern_drift_0p001m"] = "HOLD: " + str(exc)
 
+    bad_source = copy.deepcopy(pavilion)
+    bad_source["source_revision"] = "service-pavilion-001/unknown-successor"
+    try:
+        verify_profile(bad_source, profile, observed_source_sha256)
+        controls["source_revision_drift"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        controls["source_revision_drift"] = "HOLD: " + str(exc)
+
+    bad_source = copy.deepcopy(pavilion)
+    bad_source["generated_geometry_contract"]["box_shell_topology"] = "historical-malformed-face-table"
+    try:
+        verify_profile(bad_source, profile, observed_source_sha256)
+        controls["source_topology_contract_drift"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        controls["source_topology_contract_drift"] = "HOLD: " + str(exc)
+
     bad = copy.deepcopy(profile)
     bad["source_sha256"] = "0" * 64
     try:
@@ -200,11 +223,47 @@ def build():
     negatives = run_negative_controls(pavilion, profile, observed_source_sha256)
 
     base = load_base_builder()
-    base_pav, panel, fits, obj, mins, maxs, path_gap, base_negatives = base.build()
+    (
+        base_pav,
+        panel,
+        fits,
+        obj,
+        mins,
+        maxs,
+        path_gap,
+        base_negatives,
+        topology_summary,
+    ) = base.build()
     if base_pav["asset_id"] != pavilion["asset_id"]:
         raise ValueError("base structural builder source identity mismatch")
+    if base_pav.get("source_revision") != profile.get("source_revision"):
+        raise ValueError("inherited hard-surface source revision mismatch")
+    if topology_summary.get("revision") != profile.get("required_box_shell_topology"):
+        raise ValueError("inherited hard-surface topology revision mismatch")
     if any(not state.startswith("REJECTED") for state in base_negatives.values()):
         raise ValueError("inherited hard-surface negative control drift")
+
+    expected_topology = {
+        "object_count": 19,
+        "vertex_count": 152,
+        "triangle_count": 228,
+        "boundary_edge_count": 0,
+        "nonmanifold_edge_count": 0,
+        "orientation_conflict_edge_count": 0,
+        "degenerate_triangle_count": 0,
+        "outward_triangle_count": 228,
+        "inward_triangle_count": 0,
+        "tangent_triangle_count": 0,
+    }
+    for key, expected in expected_topology.items():
+        if topology_summary.get(key) != expected:
+            raise ValueError(
+                f"inherited hard-surface topology drift {key}: {topology_summary.get(key)} != {expected}"
+            )
+    if not topology_summary.get("historical_predecessor_rejection", "").startswith("REJECTED"):
+        raise ValueError("historical malformed topology control did not reject")
+    if not topology_summary.get("single_triangle_flip_rejection", "").startswith("REJECTED"):
+        raise ValueError("single-triangle winding control did not reject")
 
     generated_components = []
     for row in profile["rows"]:
@@ -212,9 +271,13 @@ def build():
 
     return {
         "result": "PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR",
-        "schema": "axm.building-symmetric-component-row-evidence/v0.1",
+        "source_rebind_result": "PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002",
+        "schema": "axm.building-symmetric-component-row-evidence/v0.2",
         "family_id": profile["family_id"],
         "source_asset_id": pavilion["asset_id"],
+        "source_schema": pavilion["schema"],
+        "source_revision": pavilion["source_revision"],
+        "source_hard_surface_head": profile["source_hard_surface_head"],
         "source_sha256": observed_source_sha256,
         "profile_sha256": sha256(PROFILE),
         "authority": profile["authority"],
@@ -232,6 +295,15 @@ def build():
         "generated_subset_digest": digest_json(generated_components),
         "inherited_hard_surface_gate": {
             "result": "PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF",
+            "source_revision": base_pav["source_revision"],
+            "box_shell_topology": topology_summary["revision"],
+            "topology_result": "PASS_SOURCE_OWNED_CLOSED_OUTWARD_BOX_SHELLS_19_REAL_OUTPUTS",
+            "topology_summary": {
+                key: topology_summary[key]
+                for key in expected_topology
+            },
+            "historical_predecessor_rejection": topology_summary["historical_predecessor_rejection"],
+            "single_triangle_flip_rejection": topology_summary["single_triangle_flip_rejection"],
             "receiver_count": len(fits),
             "readable_path_gap_m": path_gap,
             "combined_bounds_local_m": {"min": mins, "max": maxs},
