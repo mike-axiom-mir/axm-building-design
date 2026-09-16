@@ -15,10 +15,13 @@ jobs:
       matrix:
         python-version: ['3.11', '3.13']
     runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Checkout Building candidate
+      - name: Checkout exact Building candidate head
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.EXACT_HEAD }}
           fetch-depth: 0
 
       - name: Checkout exact UC topology donor
@@ -40,6 +43,7 @@ jobs:
 
       - name: Prove exact Hard-Surface source/builder stayed unchanged
         run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
           git cat-file -e 4faa769b406bf3ad0ba9489a77141c27f122ce51^{commit}
           git diff --exit-code 4faa769b406bf3ad0ba9489a77141c27f122ce51 -- \
             assets/service_pavilion_001.json \
@@ -53,17 +57,17 @@ jobs:
         run: >-
           python tools/build_service_pavilion_topology_candidate.py
           --uc-root _uc
-          --exact-head "${GITHUB_SHA}"
+          --exact-head "$EXACT_HEAD"
           --output-dir evidence/service-pavilion-box-topology-001
 
       - name: Truth-gate retained Geometry result
         run: |
           python - <<'PY'
-          import json, pathlib
+          import json, os, pathlib
           p = pathlib.Path('evidence/service-pavilion-box-topology-001/topology-evidence.json')
           data = json.loads(p.read_text())
           assert data['result'] == 'PASS_DERIVED_CLOSED_OUTWARD_BOX_TOPOLOGY_19_REAL_COMPONENTS'
-          assert data['exact_geometry_head'] == '${{ github.sha }}'
+          assert data['exact_geometry_head'] == os.environ['EXACT_HEAD']
           assert data['aggregate']['historical_boundary_edges'] == 114
           assert data['aggregate']['historical_nonmanifold_edges'] == 38
           assert data['aggregate']['historical_orientation_conflicts'] == 76
@@ -79,6 +83,6 @@ jobs:
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
-          name: service-pavilion-box-topology-001-${{ github.sha }}
+          name: service-pavilion-box-topology-001-${{ env.EXACT_HEAD }}
           path: evidence/service-pavilion-box-topology-001
           if-no-files-found: error
