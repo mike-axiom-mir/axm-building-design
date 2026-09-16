@@ -50,7 +50,7 @@ class PavilionHeaderSegmentExpansionTests(unittest.TestCase):
         summary = mod.build()
         self.assertEqual(
             summary["source_hard_surface_head"],
-            "34124101e616c423c5a3ed5e122ddf09b98a1650",
+            "547bd21073332c8f856f07017cf9d279aa157bfa",
         )
         self.assertEqual(
             summary["successor_contract_schema"],
