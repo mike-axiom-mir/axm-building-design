@@ -39,6 +39,9 @@ jobs:
       - name: Build source-owned header segmentation successor evidence
         if: matrix.python-version == '3.11'
         run: python tools/build_service_pavilion_header_segmentation.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001/header-segmentation-003
+      - name: Build explicit source-owned emission-variant evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/service_pavilion_emission_variants.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001/emission-variants-001
       - name: Verify exact retained binding, source topology and named result
         if: matrix.python-version == '3.11'
         run: |
@@ -48,6 +51,7 @@ jobs:
           receipt = json.loads((root / 'receipt.json').read_text())
           interface = json.loads((root / 'build-result-contract.json').read_text())
           successor = json.loads((root / 'header-segmentation-003' / 'receipt.json').read_text())
+          variants = json.loads((root / 'emission-variants-001' / 'receipt.json').read_text())
           exact = os.environ['AXM_EXACT_HEAD']
           assert receipt['exact_hard_surface_head'] == exact
           assert (root / 'exact-head.txt').read_text().strip() == exact
@@ -104,6 +108,37 @@ jobs:
           assert successor_topo['inward_triangle_count'] == 0
           assert successor['negative_controls']['plus_1mm_header_overlap']['result'] == 'REJECTED_POSITIVE_VOLUME_INTERSECTION'
           assert successor['negative_controls']['minus_1mm_header_gap']['result'] == 'REJECTED_OCCUPIED_UNION_CHANGE'
+
+          assert variants['exact_hard_surface_head'] == exact
+          assert (root / 'emission-variants-001' / 'exact-head.txt').read_text().strip() == exact
+          assert variants['result'] == 'PASS_EXPLICIT_SOURCE_OWNED_BUILDING_EMISSION_VARIANT_SELECTION'
+          assert variants['schema'] == 'axm.building-emission-variants/v0.1'
+          assert variants['selection_policy'] == 'EXPLICIT_VARIANT_ID_NO_FALLBACK'
+          assert variants['default_variant_id'] == 'base-closed-outward-19'
+          assert variants['default_build_result_unchanged'] is True
+          base_variant = variants['base_variant']
+          segmented_variant = variants['header_segmented_variant']
+          assert base_variant['emitted_box_count'] == 19
+          assert base_variant['vertex_count'] == 152
+          assert base_variant['triangle_count'] == 228
+          assert base_variant['positive_volume_intersection_count'] == 4
+          assert base_variant['downstream_adoption'] == 'CURRENT_DEFAULT_UNCHANGED'
+          assert segmented_variant['emitted_box_count'] == 23
+          assert segmented_variant['vertex_count'] == 184
+          assert segmented_variant['triangle_count'] == 276
+          assert segmented_variant['positive_volume_intersection_count'] == 0
+          assert segmented_variant['downstream_adoption'] == 'OPT_IN_ONLY'
+          comparison = variants['comparison']
+          assert comparison['occupied_union_volume_residual_m3'] == 0.0
+          assert comparison['emitted_box_delta'] == 4
+          assert comparison['vertex_delta'] == 32
+          assert comparison['triangle_delta'] == 48
+          assert comparison['positive_volume_intersection_delta'] == -4
+          assert comparison['bounds_equal'] is True
+          assert comparison['receiver_ids_equal'] is True
+          assert comparison['receiver_residual_equal'] is True
+          assert variants['unknown_variant_control'].startswith('REJECTED:')
+          assert variants['downstream_policy'] == 'NO_AUTOMATIC_ADOPTION__CONSUMER_MUST_EXPLICITLY_SELECT_AND_RETEST'
           PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
