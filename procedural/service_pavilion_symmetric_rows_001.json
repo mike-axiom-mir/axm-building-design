@@ -7,6 +7,8 @@
   "source_hard_surface_head": "57f66b1245812f0c3d402232a046b86c0b5c72d8",
   "source_sha256": "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a",
   "required_box_shell_topology": "closed-outward-12-triangle-v1",
+  "required_build_result_schema": "axm.building-build-result/v0.1",
+  "build_result_contract_hard_surface_head": "595217be3cb9de25d3dc48b19447654533a20599",
   "authority": "DERIVE_EXISTING_REPEATED_COMPONENTS_ONLY_NO_SOURCE_REWRITE",
   "failure_policy": "FAIL_CLOSED_NO_SOURCE_REWRITE_NO_PATTERN_WIDENING_NO_NEAREST_MATCH",
   "rows": [
@@ -76,5 +78,5 @@
       ]
     }
   ],
-  "truth_boundary": "This family only derives repeated box-row center/size records already authored in the exact source-owned service-pavilion-001 successor. It now binds explicitly to Hard-Surface source revision closed-outward-box-shells-002 while leaving that source-owned triangle topology untouched. The family covers three body rows plus two exact symmetric header pairs; slab and roof remain explicit source records outside the family. It does not add building semantics, rewrite source topology, add receiver frames, establish structural engineering, architecture, materials, runtime behavior, visual acceptance, or a generic UC building grammar."
+  "truth_boundary": "This family only derives repeated box-row center/size records already authored in the exact source-owned service-pavilion-001 successor. It binds source geometry/topology to the exact closed-outward successor and consumes the Hard-Surface producer through the versioned named axm.building-build-result/v0.1 interface rather than tuple positions. The family covers three body rows plus two exact symmetric header pairs; slab and roof remain explicit source records outside the family. It does not add building semantics, rewrite source topology, absorb Geometry-only header segmentation, add receiver frames, establish structural engineering, architecture, materials, runtime behavior, visual acceptance, or a generic UC building grammar."
 }
