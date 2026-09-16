@@ -23,9 +23,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Verify exact source ancestry
+      - name: Verify exact source and named-contract ancestry
         if: matrix.python-version == '3.11'
-        run: git merge-base --is-ancestor 57f66b1245812f0c3d402232a046b86c0b5c72d8 HEAD
+        run: |
+          git merge-base --is-ancestor 57f66b1245812f0c3d402232a046b86c0b5c72d8 HEAD
+          git merge-base --is-ancestor 595217be3cb9de25d3dc48b19447654533a20599 HEAD
       - name: Compile
         run: python -m compileall tools tests
       - name: Test
@@ -36,6 +38,7 @@ jobs:
           python tools/build_pavilion_symmetric_rows.py --output-dir evidence/service-pavilion-symmetric-rows-001
           echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-symmetric-rows-001/exact-head.txt
           echo "57f66b1245812f0c3d402232a046b86c0b5c72d8" > evidence/service-pavilion-symmetric-rows-001/source-hard-surface-head.txt
+          echo "595217be3cb9de25d3dc48b19447654533a20599" > evidence/service-pavilion-symmetric-rows-001/build-result-contract-hard-surface-head.txt
       - name: Verify exact evidence summary
         if: matrix.python-version == '3.11'
         run: |
@@ -46,9 +49,14 @@ jobs:
           data = json.loads((root / 'summary.json').read_text())
           assert data['result'] == 'PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR'
           assert data['source_rebind_result'] == 'PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002'
+          assert data['build_result_rebind_result'] == 'PASS_PROCEDURAL_CONSUMER_USES_VERSIONED_NAMED_BUILD_RESULT'
           assert data['source_schema'] == 'axm.building-hard-surface/v0.2'
           assert data['source_revision'] == 'service-pavilion-001/closed-outward-box-shells-002'
           assert data['source_hard_surface_head'] == '57f66b1245812f0c3d402232a046b86c0b5c72d8'
+          assert data['build_result_contract_hard_surface_head'] == '595217be3cb9de25d3dc48b19447654533a20599'
+          assert data['build_result_contract_schema'] == 'axm.building-build-result/v0.1'
+          assert data['build_result_legacy_output_count_observed'] == 9
+          assert data['build_result_future_extension_control'] == 'PASS_EXISTING_PROCEDURAL_INPUTS_UNCHANGED'
           assert data['source_sha256'] == '5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a'
           assert data['row_count'] == 5
           assert data['generated_component_count'] == 15
@@ -68,6 +76,7 @@ jobs:
           assert inherited['topology_summary']['orientation_conflict_edge_count'] == 0
           assert inherited['topology_summary']['outward_triangle_count'] == 228
           assert inherited['topology_summary']['inward_triangle_count'] == 0
+          assert len(data['negative_controls']) == 9
           assert all(v.startswith('HOLD:') for v in data['negative_controls'].values())
           PY
       - name: Retain evidence
