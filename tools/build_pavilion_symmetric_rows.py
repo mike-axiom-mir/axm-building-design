@@ -166,6 +166,17 @@ def run_negative_controls(pavilion, profile, observed_source_sha256):
     except ValueError as exc:
         controls["source_pattern_drift_0p001m"] = "HOLD: " + str(exc)
 
+    bad_source = copy.deepcopy(pavilion)
+    target = next(
+        item for item in bad_source["components"] if item["id"] == "east-header"
+    )
+    target["center"][0] += 0.001
+    try:
+        verify_profile(bad_source, profile, observed_source_sha256)
+        controls["header_pattern_drift_0p001m"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        controls["header_pattern_drift_0p001m"] = "HOLD: " + str(exc)
+
     bad = copy.deepcopy(profile)
     bad["source_sha256"] = "0" * 64
     try:
