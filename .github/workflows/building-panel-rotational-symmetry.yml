@@ -28,7 +28,7 @@ jobs:
         if: matrix.python-version == '3.11'
         run: |
           python tools/verify_panel_rotational_symmetry.py --output-dir evidence/utility-panel-rotational-symmetry-001
-          git rev-parse HEAD > evidence/utility-panel-rotational-symmetry-001/exact-head.txt
+          printf '%s\n' "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/utility-panel-rotational-symmetry-001/exact-head.txt
       - name: Retain evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
