@@ -27,6 +27,10 @@ class PavilionSymmetricRowTests(unittest.TestCase):
             summary["source_rebind_result"],
             "PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002",
         )
+        self.assertEqual(
+            summary["build_result_rebind_result"],
+            "PASS_PROCEDURAL_CONSUMER_USES_VERSIONED_NAMED_BUILD_RESULT",
+        )
         self.assertEqual(summary["row_count"], 5)
         self.assertEqual(summary["generated_component_count"], 15)
         self.assertEqual(summary["source_component_count"], 17)
@@ -73,6 +77,23 @@ class PavilionSymmetricRowTests(unittest.TestCase):
             [item["id"] for item in west_east_headers], ["west-header", "east-header"]
         )
 
+    def test_named_build_result_is_exact_and_future_trailing_extension_safe(self):
+        profile = mod.load(mod.PROFILE)
+        contract = mod.load_build_result_contract()
+        legacy = contract.builder.build()
+        named = contract.from_legacy_output(legacy)
+        current = mod.project_named_build_result(contract, named, profile)
+        extended = contract.from_legacy_output(
+            tuple(legacy) + ({"future_extension": "opaque-to-procedural-v0.1"},)
+        )
+        future = mod.project_named_build_result(contract, extended, profile)
+        self.assertEqual(contract.BUILD_RESULT_SCHEMA, "axm.building-build-result/v0.1")
+        self.assertEqual(named["legacy_output_count_observed"], 9)
+        self.assertEqual(extended["legacy_output_count_observed"], 10)
+        self.assertEqual(extended["opaque_trailing_extension_count"], 1)
+        self.assertEqual(current, future)
+        self.assertEqual(set(current), set(mod.PROCEDURAL_BUILD_FIELDS))
+
     def test_source_identity_and_inherited_hard_surface_gate_remain_exact(self):
         summary = mod.build()
         self.assertEqual(summary["source_schema"], "axm.building-hard-surface/v0.2")
@@ -83,6 +104,19 @@ class PavilionSymmetricRowTests(unittest.TestCase):
         self.assertEqual(
             summary["source_hard_surface_head"],
             "57f66b1245812f0c3d402232a046b86c0b5c72d8",
+        )
+        self.assertEqual(
+            summary["build_result_contract_hard_surface_head"],
+            "595217be3cb9de25d3dc48b19447654533a20599",
+        )
+        self.assertEqual(
+            summary["build_result_contract_schema"],
+            "axm.building-build-result/v0.1",
+        )
+        self.assertEqual(summary["build_result_legacy_output_count_observed"], 9)
+        self.assertEqual(
+            summary["build_result_future_extension_control"],
+            "PASS_EXISTING_PROCEDURAL_INPUTS_UNCHANGED",
         )
         self.assertEqual(
             summary["source_sha256"],
@@ -130,6 +164,8 @@ class PavilionSymmetricRowTests(unittest.TestCase):
                 "source_revision_drift",
                 "source_topology_contract_drift",
                 "source_identity_drift",
+                "missing_named_build_dependency",
+                "named_build_result_schema_drift",
             },
         )
         self.assertTrue(
