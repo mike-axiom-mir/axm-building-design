@@ -5,10 +5,10 @@ const RECEIPT := "res://material-topology-lookdev-runtime-receipt.json"
 
 var payload: Dictionary = {}
 var receipt := {
-    "schema": "axm.building-material-topology-lookdev-runtime/v0.1",
+    "schema": "axm.building-material-topology-lookdev-runtime/v0.2",
     "promotion_effect": "NONE",
     "coordinate_conversion": "Source (x,y,z) -> Godot (x,z,-y) is orientation preserving. The source outward normal is preserved from source triangle order, while SurfaceTool emission reverses b/c once so the target-host front-face/culling convention presents that same physical exterior.",
-    "renderer_boundary": "Godot 4.7.2 GL Compatibility. Same Building source vertices and same refined scalar-PBR profile are rendered as exact historical face-table defect reproduction, exact Geometry PR #6 closed/outward candidate, and the existing BoxMesh lookdev reference. This is Materials renderer evidence only."
+    "renderer_boundary": "Godot 4.7.2 GL Compatibility. Same Building source vertices and same refined scalar-PBR profile are rendered as exact historical predecessor face-table defect reproduction, exact current Hard-Surface source-owned closed/outward topology, and the existing BoxMesh lookdev reference. This is Materials renderer/provenance evidence only."
 }
 
 func write_receipt() -> void:
@@ -76,9 +76,9 @@ func make_face_table_component(component: Dictionary, face_key: String) -> MeshI
         var a := source_vec3(vertices[int(face[0])] as Array)
         var source_b := source_vec3(vertices[int(face[1])] as Array)
         var source_c := source_vec3(vertices[int(face[2])] as Array)
-        # Preserve the source-owned outward normal independently from target-host
-        # front-face order. The Godot SurfaceTool representation emits source
-        # b/c reversed once so CULL_BACK exposes the same physical exterior.
+        # Preserve the source-owned physical normal separately from target-host
+        # front-face order. The observer reverses source b/c once for Godot's
+        # CULL_BACK representation without rewriting the source face table.
         var normal := (source_b - a).cross(source_c - a).normalized()
         surface.set_normal(normal)
         surface.add_vertex(a)
@@ -228,8 +228,15 @@ func compare_images(a: Image, b: Image) -> Dictionary:
 
 func _initialize() -> void:
     payload = read_json(PAYLOAD)
-    if payload.get("schema") != "axm.building-material-topology-lookdev-payload/v0.1":
-        fail("missing or invalid Building material topology lookdev payload")
+    if payload.get("schema") != "axm.building-material-topology-lookdev-payload/v0.2":
+        fail("missing or invalid current-source Building material topology lookdev payload")
+        return
+    if payload.get("hard_surface_source_head") != "57f66b1245812f0c3d402232a046b86c0b5c72d8":
+        fail("current Hard-Surface source head drift")
+        return
+    var truth := payload.get("truth_boundary", {}) as Dictionary
+    if truth.get("closed_outward_candidate_matches_current_source") != true or truth.get("source_migration") != true:
+        fail("payload does not prove current-source topology binding")
         return
 
     var rows := {}
@@ -255,10 +262,10 @@ func _initialize() -> void:
             images["boxmesh_reference"] as Image
         )
         if historical_vs_candidate.get("state") != "PASS" or int(historical_vs_candidate["changed_pixels"]) <= 0:
-            fail("historical/candidate topology comparison produced no visible delta for " + context)
+            fail("historical/current-source topology comparison produced no visible delta for " + context)
             return
         if candidate_vs_reference.get("state") != "PASS":
-            fail("candidate/reference comparison failed for " + context)
+            fail("current-source/reference comparison failed for " + context)
             return
         rows[context] = {
             "captures": metas,
@@ -270,9 +277,12 @@ func _initialize() -> void:
     receipt["contexts"] = rows
     receipt["godot_version"] = Engine.get_version_info()
     receipt["exact_materials_head"] = payload["exact_materials_head"]
+    receipt["hard_surface_source_head"] = payload["hard_surface_source_head"]
+    receipt["source_revision"] = payload["source_revision"]
+    receipt["box_topology_revision"] = payload["box_topology_revision"]
     receipt["geometry_donor_head"] = payload["geometry_donor_head"]
     receipt["material_profile_sha256"] = payload["material_profile_sha256"]
     receipt["truth_boundary"] = payload["truth_boundary"]
     write_receipt()
-    print("AXM BUILDING MATERIAL TOPOLOGY LOOKDEV ", JSON.stringify(receipt))
+    print("AXM BUILDING CURRENT-SOURCE MATERIAL TOPOLOGY LOOKDEV ", JSON.stringify(receipt))
     quit(0)
