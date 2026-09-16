@@ -46,11 +46,11 @@ class PavilionHeaderSegmentExpansionTests(unittest.TestCase):
         self.assertTrue(all(item["center"][2] == 3.02 for item in front + rear))
         self.assertTrue(all(item["size"][1:] == [0.18, 0.18] for item in front + rear))
 
-    def test_successor_identity_is_exact(self):
+    def test_successor_identity_is_exact_under_current_source_policy(self):
         summary = mod.build()
         self.assertEqual(
             summary["source_hard_surface_head"],
-            "547bd21073332c8f856f07017cf9d279aa157bfa",
+            "a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3",
         )
         self.assertEqual(
             summary["successor_contract_schema"],
