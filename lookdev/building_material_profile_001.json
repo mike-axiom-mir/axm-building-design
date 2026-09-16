@@ -2,7 +2,7 @@
   "schema": "axm.building-material-profile/v0.1",
   "asset_id": "service-pavilion-001",
   "panel_asset_id": "utility-access-panel-001",
-  "intent": "Bounded source-component surface hierarchy for foundation, structural frame, enclosure, roof and service access; scalar PBR only, with no UV, texture, weathering, engineering coating, runtime or final art acceptance.",
+  "intent": "Bounded source-component surface hierarchy for foundation, structural frame, enclosure, roof and service access; scalar PBR only, with receiving-scene service accents intentionally subordinate to pavilion structure and no UV, texture, weathering, engineering coating, runtime or final art acceptance.",
   "baseline": {
     "neutral_proof": {
       "albedo": "#74797DFF",
@@ -32,9 +32,9 @@
       "roughness": 0.88
     },
     "utility_panel_ochre": {
-      "albedo": "#9B7338FF",
-      "metallic": 0.28,
-      "roughness": 0.50
+      "albedo": "#6F5A3AFF",
+      "metallic": 0.18,
+      "roughness": 0.62
     }
   },
   "component_materials": {
@@ -61,6 +61,7 @@
   "provenance": {
     "method": "AXM self-authored scalar PBR lookdev values",
     "method_donor": "mike-axiom-mir/axm-object-design#6 multi-context same-geometry A/B evidence discipline only",
+    "receiving_scene_refinement": "Map PR #14 direct receiving-scene A/B showed the original #9B7338 / metallic 0.28 / roughness 0.50 panel response becoming the strongest path-end color accent and increasing contrast around the known triangular front-panel lighting read; revision mutes only that source-owned service surface while preserving all other material roles.",
     "external_textures": [],
     "external_material_assets": []
   },
