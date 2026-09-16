@@ -9,9 +9,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PAVILION = ROOT / "assets/service_pavilion_001.json"
 PROFILE = ROOT / "procedural/service_pavilion_symmetric_rows_001.json"
-BASE_BUILDER = ROOT / "tools/build_service_pavilion.py"
+BUILD_RESULT_CONTRACT = ROOT / "tools/service_pavilion_build_result.py"
 EPS = 1e-9
 AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
+PROCEDURAL_BUILD_FIELDS = (
+    "pavilion",
+    "receiver_fits",
+    "bounds_min",
+    "bounds_max",
+    "readable_path_gap_m",
+    "negative_controls",
+    "topology_summary",
+)
 
 
 def load(path):
@@ -27,11 +36,23 @@ def digest_json(value):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def load_base_builder():
-    spec = importlib.util.spec_from_file_location("build_service_pavilion", BASE_BUILDER)
+def load_build_result_contract():
+    spec = importlib.util.spec_from_file_location(
+        "service_pavilion_build_result", BUILD_RESULT_CONTRACT
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def project_named_build_result(contract, named, profile):
+    required_schema = profile.get("required_build_result_schema")
+    if required_schema != contract.BUILD_RESULT_SCHEMA:
+        raise ValueError("procedural profile build-result schema drift")
+    if named.get("schema") != required_schema:
+        raise ValueError("named Building build-result schema drift")
+    contract.require_fields(named, PROCEDURAL_BUILD_FIELDS)
+    return {field: named[field] for field in PROCEDURAL_BUILD_FIELDS}
 
 
 def _close(a, b):
@@ -141,7 +162,7 @@ def verify_profile(pavilion, profile, observed_source_sha256):
     return row_results, generated_ids, manual_ids
 
 
-def run_negative_controls(pavilion, profile, observed_source_sha256):
+def run_negative_controls(pavilion, profile, observed_source_sha256, build_contract, named):
     controls = {}
 
     bad = copy.deepcopy(profile)
@@ -208,6 +229,22 @@ def run_negative_controls(pavilion, profile, observed_source_sha256):
     except ValueError as exc:
         controls["source_identity_drift"] = "HOLD: " + str(exc)
 
+    missing = dict(named)
+    missing.pop("topology_summary")
+    try:
+        project_named_build_result(build_contract, missing, profile)
+        controls["missing_named_build_dependency"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        controls["missing_named_build_dependency"] = "HOLD: " + str(exc)
+
+    drifted = dict(named)
+    drifted["schema"] = "axm.building-build-result/v9.9"
+    try:
+        project_named_build_result(build_contract, drifted, profile)
+        controls["named_build_result_schema_drift"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        controls["named_build_result_schema_drift"] = "HOLD: " + str(exc)
+
     if any(not state.startswith("HOLD:") for state in controls.values()):
         raise ValueError("negative control unexpectedly passed")
     return controls
@@ -220,20 +257,35 @@ def build():
     rows, generated_ids, manual_ids = verify_profile(
         pavilion, profile, observed_source_sha256
     )
-    negatives = run_negative_controls(pavilion, profile, observed_source_sha256)
 
-    base = load_base_builder()
-    (
-        base_pav,
-        panel,
-        fits,
-        obj,
-        mins,
-        maxs,
-        path_gap,
-        base_negatives,
-        topology_summary,
-    ) = base.build()
+    build_contract = load_build_result_contract()
+    named = build_contract.build_named()
+    projected = project_named_build_result(build_contract, named, profile)
+
+    legacy = build_contract.builder.build()
+    future_named = build_contract.from_legacy_output(
+        tuple(legacy) + ({"future_extension": "opaque-to-v0.1-procedural-consumer"},)
+    )
+    future_projected = project_named_build_result(build_contract, future_named, profile)
+    if future_projected != projected:
+        raise ValueError("opaque trailing producer extension changed Procedural named inputs")
+
+    negatives = run_negative_controls(
+        pavilion,
+        profile,
+        observed_source_sha256,
+        build_contract,
+        named,
+    )
+
+    base_pav = projected["pavilion"]
+    fits = projected["receiver_fits"]
+    mins = projected["bounds_min"]
+    maxs = projected["bounds_max"]
+    path_gap = projected["readable_path_gap_m"]
+    base_negatives = projected["negative_controls"]
+    topology_summary = projected["topology_summary"]
+
     if base_pav["asset_id"] != pavilion["asset_id"]:
         raise ValueError("base structural builder source identity mismatch")
     if base_pav.get("source_revision") != profile.get("source_revision"):
@@ -272,12 +324,19 @@ def build():
     return {
         "result": "PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR",
         "source_rebind_result": "PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002",
-        "schema": "axm.building-symmetric-component-row-evidence/v0.2",
+        "build_result_rebind_result": "PASS_PROCEDURAL_CONSUMER_USES_VERSIONED_NAMED_BUILD_RESULT",
+        "schema": "axm.building-symmetric-component-row-evidence/v0.3",
         "family_id": profile["family_id"],
         "source_asset_id": pavilion["asset_id"],
         "source_schema": pavilion["schema"],
         "source_revision": pavilion["source_revision"],
         "source_hard_surface_head": profile["source_hard_surface_head"],
+        "build_result_contract_hard_surface_head": profile["build_result_contract_hard_surface_head"],
+        "build_result_contract_schema": named["schema"],
+        "build_result_named_dependencies": list(PROCEDURAL_BUILD_FIELDS),
+        "build_result_legacy_output_count_observed": named["legacy_output_count_observed"],
+        "build_result_opaque_trailing_extension_count_current": named["opaque_trailing_extension_count"],
+        "build_result_future_extension_control": "PASS_EXISTING_PROCEDURAL_INPUTS_UNCHANGED",
         "source_sha256": observed_source_sha256,
         "profile_sha256": sha256(PROFILE),
         "authority": profile["authority"],
