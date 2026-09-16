@@ -1,0 +1,55 @@
+name: Procedural building symmetric-row evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Test
+        run: python -m unittest discover -s tests -v
+      - name: Build exact procedural evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          python tools/build_pavilion_symmetric_rows.py --output-dir evidence/service-pavilion-symmetric-rows-001
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-symmetric-rows-001/exact-head.txt
+      - name: Verify exact evidence summary
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('evidence/service-pavilion-symmetric-rows-001')
+          data = json.loads((root / 'summary.json').read_text())
+          assert data['result'] == 'PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR'
+          assert data['row_count'] == 3
+          assert data['generated_component_count'] == 11
+          assert data['distinct_row_digests'] == 3
+          assert data['distinct_station_counts'] == [3, 4]
+          assert all(v.startswith('HOLD:') for v in data['negative_controls'].values())
+          PY
+      - name: Retain evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-symmetric-rows-001-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/service-pavilion-symmetric-rows-001
+          if-no-files-found: error
