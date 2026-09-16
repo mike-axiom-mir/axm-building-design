@@ -22,7 +22,7 @@
       "roughness": 0.38
     },
     "infill_coating": {
-      "albedo": "#46535AFF",
+      "albedo": "#59666DFF",
       "metallic": 0.16,
       "roughness": 0.68
     },
@@ -61,8 +61,16 @@
   "provenance": {
     "method": "AXM self-authored scalar PBR lookdev values",
     "method_donor": "mike-axiom-mir/axm-object-design#6 multi-context same-geometry A/B evidence discipline only",
-    "receiving_scene_refinement": "Map PR #24 + Visual QA + 3D Art Direction retained the current-world hierarchy defect under fixed lighting/composition: the source-owned solid infill compressed toward the near-black background. Direction packet BUILDING_CURRENT_WORLD_INFILL_HIERARCHY_DIRECTION_004 explicitly requests an infill_coating-only first repair. This successor changes only infill_coating albedo from #344047FF to #46535AFF; metallic 0.16 and roughness 0.68 remain unchanged, and frame/roof/slab/service-panel values and mappings remain exact.",
+    "receiving_scene_refinement": "Map PR #24 + Visual QA + 3D Art Direction retained the current-world hierarchy defect under fixed lighting/composition: the source-owned solid infill compressed toward the near-black background. Direction packet BUILDING_CURRENT_WORLD_INFILL_HIERARCHY_DIRECTION_004 requests an infill_coating-only repair. First exact candidate #46535AFF reached Godot in workflow 35108221810 but remained visually too close to the dark mass (changed-infill median luma 30.6642 and >96% of changed pixels below luma 32 in both fixed contexts). This retained successor therefore continues the same one-variable experiment and changes only infill_coating albedo from held predecessor #344047FF to #59666DFF; metallic 0.16 and roughness 0.68 remain unchanged, and frame/roof/slab/service-panel values and mappings remain exact.",
     "predecessor_material_profile_sha256": "e8dd0c33b9b2aea108194af57a8fe8de39c7e67bb86109af6dbf3895f22c010b",
+    "prior_insufficient_candidate": {
+      "head": "4a3c406f2938438b4403fb8760d004308a3c1e4d",
+      "albedo": "#46535AFF",
+      "workflow": 35108221810,
+      "artifact": 10451615541,
+      "artifact_sha256": "b93313b81ba8dae35b5e8d54d5012d76ba183d7564ba5a3abf4f6654c3f068b6",
+      "decision": "HOLD_INSUFFICIENT_INFILL_SEPARATION"
+    },
     "external_textures": [],
     "external_material_assets": []
   },
