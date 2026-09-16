@@ -1,0 +1,32 @@
+{
+  "schema": "axm.building-header-segmentation/v0.1",
+  "asset_id": "service-pavilion-001",
+  "successor_revision": "service-pavilion-001/interpenetration-free-header-segmentation-003",
+  "units": "meters",
+  "owner": "Building Hard Surface",
+  "purpose": "Source-owned successor emission contract that preserves the exact logical pavilion body while replacing only the two long header proof boxes with exact closed/outward segments around source-owned vertical-post volumes.",
+  "provenance": {
+    "base_hard_surface_head": "595217be3cb9de25d3dc48b19447654533a20599",
+    "base_source_revision": "service-pavilion-001/closed-outward-box-shells-002",
+    "base_source_sha256": "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a",
+    "geometry_candidate_head": "aaa987397c33f0dc9579a2ac3785ca00a5bc7402",
+    "geometry_candidate_artifact_id": 10451580791,
+    "geometry_candidate_artifact_sha256": "a3d478a5ef62f54db40e021c1ebc024e8bde353b6f8e8ee09fc8a5b7c962294b",
+    "geometry_result": "PASS_EXACT_UNION_HEADER_SEGMENTATION_REMOVES_ALL_POSITIVE_VOLUME_INTERPENETRATIONS"
+  },
+  "representation": "segmented-headers-around-source-post-volumes-v1",
+  "logical_component_policy": "Preserve the 17 source component IDs, centers and sizes as semantic envelopes; only emitted proof-box representation changes for front-header and rear-header.",
+  "segmented_components": {
+    "front-header": [
+      {"id": "front-header::segment-0", "center": [-2.475, -0.90, 3.02], "size": [2.25, 0.18, 0.18]},
+      {"id": "front-header::segment-1", "center": [0.0, -0.90, 3.02], "size": [2.30, 0.18, 0.18]},
+      {"id": "front-header::segment-2", "center": [2.475, -0.90, 3.02], "size": [2.25, 0.18, 0.18]}
+    ],
+    "rear-header": [
+      {"id": "rear-header::segment-0", "center": [-2.475, 0.90, 3.02], "size": [2.25, 0.18, 0.18]},
+      {"id": "rear-header::segment-1", "center": [0.0, 0.90, 3.02], "size": [2.30, 0.18, 0.18]},
+      {"id": "rear-header::segment-2", "center": [2.475, 0.90, 3.02], "size": [2.25, 0.18, 0.18]}
+    ]
+  },
+  "truth_boundary": "This source-owned overlay authorizes only the exact two-header segmented proof-box representation above. It preserves the base logical component semantics and occupied solid union while removing the four known positive-volume header/post interpenetrations. It does not establish a boolean-unioned/global-manifold pavilion shell, removal of coplanar internal faces at touching components, architectural or manufacturing validity, final normals/tangents/UVs/materials, runtime acceptance, gameplay, CANON or production readiness."
+}

@@ -17,6 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Bind exact current Building source lineage
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git merge-base --is-ancestor 34124101e616c423c5a3ed5e122ddf09b98a1650 HEAD
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -24,15 +32,30 @@ jobs:
         run: python -m compileall tools tests
       - name: Test complete receiving suite
         run: python -m unittest discover -s tests -v
-      - name: Build exact rotational-symmetry evidence
+      - name: Build exact current-source rotational-symmetry evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/verify_panel_rotational_symmetry.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/utility-panel-rotational-symmetry-002
+      - name: Verify retained exact binding
         if: matrix.python-version == '3.11'
         run: |
-          python tools/verify_panel_rotational_symmetry.py --output-dir evidence/utility-panel-rotational-symmetry-001
-          printf '%s\n' "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/utility-panel-rotational-symmetry-001/exact-head.txt
+          python - <<'PY'
+          import json, os, pathlib
+          receipt = json.loads(pathlib.Path('evidence/utility-panel-rotational-symmetry-002/receipt.json').read_text())
+          assert receipt['exact_hard_surface_head'] == os.environ['AXM_EXACT_HEAD']
+          assert receipt['source_authority']['hard_surface_pr2_head'] == '34124101e616c423c5a3ed5e122ddf09b98a1650'
+          assert receipt['result'] == 'PASS_BUILDING_PANEL_180_DEGREE_MECHANICAL_REVERSIBILITY_CURRENT_SOURCE'
+          assert receipt['named_build_result']['schema'] == 'axm.building-build-result/v0.1'
+          assert receipt['named_build_result']['legacy_output_count_observed'] == 9
+          assert receipt['named_build_result']['topology_revision'] == 'closed-outward-12-triangle-v1'
+          assert receipt['named_build_result']['topology_object_count'] == 19
+          assert receipt['source_mount_pattern_180_residual_m'] == 0.0
+          assert receipt['current_box_proof_geometry_180_residual_m'] == 0.0
+          assert receipt['negative_controls']['missing_named_receiver_dependency'].startswith('REJECTED:')
+          PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
-          name: utility-panel-rotational-symmetry-001-evidence
-          path: evidence/utility-panel-rotational-symmetry-001
+          name: utility-panel-rotational-symmetry-002-evidence
+          path: evidence/utility-panel-rotational-symmetry-002
           if-no-files-found: error

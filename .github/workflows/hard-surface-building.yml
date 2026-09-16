@@ -17,6 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Bind exact source head
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -26,7 +32,79 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Build exact structural evidence
         if: matrix.python-version == '3.11'
-        run: python tools/build_service_pavilion.py --output-dir evidence/service-pavilion-001
+        run: python tools/build_service_pavilion.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001
+      - name: Build exact named-result compatibility evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/verify_service_pavilion_build_result.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001
+      - name: Build source-owned header segmentation successor evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/build_service_pavilion_header_segmentation.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001/header-segmentation-003
+      - name: Verify exact retained binding, source topology and named result
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('evidence/service-pavilion-001')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          interface = json.loads((root / 'build-result-contract.json').read_text())
+          successor = json.loads((root / 'header-segmentation-003' / 'receipt.json').read_text())
+          exact = os.environ['AXM_EXACT_HEAD']
+          assert receipt['exact_hard_surface_head'] == exact
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          assert receipt['result'] == 'PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF'
+          assert receipt['source_topology_result'] == 'PASS_SOURCE_OWNED_CLOSED_OUTWARD_BOX_SHELLS_19_REAL_OUTPUTS'
+          topo = receipt['source_topology']
+          assert topo['object_count'] == 19
+          assert topo['vertex_count'] == 152
+          assert topo['triangle_count'] == 228
+          assert topo['boundary_edge_count'] == 0
+          assert topo['nonmanifold_edge_count'] == 0
+          assert topo['orientation_conflict_edge_count'] == 0
+          assert topo['outward_triangle_count'] == 228
+          assert topo['inward_triangle_count'] == 0
+          assert topo['historical_predecessor_rejection'].startswith('REJECTED:')
+          assert topo['single_triangle_flip_rejection'].startswith('REJECTED:')
+          assert interface['exact_hard_surface_head'] == exact
+          assert interface['result'] == 'PASS_VERSIONED_NAMED_BUILD_RESULT_WITH_LEGACY_TUPLE_COMPATIBILITY'
+          named = interface['contract']
+          assert named['schema'] == 'axm.building-build-result/v0.1'
+          assert named['legacy_output_count_observed'] == 9
+          assert named['opaque_trailing_extension_count'] == 0
+          assert named['topology_revision'] == 'closed-outward-12-triangle-v1'
+          assert named['topology_object_count'] == 19
+          assert named['legacy_current_required_payload_sha256'] == named['named_current_required_payload_sha256']
+          assert interface['future_trailing_extension_control'] == 'PASS_EXISTING_NAMED_FIELDS_UNCHANGED'
+          assert interface['missing_topology_control'].startswith('REJECTED:')
+          assert interface['missing_named_dependency_control'].startswith('REJECTED:')
+          assert interface['schema_drift_control'].startswith('REJECTED:')
+
+          assert successor['exact_hard_surface_head'] == exact
+          assert (root / 'header-segmentation-003' / 'exact-head.txt').read_text().strip() == exact
+          assert successor['result'] == 'PASS_SOURCE_OWNED_INTERPENETRATION_FREE_HEADER_SEGMENTATION_OVERLAY'
+          assert successor['base_hard_surface_head'] == '595217be3cb9de25d3dc48b19447654533a20599'
+          assert successor['geometry_candidate_head'] == 'aaa987397c33f0dc9579a2ac3785ca00a5bc7402'
+          assert successor['logical_component_count'] == 17
+          assert successor['logical_source_box_count_with_panels'] == 19
+          assert successor['emitted_successor_box_count_with_panels'] == 23
+          assert successor['source_positive_volume_intersection_count'] == 4
+          assert successor['source_positive_double_covered_volume_m3'] == 0.02592
+          assert successor['successor_positive_volume_intersection_count'] == 0
+          assert successor['occupied_union']['equivalent'] is True
+          assert successor['occupied_union']['volume_residual_m3'] == 0.0
+          assert successor['receiver_mount_residual_max_m'] == 0.0
+          successor_topo = successor['topology']
+          assert successor_topo['object_count'] == 23
+          assert successor_topo['vertex_count'] == 184
+          assert successor_topo['triangle_count'] == 276
+          assert successor_topo['boundary_edge_count'] == 0
+          assert successor_topo['nonmanifold_edge_count'] == 0
+          assert successor_topo['orientation_conflict_edge_count'] == 0
+          assert successor_topo['degenerate_triangle_count'] == 0
+          assert successor_topo['outward_triangle_count'] == 276
+          assert successor_topo['inward_triangle_count'] == 0
+          assert successor['negative_controls']['plus_1mm_header_overlap']['result'] == 'REJECTED_POSITIVE_VOLUME_INTERSECTION'
+          assert successor['negative_controls']['minus_1mm_header_gap']['result'] == 'REJECTED_OCCUPIED_UNION_CHANGE'
+          PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4

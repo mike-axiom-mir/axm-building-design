@@ -12,12 +12,13 @@ ROOT = Path(__file__).resolve().parents[1]
 PANEL = ROOT / "assets/utility_access_panel_001.json"
 PAVILION = ROOT / "assets/service_pavilion_001.json"
 CONTRACT = ROOT / "assets/utility_panel_rotational_symmetry_001.json"
-BUILD_TOOL = ROOT / "tools/build_service_pavilion.py"
+BUILD_RESULT_TOOL = ROOT / "tools/service_pavilion_build_result.py"
 EPS = 1e-9
 
 EXPECTED_PANEL_SHA256 = "df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253"
-EXPECTED_PAVILION_SHA256 = "852038d2288ead9a0ee271e09f1a7f7207ec8fd74668e0c52e739e9a224f87d7"
-EXPECTED_BASE_HEAD = "4faa769b406bf3ad0ba9489a77141c27f122ce51"
+EXPECTED_PAVILION_SHA256 = "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a"
+EXPECTED_BASE_HEAD = "34124101e616c423c5a3ed5e122ddf09b98a1650"
+EXPECTED_BUILD_RESULT_SCHEMA = "axm.building-build-result/v0.1"
 
 
 def load(path):
@@ -28,8 +29,8 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def load_build_tool():
-    spec = importlib.util.spec_from_file_location("build_service_pavilion", BUILD_TOOL)
+def load_build_result_tool():
+    spec = importlib.util.spec_from_file_location("service_pavilion_build_result", BUILD_RESULT_TOOL)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -51,7 +52,24 @@ def best_pattern_residual(reference, candidate):
     return best
 
 
-def verify(panel=None, pavilion=None, contract=None):
+def validate_named_result(named, pavilion, panel):
+    build_result = load_build_result_tool()
+    build_result.require_fields(named, ("pavilion", "panel", "receiver_fits", "negative_controls", "topology_summary"))
+    if named.get("schema") != EXPECTED_BUILD_RESULT_SCHEMA:
+        raise ValueError("Building named build-result schema drift")
+    if named["pavilion"] != pavilion:
+        raise ValueError("named build-result pavilion source drift")
+    if named["panel"] != panel:
+        raise ValueError("named build-result panel source drift")
+    topology = named["topology_summary"]
+    if topology.get("revision") != "closed-outward-12-triangle-v1":
+        raise ValueError("named build-result topology revision drift")
+    if topology.get("object_count") != 19:
+        raise ValueError("named build-result topology object-count drift")
+    return named
+
+
+def verify(panel=None, pavilion=None, contract=None, named_result=None, exact_head="LOCAL_UNBOUND"):
     panel = copy.deepcopy(panel if panel is not None else load(PANEL))
     pavilion = copy.deepcopy(pavilion if pavilion is not None else load(PAVILION))
     contract = copy.deepcopy(contract if contract is not None else load(CONTRACT))
@@ -61,13 +79,15 @@ def verify(panel=None, pavilion=None, contract=None):
     authority = contract["source_authority"]
     if authority["hard_surface_pr2_head"] != EXPECTED_BASE_HEAD:
         raise ValueError("hard-surface source-authority head drift")
+    if authority["build_result_schema"] != EXPECTED_BUILD_RESULT_SCHEMA:
+        raise ValueError("declared named build-result schema drift")
     if authority["panel_source_sha256"] != EXPECTED_PANEL_SHA256:
         raise ValueError("declared panel source identity drift")
     if authority["pavilion_source_sha256"] != EXPECTED_PAVILION_SHA256:
         raise ValueError("declared pavilion source identity drift")
-    if panel is not None and load(PANEL) == panel and sha256(PANEL) != EXPECTED_PANEL_SHA256:
+    if load(PANEL) == panel and sha256(PANEL) != EXPECTED_PANEL_SHA256:
         raise ValueError("panel source bytes drift")
-    if pavilion is not None and load(PAVILION) == pavilion and sha256(PAVILION) != EXPECTED_PAVILION_SHA256:
+    if load(PAVILION) == pavilion and sha256(PAVILION) != EXPECTED_PAVILION_SHA256:
         raise ValueError("pavilion source bytes drift")
 
     state = contract["observed_mechanical_state"]
@@ -89,13 +109,13 @@ def verify(panel=None, pavilion=None, contract=None):
     size = panel["proof_geometry"]["size_local_xyz_m"]
     if len(size) != 3 or size[1] <= 0 or size[2] <= 0:
         raise ValueError("unsupported current proof geometry")
-    # A centered box is invariant under 180 degrees about local +X; only its
-    # lateral/up signs swap. This does not claim future detailed geometry is.
     proof_geometry_residual_m = 0.0
 
-    build = load_build_tool()
-    # Re-execute the exact inherited Hard-Surface prerequisite before the new gate.
-    _, _, fits, _, _, _, _, negatives = build.build()
+    build_result = load_build_result_tool()
+    named = copy.deepcopy(named_result if named_result is not None else build_result.build_named())
+    validate_named_result(named, pavilion, panel)
+    fits = named["receiver_fits"]
+    negatives = named["negative_controls"]
     if len(fits) != len(pavilion["interfaces"]):
         raise ValueError("inherited receiver count drift")
     if any(not value.startswith("REJECTED") for value in negatives.values()):
@@ -103,7 +123,7 @@ def verify(panel=None, pavilion=None, contract=None):
 
     receiver_results = []
     for interface in pavilion["interfaces"]:
-        base = build.fit_panel(interface, panel)
+        base = build_result.builder.fit_panel(interface, panel)
         rotated_residual = best_pattern_residual(interface["mount_points_local_m"], rotated)
         if rotated_residual > EPS:
             raise ValueError(f"{interface['id']}: rotated mount-pattern residual {rotated_residual}")
@@ -124,13 +144,22 @@ def verify(panel=None, pavilion=None, contract=None):
         raise ValueError("contract contradicts exact current box proof geometry")
 
     return {
-        "result": "PASS_BUILDING_PANEL_180_DEGREE_MECHANICAL_REVERSIBILITY_EVIDENCE",
+        "result": "PASS_BUILDING_PANEL_180_DEGREE_MECHANICAL_REVERSIBILITY_CURRENT_SOURCE",
+        "exact_hard_surface_head": exact_head,
         "scope": contract["scope"],
         "source_authority": authority,
         "panel_source_sha256": EXPECTED_PANEL_SHA256,
         "pavilion_source_sha256": EXPECTED_PAVILION_SHA256,
         "source_mount_pattern_180_residual_m": source_residual,
         "current_box_proof_geometry_180_residual_m": proof_geometry_residual_m,
+        "named_build_result": {
+            "schema": named["schema"],
+            "legacy_output_count_observed": named["legacy_output_count_observed"],
+            "opaque_trailing_extension_count": named["opaque_trailing_extension_count"],
+            "topology_revision": named["topology_summary"]["revision"],
+            "topology_object_count": named["topology_summary"]["object_count"],
+            "receiver_ids": [row["interface_id"] for row in fits],
+        },
         "receiver_results": receiver_results,
         "physical_orientation_key_present": False,
         "receiver_frame_metadata_orientation_preserved": True,
@@ -171,6 +200,14 @@ def run_negative_controls():
     except ValueError as exc:
         results["source_identity_drift"] = "REJECTED: " + str(exc)
 
+    named = load_build_result_tool().build_named()
+    named.pop("receiver_fits")
+    try:
+        verify(panel=panel, pavilion=pavilion, contract=contract, named_result=named)
+        results["missing_named_receiver_dependency"] = "UNEXPECTED_PASS"
+    except ValueError as exc:
+        results["missing_named_receiver_dependency"] = "REJECTED: " + str(exc)
+
     if any(not value.startswith("REJECTED") for value in results.values()):
         raise ValueError("negative control unexpectedly passed")
     return results
@@ -178,16 +215,18 @@ def run_negative_controls():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-dir", default="evidence/utility-panel-rotational-symmetry-001")
+    parser.add_argument("--output-dir", default="evidence/utility-panel-rotational-symmetry-002")
+    parser.add_argument("--exact-head", default="LOCAL_UNBOUND")
     args = parser.parse_args()
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    receipt = verify()
+    receipt = verify(exact_head=args.exact_head)
     receipt["negative_controls"] = run_negative_controls()
     receipt["contract_sha256"] = sha256(CONTRACT)
     (out / "receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (out / "contract.json").write_text(CONTRACT.read_text(encoding="utf-8"), encoding="utf-8")
+    (out / "exact-head.txt").write_text(args.exact_head + "\n", encoding="utf-8")
     print(json.dumps(receipt, indent=2, sort_keys=True))
 
 
