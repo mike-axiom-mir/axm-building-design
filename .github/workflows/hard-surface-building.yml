@@ -17,6 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Bind exact source head
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -26,7 +32,31 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Build exact structural evidence
         if: matrix.python-version == '3.11'
-        run: python tools/build_service_pavilion.py --output-dir evidence/service-pavilion-001
+        run: python tools/build_service_pavilion.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001
+      - name: Verify exact retained binding and source topology
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('evidence/service-pavilion-001')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          exact = os.environ['AXM_EXACT_HEAD']
+          assert receipt['exact_hard_surface_head'] == exact
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          assert receipt['result'] == 'PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF'
+          assert receipt['source_topology_result'] == 'PASS_SOURCE_OWNED_CLOSED_OUTWARD_BOX_SHELLS_19_REAL_OUTPUTS'
+          topo = receipt['source_topology']
+          assert topo['object_count'] == 19
+          assert topo['vertex_count'] == 152
+          assert topo['triangle_count'] == 228
+          assert topo['boundary_edge_count'] == 0
+          assert topo['nonmanifold_edge_count'] == 0
+          assert topo['orientation_conflict_edge_count'] == 0
+          assert topo['outward_triangle_count'] == 228
+          assert topo['inward_triangle_count'] == 0
+          assert topo['historical_predecessor_rejection'].startswith('REJECTED:')
+          assert topo['single_triangle_flip_rejection'].startswith('REJECTED:')
+          PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
