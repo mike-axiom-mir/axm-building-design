@@ -1,0 +1,38 @@
+name: Building panel rotational-symmetry evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-panel-rotational-symmetry-002
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Test complete receiving suite
+        run: python -m unittest discover -s tests -v
+      - name: Build exact rotational-symmetry evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          python tools/verify_panel_rotational_symmetry.py --output-dir evidence/utility-panel-rotational-symmetry-001
+          git rev-parse HEAD > evidence/utility-panel-rotational-symmetry-001/exact-head.txt
+      - name: Retain evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: utility-panel-rotational-symmetry-001-evidence
+          path: evidence/utility-panel-rotational-symmetry-001
+          if-no-files-found: error
