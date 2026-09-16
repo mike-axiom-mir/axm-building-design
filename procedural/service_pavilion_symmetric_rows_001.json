@@ -1,0 +1,52 @@
+{
+  "schema": "axm.building-symmetric-component-row-family/v0.1",
+  "family_id": "service-pavilion-symmetric-component-rows-001",
+  "source_asset_id": "service-pavilion-001",
+  "source_sha256": "852038d2288ead9a0ee271e09f1a7f7207ec8fd74668e0c52e739e9a224f87d7",
+  "authority": "DERIVE_EXISTING_REPEATED_COMPONENTS_ONLY_NO_SOURCE_REWRITE",
+  "failure_policy": "FAIL_CLOSED_NO_SOURCE_REWRITE_NO_PATTERN_WIDENING_NO_NEAREST_MATCH",
+  "rows": [
+    {
+      "id": "front-uprights",
+      "axis": "x",
+      "base_center_m": [0.0, -0.9, 1.7],
+      "positive_offsets_m": [3.7, 1.25],
+      "include_center": false,
+      "size_m": [0.2, 0.2, 3.0],
+      "component_ids_negative_to_positive": [
+        "front-left-corner",
+        "front-door-left",
+        "front-door-right",
+        "front-right-corner"
+      ]
+    },
+    {
+      "id": "rear-uprights",
+      "axis": "x",
+      "base_center_m": [0.0, 0.9, 1.7],
+      "positive_offsets_m": [3.7, 1.25],
+      "include_center": false,
+      "size_m": [0.2, 0.2, 3.0],
+      "component_ids_negative_to_positive": [
+        "rear-left-corner",
+        "rear-left-mid",
+        "rear-right-mid",
+        "rear-right-corner"
+      ]
+    },
+    {
+      "id": "rear-infill-row",
+      "axis": "x",
+      "base_center_m": [0.0, 0.94, 1.65],
+      "positive_offsets_m": [2.45],
+      "include_center": true,
+      "size_m": [2.2, 0.1, 2.5],
+      "component_ids_negative_to_positive": [
+        "rear-infill-left",
+        "rear-infill-center",
+        "rear-infill-right"
+      ]
+    }
+  ],
+  "truth_boundary": "This family only derives repeated box-row records already authored in service-pavilion-001. It does not add building semantics, new receiver frames, structural engineering, architecture, materials, runtime behavior, or visual acceptance."
+}
