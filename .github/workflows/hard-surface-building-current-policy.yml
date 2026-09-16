@@ -1,0 +1,82 @@
+name: Hard-surface Building current-source policy evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-pavilion-interface-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Bind exact source head
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Test full Building repository
+        run: python -m unittest discover -s tests -v
+      - name: Build exact current-source policy evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/service_pavilion_current_emission_policy.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001/current-emission-policy-001
+      - name: Verify exact retained policy binding
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('evidence/service-pavilion-001/current-emission-policy-001')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          exact = os.environ['AXM_EXACT_HEAD']
+          assert receipt['exact_hard_surface_head'] == exact
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          assert receipt['result'] == 'PASS_SEGMENTED_BUILDING_PROMOTED_TO_CURRENT_SOURCE_POLICY_WITH_LEGACY_COMPATIBILITY'
+          assert receipt['schema'] == 'axm.building-current-emission-policy/v0.1'
+          assert receipt['current_source_variant_id'] == 'header-segmented-23'
+          assert receipt['legacy_compatibility_variant_id'] == 'base-closed-outward-19'
+          assert receipt['historical_build_result_unchanged'] is True
+          assert receipt['selection_policy'] == 'CURRENT_SOURCE_IS_NAMED__CONSUMER_REBIND_REQUIRED__NO_SILENT_DEFAULT_REWRITE'
+          current = receipt['current_source']
+          legacy = receipt['legacy_compatibility']
+          assert current['emitted_box_count'] == 23
+          assert current['vertex_count'] == 184
+          assert current['triangle_count'] == 276
+          assert current['positive_volume_intersection_count'] == 0
+          assert legacy['emitted_box_count'] == 19
+          assert legacy['vertex_count'] == 152
+          assert legacy['triangle_count'] == 228
+          assert legacy['positive_volume_intersection_count'] == 4
+          comparison = receipt['comparison']
+          assert comparison['occupied_union_volume_residual_m3'] == 0.0
+          assert comparison['emitted_box_delta'] == 4
+          assert comparison['vertex_delta'] == 32
+          assert comparison['triangle_delta'] == 48
+          assert comparison['positive_volume_intersection_delta'] == -4
+          assert comparison['bounds_equal'] is True
+          assert comparison['receiver_ids_equal'] is True
+          assert comparison['receiver_residual_equal'] is True
+          assert all(value.startswith('REJECTED:') for value in receipt['negative_controls'].values())
+          assert receipt['receiving_evidence']['receiving_workflow_run_id'] == 35130502118
+          assert receipt['receiving_evidence']['receiving_result'] == 'PASS_CURRENT_WORLD_BUILDING_HEADER_SEGMENTATION_BOUNDED_CONTINUITY'
+          assert receipt['downstream_policy'] == 'CURRENT_SOURCE_PROMOTED__NO_CONSUMER_AUTO_MIGRATION__EXACT_REBIND_AND_RETEST_REQUIRED'
+          PY
+      - name: Retain current-source policy evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-001-current-emission-policy-evidence
+          path: evidence/service-pavilion-001/current-emission-policy-001
+          if-no-files-found: error
