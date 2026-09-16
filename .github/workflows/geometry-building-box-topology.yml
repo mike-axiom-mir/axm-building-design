@@ -1,0 +1,84 @@
+name: Geometry building box topology evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/geometry-building-box-topology-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Building candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout exact UC topology donor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-universal-creation
+          ref: dde8d952161788f8bf21118f91edd3163e51277d
+          path: _uc
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Prove exact Hard-Surface source/builder stayed unchanged
+        run: |
+          git cat-file -e 4faa769b406bf3ad0ba9489a77141c27f122ce51^{commit}
+          git diff --exit-code 4faa769b406bf3ad0ba9489a77141c27f122ce51 -- \
+            assets/service_pavilion_001.json \
+            assets/utility_access_panel_001.json \
+            tools/build_service_pavilion.py
+
+      - name: Rebuild inherited Hard-Surface evidence
+        run: python tools/build_service_pavilion.py --output-dir evidence/service-pavilion-001
+
+      - name: Build exact Geometry topology evidence
+        run: >-
+          python tools/build_service_pavilion_topology_candidate.py
+          --uc-root _uc
+          --exact-head "${GITHUB_SHA}"
+          --output-dir evidence/service-pavilion-box-topology-001
+
+      - name: Truth-gate retained Geometry result
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path('evidence/service-pavilion-box-topology-001/topology-evidence.json')
+          data = json.loads(p.read_text())
+          assert data['result'] == 'PASS_DERIVED_CLOSED_OUTWARD_BOX_TOPOLOGY_19_REAL_COMPONENTS'
+          assert data['exact_geometry_head'] == '${{ github.sha }}'
+          assert data['aggregate']['historical_boundary_edges'] == 114
+          assert data['aggregate']['historical_nonmanifold_edges'] == 38
+          assert data['aggregate']['historical_orientation_conflicts'] == 76
+          assert data['aggregate']['candidate_boundary_edges'] == 0
+          assert data['aggregate']['candidate_nonmanifold_edges'] == 0
+          assert data['aggregate']['candidate_orientation_conflicts'] == 0
+          assert data['aggregate']['candidate_outward_triangles'] == 228
+          assert data['aggregate']['candidate_inward_triangles'] == 0
+          assert data['negative_control_single_triangle_flip']['accepted'] is False
+          PY
+
+      - name: Retain exact Geometry evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-box-topology-001-${{ github.sha }}
+          path: evidence/service-pavilion-box-topology-001
+          if-no-files-found: error
