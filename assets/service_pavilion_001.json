@@ -1,0 +1,63 @@
+{
+  "schema": "axm.building-hard-surface/v0.1",
+  "asset_id": "service-pavilion-001",
+  "units": "meters",
+  "purpose": "Bounded manufactured pavilion source sized for the existing Map building proxy, with two source-owned utility-panel receiver frames.",
+  "provenance": {
+    "authoring": "AXM self-authored deterministic source",
+    "map_reference_repo": "mike-axiom-mir/axm-map-design",
+    "map_reference_ref": "studio/environment-composition-baseline-001",
+    "map_reference_path": "examples/environment_baseline_001.json",
+    "map_reference_blob_sha": "e0d61b4bb8e03d9515eed05fee7da601622b6330",
+    "map_slot_asset_id": "proxy:building-pavilion",
+    "map_slot_position_m": [0.0, 7.2, 1.8],
+    "map_slot_size_m": [8.0, 2.4, 3.6],
+    "map_readable_path_y_max_m": 5.5,
+    "map_minimum_gap_m": 0.35
+  },
+  "body_envelope_m": [7.6, 2.0, 3.4],
+  "components": [
+    {"id": "slab", "center": [0.0, 0.0, 0.10], "size": [7.6, 2.0, 0.20]},
+    {"id": "roof", "center": [0.0, 0.0, 3.30], "size": [7.6, 2.0, 0.20]},
+    {"id": "front-left-corner", "center": [-3.70, -0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "front-door-left", "center": [-1.25, -0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "front-door-right", "center": [1.25, -0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "front-right-corner", "center": [3.70, -0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "rear-left-corner", "center": [-3.70, 0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "rear-left-mid", "center": [-1.25, 0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "rear-right-mid", "center": [1.25, 0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "rear-right-corner", "center": [3.70, 0.90, 1.70], "size": [0.20, 0.20, 3.00]},
+    {"id": "front-header", "center": [0.0, -0.90, 3.02], "size": [7.2, 0.18, 0.18]},
+    {"id": "rear-header", "center": [0.0, 0.90, 3.02], "size": [7.2, 0.18, 0.18]},
+    {"id": "west-header", "center": [-3.70, 0.0, 3.02], "size": [0.18, 1.6, 0.18]},
+    {"id": "east-header", "center": [3.70, 0.0, 3.02], "size": [0.18, 1.6, 0.18]},
+    {"id": "rear-infill-left", "center": [-2.45, 0.94, 1.65], "size": [2.20, 0.10, 2.50]},
+    {"id": "rear-infill-center", "center": [0.0, 0.94, 1.65], "size": [2.20, 0.10, 2.50]},
+    {"id": "rear-infill-right", "center": [2.45, 0.94, 1.65], "size": [2.20, 0.10, 2.50]}
+  ],
+  "interfaces": [
+    {
+      "id": "front-utility-bay",
+      "accepted_tag": "building-utility-panel",
+      "origin": [-2.45, -1.00, 1.65],
+      "normal": [0.0, -1.0, 0.0],
+      "lateral": [1.0, 0.0, 0.0],
+      "up": [0.0, 0.0, 1.0],
+      "plate_footprint_m": [1.20, 1.60],
+      "plate_thickness_m": 0.04,
+      "mount_points_local_m": [[-0.50, -0.70], [0.50, -0.70], [0.50, 0.70], [-0.50, 0.70]]
+    },
+    {
+      "id": "east-utility-bay",
+      "accepted_tag": "building-utility-panel",
+      "origin": [3.80, 0.10, 1.65],
+      "normal": [1.0, 0.0, 0.0],
+      "lateral": [0.0, 1.0, 0.0],
+      "up": [0.0, 0.0, 1.0],
+      "plate_footprint_m": [1.20, 1.60],
+      "plate_thickness_m": 0.04,
+      "mount_points_local_m": [[-0.50, -0.70], [0.50, -0.70], [0.50, 0.70], [-0.50, 0.70]]
+    }
+  ],
+  "truth_boundary": "This source defines deterministic proof geometry, a reserved Map-slot envelope and two building-local panel receiver frames. It does not establish architectural engineering, code compliance, weather sealing, structural loads, collision, navigation, final topology, materials, runtime import, gameplay, Art Direction acceptance or a universal attachment system."
+}
