@@ -23,6 +23,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Checkout exact shared rigid-frame donor
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-universal-creation
+          ref: bd51542bc68534a6e6f3a11d421dc70216b2abf9
+          path: external/axm-universal-creation
+          fetch-depth: 1
       - name: Verify exact source and named-contract ancestry
         if: matrix.python-version == '3.11'
         run: |
@@ -39,13 +47,18 @@ jobs:
           python tools/build_pavilion_symmetric_rows.py --output-dir evidence/service-pavilion-symmetric-rows-001
           python tools/build_pavilion_header_segment_expansion.py --output-dir evidence/service-pavilion-header-segment-expansion-001
           python tools/build_pavilion_utility_panel_receivers.py --output-dir evidence/service-pavilion-utility-panel-receivers-001
+          python tools/verify_pavilion_receiver_shared_frame_equivalence.py \
+            --uc-root external/axm-universal-creation \
+            --output-dir evidence/service-pavilion-shared-frame-equivalence-001
           echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-symmetric-rows-001/exact-head.txt
           echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-header-segment-expansion-001/exact-head.txt
           echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-utility-panel-receivers-001/exact-head.txt
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-shared-frame-equivalence-001/exact-head.txt
           echo "57f66b1245812f0c3d402232a046b86c0b5c72d8" > evidence/service-pavilion-symmetric-rows-001/source-hard-surface-head.txt
           echo "595217be3cb9de25d3dc48b19447654533a20599" > evidence/service-pavilion-symmetric-rows-001/build-result-contract-hard-surface-head.txt
           echo "34124101e616c423c5a3ed5e122ddf09b98a1650" > evidence/service-pavilion-header-segment-expansion-001/source-hard-surface-head.txt
           echo "34124101e616c423c5a3ed5e122ddf09b98a1650" > evidence/service-pavilion-utility-panel-receivers-001/source-hard-surface-head.txt
+          echo "bd51542bc68534a6e6f3a11d421dc70216b2abf9" > evidence/service-pavilion-shared-frame-equivalence-001/shared-donor-head.txt
       - name: Verify exact evidence summary
         if: matrix.python-version == '3.11'
         run: |
@@ -127,6 +140,30 @@ jobs:
           assert panel['hard_surface_prerequisite']['result'] == 'PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF'
           assert len(panel['negative_controls']) == 7
           assert all(v.startswith('HOLD:') for v in panel['negative_controls'].values())
+
+          shared_root = Path('evidence/service-pavilion-shared-frame-equivalence-001')
+          shared = json.loads((shared_root / 'summary.json').read_text())
+          assert shared['result'] == 'PASS_EXACT_SHARED_RIGID_FRAME_EQUIVALENCE_BUILDING_RECEIVERS'
+          assert shared['authority'] == 'RECEIVING_DOMAIN_EQUIVALENCE_PROBE_ONLY'
+          assert shared['consolidation_decision'] == 'HOLD_SHARED_CONSOLIDATION_PENDING_OBJECT_DOMAIN_EQUIVALENCE'
+          assert shared['building_family_result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
+          assert shared['building_receiver_count'] == 2
+          assert shared['building_receiver_ids'] == ['front-utility-bay', 'east-utility-bay']
+          assert shared['shared_donor_repo'] == 'mike-axiom-mir/axm-universal-creation'
+          assert shared['shared_donor_head'] == 'bd51542bc68534a6e6f3a11d421dc70216b2abf9'
+          assert shared['shared_donor_module'] == 'src/axm_stickers/placement.py'
+          assert shared['source_anchor'] == 'identity'
+          assert shared['local_offset'] == 'identity'
+          assert shared['scale'] == 1.0
+          assert shared['exact_receiver_equivalence_count'] == 2
+          assert shared['distinct_target_frame_digests'] == 2
+          assert shared['distinct_shared_mesh_digests'] == 2
+          assert shared['maximum_position_residual_m'] == 0.0
+          assert len(shared['negative_controls']) == 3
+          assert all(v.startswith('HOLD:') for v in shared['negative_controls'].values())
+          assert all(row['exact_vertex_list_match'] for row in shared['receivers'])
+          assert all(row['exact_mesh_digest_match'] for row in shared['receivers'])
+          assert all(row['maximum_position_residual_m'] == 0.0 for row in shared['receivers'])
           PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
@@ -137,4 +174,5 @@ jobs:
             evidence/service-pavilion-symmetric-rows-001
             evidence/service-pavilion-header-segment-expansion-001
             evidence/service-pavilion-utility-panel-receivers-001
+            evidence/service-pavilion-shared-frame-equivalence-001
           if-no-files-found: error
