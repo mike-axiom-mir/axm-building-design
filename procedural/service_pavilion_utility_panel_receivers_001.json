@@ -1,0 +1,20 @@
+{
+  "schema": "axm.building-utility-panel-receiver-placement-family/v0.1",
+  "family_id": "axm.building-utility-panel-receiver-placement-family/v0.1",
+  "source_asset_id": "service-pavilion-001",
+  "source_schema": "axm.building-hard-surface/v0.2",
+  "source_revision": "service-pavilion-001/closed-outward-box-shells-002",
+  "source_pavilion_sha256": "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a",
+  "panel_asset_id": "utility-access-panel-001",
+  "panel_schema": "axm.building-utility-panel/v0.1",
+  "panel_sha256": "df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253",
+  "receiver_ids": [
+    "front-utility-bay",
+    "east-utility-bay"
+  ],
+  "required_orientation_contract": "panel local +X maps to receiver outward normal; local +Y maps receiver lateral; local +Z maps receiver up",
+  "transform_policy": "EXACT_SOURCE_FRAME_NO_SCALE_NO_EXTRA_ROTATION",
+  "authority": "DERIVE_ONLY_EXACT_SOURCE_OWNED_RECEIVER_PLACEMENT",
+  "failure_policy": "FAIL_CLOSED_NO_NEAREST_RECEIVER_NO_FRAME_INFERENCE_NO_SCALE_NO_EXTRA_ROTATION_NO_SOURCE_REWRITE",
+  "truth_boundary": "This family only derives deterministic proof placement of the exact utility-access-panel-001 through the exact source-owned Building receiver frames that already pass Hard-Surface fit checks. It does not make panels optional, invent receiver frames, alter source geometry, prove runtime attachment, physical retention, collision, engineering validity, final materials or visual quality, or define a universal attachment system."
+}
