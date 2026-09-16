@@ -33,13 +33,17 @@ jobs:
       - name: Build exact structural evidence
         if: matrix.python-version == '3.11'
         run: python tools/build_service_pavilion.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001
-      - name: Verify exact retained binding and source topology
+      - name: Build exact named-result compatibility evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/verify_service_pavilion_build_result.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/service-pavilion-001
+      - name: Verify exact retained binding, source topology and named result
         if: matrix.python-version == '3.11'
         run: |
           python - <<'PY'
           import json, os, pathlib
           root = pathlib.Path('evidence/service-pavilion-001')
           receipt = json.loads((root / 'receipt.json').read_text())
+          interface = json.loads((root / 'build-result-contract.json').read_text())
           exact = os.environ['AXM_EXACT_HEAD']
           assert receipt['exact_hard_surface_head'] == exact
           assert (root / 'exact-head.txt').read_text().strip() == exact
@@ -56,6 +60,19 @@ jobs:
           assert topo['inward_triangle_count'] == 0
           assert topo['historical_predecessor_rejection'].startswith('REJECTED:')
           assert topo['single_triangle_flip_rejection'].startswith('REJECTED:')
+          assert interface['exact_hard_surface_head'] == exact
+          assert interface['result'] == 'PASS_VERSIONED_NAMED_BUILD_RESULT_WITH_LEGACY_TUPLE_COMPATIBILITY'
+          named = interface['contract']
+          assert named['schema'] == 'axm.building-build-result/v0.1'
+          assert named['legacy_output_count_observed'] == 9
+          assert named['opaque_trailing_extension_count'] == 0
+          assert named['topology_revision'] == 'closed-outward-12-triangle-v1'
+          assert named['topology_object_count'] == 19
+          assert named['legacy_current_required_payload_sha256'] == named['named_current_required_payload_sha256']
+          assert interface['future_trailing_extension_control'] == 'PASS_EXISTING_NAMED_FIELDS_UNCHANGED'
+          assert interface['missing_topology_control'].startswith('REJECTED:')
+          assert interface['missing_named_dependency_control'].startswith('REJECTED:')
+          assert interface['schema_drift_control'].startswith('REJECTED:')
           PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
