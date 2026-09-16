@@ -1,0 +1,78 @@
+{
+  "schema": "axm.building-material-profile/v0.1",
+  "asset_id": "service-pavilion-001",
+  "panel_asset_id": "utility-access-panel-001",
+  "intent": "Bounded source-component surface hierarchy for foundation, structural frame, enclosure, roof and service access; scalar PBR only, with no UV, texture, weathering, engineering coating, runtime or final art acceptance.",
+  "baseline": {
+    "neutral_proof": {
+      "albedo": "#74797DFF",
+      "metallic": 0.05,
+      "roughness": 0.78
+    }
+  },
+  "candidate": {
+    "slab_mineral": {
+      "albedo": "#555A5DFF",
+      "metallic": 0.0,
+      "roughness": 0.92
+    },
+    "frame_galvanized": {
+      "albedo": "#77838AFF",
+      "metallic": 0.68,
+      "roughness": 0.38
+    },
+    "infill_coating": {
+      "albedo": "#344047FF",
+      "metallic": 0.16,
+      "roughness": 0.68
+    },
+    "roof_membrane": {
+      "albedo": "#24282BFF",
+      "metallic": 0.02,
+      "roughness": 0.88
+    },
+    "utility_panel_ochre": {
+      "albedo": "#9B7338FF",
+      "metallic": 0.28,
+      "roughness": 0.50
+    }
+  },
+  "component_materials": {
+    "slab": "slab_mineral",
+    "roof": "roof_membrane",
+    "front-left-corner": "frame_galvanized",
+    "front-door-left": "frame_galvanized",
+    "front-door-right": "frame_galvanized",
+    "front-right-corner": "frame_galvanized",
+    "rear-left-corner": "frame_galvanized",
+    "rear-left-mid": "frame_galvanized",
+    "rear-right-mid": "frame_galvanized",
+    "rear-right-corner": "frame_galvanized",
+    "front-header": "frame_galvanized",
+    "rear-header": "frame_galvanized",
+    "west-header": "frame_galvanized",
+    "east-header": "frame_galvanized",
+    "rear-infill-left": "infill_coating",
+    "rear-infill-center": "infill_coating",
+    "rear-infill-right": "infill_coating",
+    "panel-front-utility-bay": "utility_panel_ochre",
+    "panel-east-utility-bay": "utility_panel_ochre"
+  },
+  "provenance": {
+    "method": "AXM self-authored scalar PBR lookdev values",
+    "method_donor": "mike-axiom-mir/axm-object-design#6 multi-context same-geometry A/B evidence discipline only",
+    "external_textures": [],
+    "external_material_assets": []
+  },
+  "truth_boundary": {
+    "source_geometry_changed": false,
+    "uvs_authored": false,
+    "textures_authored": false,
+    "weathering_authored": false,
+    "physically_measured_surfaces": false,
+    "renderer_equivalence": false,
+    "runtime_cost": false,
+    "environment_acceptance": false,
+    "art_direction_acceptance": false
+  }
+}
