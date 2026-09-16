@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Build Materials evidence for Building topology representation A/B.
+"""Build Materials evidence for the Building topology representation rebind.
 
-This consumes the current source-owned Building material profile and the exact
-derived Geometry PR #6 face tables without migrating either source. It produces
-one payload that renders the same 19 components under the same material family
-as:
-- historical malformed source face table;
-- exact Geometry closed/outward candidate;
+This consumes the current source-owned Building material profile, the exact
+source-migrated Hard-Surface PR #2 builder, and the exact historical Geometry
+PR #6 candidate. It renders the same 19 components under the same material
+family as:
+- historical malformed predecessor face table;
+- the closed/outward face table now owned by current Hard Surface;
 - the existing Godot BoxMesh lookdev reference.
 
-The comparison is Materials-owned renderer evidence only. Geometry remains owner
-of topology validity and source migration.
+The comparison is Materials-owned renderer/provenance evidence only. Hard
+Surface remains owner of the migrated source identity and Geometry remains owner
+of its historical derived proof.
 """
 from __future__ import annotations
 
@@ -22,10 +23,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_SCHEMA = "axm.building-material-profile/v0.1"
-PAYLOAD_SCHEMA = "axm.building-material-topology-lookdev-payload/v0.1"
-RECEIPT_SCHEMA = "axm.building-material-topology-lookdev-build-receipt/v0.1"
+PAYLOAD_SCHEMA = "axm.building-material-topology-lookdev-payload/v0.2"
+RECEIPT_SCHEMA = "axm.building-material-topology-lookdev-build-receipt/v0.2"
 EXPECTED_GEOMETRY_HEAD = "407d3aaf36c26829a64d964143e34587df6d8ea1"
-EXPECTED_HARD_SURFACE_HEAD = "4faa769b406bf3ad0ba9489a77141c27f122ce51"
+EXPECTED_PREDECESSOR_HARD_SURFACE_HEAD = "4faa769b406bf3ad0ba9489a77141c27f122ce51"
+EXPECTED_CURRENT_HARD_SURFACE_HEAD = "57f66b1245812f0c3d402232a046b86c0b5c72d8"
+EXPECTED_SOURCE_SCHEMA = "axm.building-hard-surface/v0.2"
+EXPECTED_SOURCE_REVISION = "service-pavilion-001/closed-outward-box-shells-002"
+EXPECTED_TOPOLOGY_REVISION = "closed-outward-12-triangle-v1"
 
 
 def sha256(path: Path) -> str:
@@ -117,34 +122,67 @@ def build_components(base, profile: dict) -> tuple[list[dict], list[dict]]:
     return raw, fits
 
 
-def build_payload(geometry_donor: Path, exact_head: str) -> tuple[dict, dict]:
-    base = load_module(ROOT / "tools" / "build_service_pavilion.py", "building_base")
+def build_payload(geometry_donor: Path, hard_surface_donor: Path, exact_head: str) -> tuple[dict, dict]:
+    base_path = hard_surface_donor / "tools" / "build_service_pavilion.py"
+    base = load_module(base_path, "building_current_source")
     donor_path = geometry_donor / "tools" / "build_service_pavilion_topology_candidate.py"
-    donor = load_module(donor_path, "geometry_donor")
-    if donor.HARD_SURFACE_DONOR_HEAD != EXPECTED_HARD_SURFACE_HEAD:
-        raise AssertionError("Geometry donor Hard-Surface dependency drifted")
-    if tuple(tuple(face) for face in base.FACES) != tuple(tuple(face) for face in donor.HISTORICAL_FACES):
-        raise AssertionError("current Building source face table differs from exact Geometry historical table")
+    donor = load_module(donor_path, "geometry_historical_donor")
+
+    pavilion = base.load(base.PAVILION)
+    if donor.HARD_SURFACE_DONOR_HEAD != EXPECTED_PREDECESSOR_HARD_SURFACE_HEAD:
+        raise AssertionError("Geometry donor predecessor Hard-Surface dependency drifted")
+    if getattr(base, "PREDECESSOR_HARD_SURFACE_HEAD", None) != EXPECTED_PREDECESSOR_HARD_SURFACE_HEAD:
+        raise AssertionError("current Hard-Surface predecessor binding drifted")
+    if getattr(base, "GEOMETRY_CANDIDATE_HEAD", None) != EXPECTED_GEOMETRY_HEAD:
+        raise AssertionError("current Hard-Surface Geometry adoption binding drifted")
+    if getattr(base, "BOX_TOPOLOGY_REVISION", None) != EXPECTED_TOPOLOGY_REVISION:
+        raise AssertionError("current Hard-Surface topology revision drifted")
+    if pavilion.get("schema") != EXPECTED_SOURCE_SCHEMA:
+        raise AssertionError("current Hard-Surface source schema drifted")
+    if pavilion.get("source_revision") != EXPECTED_SOURCE_REVISION:
+        raise AssertionError("current Hard-Surface source revision drifted")
+    if tuple(tuple(face) for face in base.HISTORICAL_FACES) != tuple(tuple(face) for face in donor.HISTORICAL_FACES):
+        raise AssertionError("current source historical oracle differs from exact Geometry historical table")
+    if tuple(tuple(face) for face in base.FACES) != tuple(tuple(face) for face in donor.CANDIDATE_FACES):
+        raise AssertionError("current source face table differs from exact Geometry closed/outward candidate")
+
+    built = base.build()
+    if len(built) < 9:
+        raise AssertionError("current source builder did not return topology evidence")
+    topology_summary = built[8]
+    if topology_summary.get("object_count") != 19 or topology_summary.get("triangle_count") != 228:
+        raise AssertionError("current source topology aggregate drift")
+    if topology_summary.get("outward_triangle_count") != 228 or topology_summary.get("inward_triangle_count") != 0:
+        raise AssertionError("current source topology is not exact closed/outward aggregate")
 
     profile_path = ROOT / "lookdev" / "building_material_profile_001.json"
     profile = json.loads(profile_path.read_text(encoding="utf-8"))
     materials = normalized_candidate_materials(profile)
     components, fits = build_components(base, profile)
 
-    historical_faces = [[index - 1 for index in face] for face in donor.HISTORICAL_FACES]
-    candidate_faces = [[index - 1 for index in face] for face in donor.CANDIDATE_FACES]
-    if historical_faces == candidate_faces:
-        raise AssertionError("topology A/B unexpectedly identical")
-    if any(len(face) != 3 for face in historical_faces + candidate_faces):
+    historical_faces = [[index - 1 for index in face] for face in base.HISTORICAL_FACES]
+    current_faces = [[index - 1 for index in face] for face in base.FACES]
+    geometry_candidate_faces = [[index - 1 for index in face] for face in donor.CANDIDATE_FACES]
+    if current_faces != geometry_candidate_faces:
+        raise AssertionError("source-owned current topology no longer equals the exact proven Geometry candidate")
+    if historical_faces == current_faces:
+        raise AssertionError("historical/current topology unexpectedly identical")
+    if any(len(face) != 3 for face in historical_faces + current_faces):
         raise AssertionError("face tables must remain triangles")
-    if any(index < 0 or index > 7 for face in historical_faces + candidate_faces for index in face):
+    if any(index < 0 or index > 7 for face in historical_faces + current_faces for index in face):
         raise AssertionError("face table index outside exact eight-vertex box")
 
     payload = {
         "schema": PAYLOAD_SCHEMA,
         "exact_materials_head": exact_head,
+        "hard_surface_source_head": EXPECTED_CURRENT_HARD_SURFACE_HEAD,
+        "hard_surface_source_builder_sha256": sha256(base_path),
         "geometry_donor_head": EXPECTED_GEOMETRY_HEAD,
         "geometry_donor_script_sha256": sha256(donor_path),
+        "source_schema": pavilion.get("schema"),
+        "source_revision": pavilion.get("source_revision"),
+        "box_topology_revision": getattr(base, "BOX_TOPOLOGY_REVISION", None),
+        "topology_summary": topology_summary,
         "pavilion_source_sha256": sha256(base.PAVILION),
         "panel_source_sha256": sha256(base.PANEL),
         "material_profile_sha256": sha256(profile_path),
@@ -152,20 +190,21 @@ def build_payload(geometry_donor: Path, exact_head: str) -> tuple[dict, dict]:
         "components": components,
         "faces": {
             "historical_malformed": historical_faces,
-            "closed_outward_candidate": candidate_faces,
+            "closed_outward_candidate": current_faces,
         },
         "contexts": ["front_service", "east_service", "three_quarter"],
         "truth_boundary": {
             "same_source_vertices_all_variants": True,
             "same_material_profile_all_variants": True,
             "same_cameras_lighting_all_variants": True,
-            "geometry_candidate_is_derived_not_source_migrated": True,
+            "closed_outward_candidate_matches_current_source": True,
+            "current_source_matches_exact_geometry_candidate": True,
             "historical_malformed_is_defect_reproduction_only": True,
             "boxmesh_reference_is_existing_materials_proof_representation": True,
             "final_normals_tangents": False,
             "uvs": False,
             "textures": False,
-            "source_migration": False,
+            "source_migration": True,
             "map_receiving_equivalence": False,
             "runtime_acceptance": False,
             "art_direction_acceptance": False,
@@ -173,17 +212,24 @@ def build_payload(geometry_donor: Path, exact_head: str) -> tuple[dict, dict]:
     }
     receipt = {
         "schema": RECEIPT_SCHEMA,
-        "result": "PASS_SOURCE_BOUND_BUILDING_TOPOLOGY_LOOKDEV_PAYLOAD",
+        "result": "PASS_SOURCE_OWNED_BUILDING_TOPOLOGY_MATERIAL_REBIND_PAYLOAD",
         "exact_materials_head": exact_head,
+        "hard_surface_source_head": EXPECTED_CURRENT_HARD_SURFACE_HEAD,
+        "hard_surface_source_builder_sha256": payload["hard_surface_source_builder_sha256"],
         "geometry_donor_head": EXPECTED_GEOMETRY_HEAD,
         "geometry_donor_script_sha256": payload["geometry_donor_script_sha256"],
+        "source_schema": payload["source_schema"],
+        "source_revision": payload["source_revision"],
+        "box_topology_revision": payload["box_topology_revision"],
         "pavilion_source_sha256": payload["pavilion_source_sha256"],
         "panel_source_sha256": payload["panel_source_sha256"],
         "material_profile_sha256": payload["material_profile_sha256"],
         "component_count": len(components),
         "receiver_count": len(fits),
         "historical_face_count_per_component": len(historical_faces),
-        "candidate_face_count_per_component": len(candidate_faces),
+        "candidate_face_count_per_component": len(current_faces),
+        "current_source_equals_geometry_candidate": current_faces == geometry_candidate_faces,
+        "topology_summary": topology_summary,
         "payload_sha256": canonical_digest(payload),
         "truth_boundary": payload["truth_boundary"],
     }
@@ -193,14 +239,19 @@ def build_payload(geometry_donor: Path, exact_head: str) -> tuple[dict, dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--geometry-donor", required=True)
+    parser.add_argument("--hard-surface-donor", required=True)
     parser.add_argument("--exact-head", required=True)
     parser.add_argument("--out", default="lookdev-topology-proof/generated")
     args = parser.parse_args()
-    if args.exact_head.strip() == EXPECTED_GEOMETRY_HEAD:
-        raise AssertionError("materials head must not be conflated with Geometry donor head")
+    if args.exact_head.strip() in {EXPECTED_GEOMETRY_HEAD, EXPECTED_CURRENT_HARD_SURFACE_HEAD}:
+        raise AssertionError("materials head must not be conflated with a donor head")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    payload, receipt = build_payload(Path(args.geometry_donor), args.exact_head.strip())
+    payload, receipt = build_payload(
+        Path(args.geometry_donor),
+        Path(args.hard_surface_donor),
+        args.exact_head.strip(),
+    )
     (out / "building_material_topology_payload.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
