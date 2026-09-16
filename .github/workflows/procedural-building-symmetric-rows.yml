@@ -19,9 +19,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Verify exact source ancestry
+        if: matrix.python-version == '3.11'
+        run: git merge-base --is-ancestor 57f66b1245812f0c3d402232a046b86c0b5c72d8 HEAD
       - name: Compile
         run: python -m compileall tools tests
       - name: Test
@@ -31,6 +35,7 @@ jobs:
         run: |
           python tools/build_pavilion_symmetric_rows.py --output-dir evidence/service-pavilion-symmetric-rows-001
           echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-symmetric-rows-001/exact-head.txt
+          echo "57f66b1245812f0c3d402232a046b86c0b5c72d8" > evidence/service-pavilion-symmetric-rows-001/source-hard-surface-head.txt
       - name: Verify exact evidence summary
         if: matrix.python-version == '3.11'
         run: |
@@ -40,6 +45,11 @@ jobs:
           root = Path('evidence/service-pavilion-symmetric-rows-001')
           data = json.loads((root / 'summary.json').read_text())
           assert data['result'] == 'PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR'
+          assert data['source_rebind_result'] == 'PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002'
+          assert data['source_schema'] == 'axm.building-hard-surface/v0.2'
+          assert data['source_revision'] == 'service-pavilion-001/closed-outward-box-shells-002'
+          assert data['source_hard_surface_head'] == '57f66b1245812f0c3d402232a046b86c0b5c72d8'
+          assert data['source_sha256'] == '5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a'
           assert data['row_count'] == 5
           assert data['generated_component_count'] == 15
           assert data['generated_source_coverage'] == '15/17'
@@ -47,6 +57,17 @@ jobs:
           assert data['distinct_component_sizes'] >= 4
           assert data['distinct_station_counts'] == [2, 3, 4]
           assert data['manual_component_ids_outside_family'] == ['slab', 'roof']
+          assert data['generated_subset_digest'] == '659a5ecc192502b75e8c9f01fa1607b48b7ea8667b5447ee7da7cd5b76902b0e'
+          inherited = data['inherited_hard_surface_gate']
+          assert inherited['topology_result'] == 'PASS_SOURCE_OWNED_CLOSED_OUTWARD_BOX_SHELLS_19_REAL_OUTPUTS'
+          assert inherited['box_shell_topology'] == 'closed-outward-12-triangle-v1'
+          assert inherited['topology_summary']['object_count'] == 19
+          assert inherited['topology_summary']['triangle_count'] == 228
+          assert inherited['topology_summary']['boundary_edge_count'] == 0
+          assert inherited['topology_summary']['nonmanifold_edge_count'] == 0
+          assert inherited['topology_summary']['orientation_conflict_edge_count'] == 0
+          assert inherited['topology_summary']['outward_triangle_count'] == 228
+          assert inherited['topology_summary']['inward_triangle_count'] == 0
           assert all(v.startswith('HOLD:') for v in data['negative_controls'].values())
           PY
       - name: Retain evidence
