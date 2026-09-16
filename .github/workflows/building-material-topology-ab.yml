@@ -1,0 +1,148 @@
+name: Building material topology A-B evidence
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+  pull_request:
+    paths:
+      - "lookdev-topology-proof/**"
+      - "lookdev/building_material_profile_001.json"
+      - "tools/build_building_material_topology_ab_evidence.py"
+      - ".github/workflows/building-material-topology-ab.yml"
+      - "assets/service_pavilion_001.json"
+      - "assets/utility_access_panel_001.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  topology-lookdev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Building Materials lane
+        uses: actions/checkout@v4
+
+      - name: Checkout exact Geometry donor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 407d3aaf36c26829a64d964143e34587df6d8ea1
+          path: geometry-donor
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Compile and run complete Building tests
+        run: |
+          python -m compileall -q tools tests
+          python -m unittest discover -s tests -v
+
+      - name: Build exact Materials topology A-B payload
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python tools/build_building_material_topology_ab_evidence.py \
+            --geometry-donor geometry-donor \
+            --exact-head "$HEAD_SHA"
+
+      - name: Validate source and donor binding
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-topology-proof/generated')
+          r=json.loads((root/'build_receipt.json').read_text())
+          p=json.loads((root/'building_material_topology_payload.json').read_text())
+          assert r['result']=='PASS_SOURCE_BOUND_BUILDING_TOPOLOGY_LOOKDEV_PAYLOAD',r
+          assert r['geometry_donor_head']=='407d3aaf36c26829a64d964143e34587df6d8ea1',r
+          assert r['component_count']==19,r
+          assert r['receiver_count']==2,r
+          assert r['historical_face_count_per_component']==12,r
+          assert r['candidate_face_count_per_component']==12,r
+          assert p['truth_boundary']['same_source_vertices_all_variants'] is True,p
+          assert p['truth_boundary']['same_material_profile_all_variants'] is True,p
+          assert p['truth_boundary']['source_migration'] is False,p
+          assert set(p['contexts'])=={'front_service','east_service','three_quarter'},p
+          assert len(p['materials'])==5,p
+          print(json.dumps(r,indent=2))
+          PY
+
+      - name: Download pinned Godot 4.7.2
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+      - name: Render historical topology, closed-outward candidate and BoxMesh reference
+        run: |
+          set -euo pipefail
+          rm -f lookdev-topology-proof/material-topology-lookdev-runtime-receipt.json lookdev-topology-proof/*.png
+          xvfb-run --auto-servernum --server-args="-screen 0 1100x820x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path lookdev-topology-proof \
+            --script observe.gd
+
+      - name: Validate target-host topology lookdev captures
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-topology-proof')
+          r=json.loads((root/'material-topology-lookdev-runtime-receipt.json').read_text())
+          assert r['state']=='PASS_TARGET_HOST_BUILDING_TOPOLOGY_MATERIAL_AB_CAPTURED',r
+          assert r['promotion_effect']=='NONE',r
+          assert r['geometry_donor_head']=='407d3aaf36c26829a64d964143e34587df6d8ea1',r
+          assert set(r['contexts'])=={'front_service','east_service','three_quarter'},r
+          for context,row in r['contexts'].items():
+            for variant in ('historical_malformed','closed_outward_candidate','boxmesh_reference'):
+              meta=row['captures'][variant]
+              assert meta['state']=='PASS',(context,variant,meta)
+              assert meta['component_count']==19,(context,variant,meta)
+              path=root/f'{variant}-{context}.png'
+              assert path.stat().st_size>2000,path
+            assert row['historical_vs_candidate']['changed_pixels']>0,(context,row)
+            assert row['candidate_vs_boxmesh_reference']['state']=='PASS',(context,row)
+          print(json.dumps(r,indent=2))
+          PY
+
+      - name: Retain exact Building topology material evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-material-topology-ab-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            lookdev/building_material_profile_001.json
+            lookdev-topology-proof/generated/building_material_topology_payload.json
+            lookdev-topology-proof/generated/build_receipt.json
+            lookdev-topology-proof/material-topology-lookdev-runtime-receipt.json
+            lookdev-topology-proof/historical_malformed-front_service.png
+            lookdev-topology-proof/closed_outward_candidate-front_service.png
+            lookdev-topology-proof/boxmesh_reference-front_service.png
+            lookdev-topology-proof/historical_malformed-east_service.png
+            lookdev-topology-proof/closed_outward_candidate-east_service.png
+            lookdev-topology-proof/boxmesh_reference-east_service.png
+            lookdev-topology-proof/historical_malformed-three_quarter.png
+            lookdev-topology-proof/closed_outward_candidate-three_quarter.png
+            lookdev-topology-proof/boxmesh_reference-three_quarter.png
+          if-no-files-found: warn
+          retention-days: 30
