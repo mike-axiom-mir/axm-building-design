@@ -1,0 +1,22 @@
+{
+  "schema": "axm.building-current-emission-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "owner": "Building Hard Surface",
+  "purpose": "Promote the already-source-owned interpenetration-free header-segmented representation as the current Building source emission policy after real receiving-scene evidence, while preserving the historical 19-box named/tuple build result for compatibility and requiring explicit downstream rebinding.",
+  "provenance": {
+    "predecessor_hard_surface_head": "547bd21073332c8f856f07017cf9d279aa157bfa",
+    "emission_variant_schema": "axm.building-emission-variants/v0.1",
+    "header_segmentation_schema": "axm.building-header-segmentation/v0.1",
+    "receiving_evidence_repo": "mike-axiom-mir/axm-map-design",
+    "receiving_pr": 24,
+    "receiving_implementation_head": "dfd4e1d662ab7d6d9f1a5c8dd35b571418154f6e",
+    "receiving_review_head": "bd065c8ee23ddee922c4aa9b4aa6e3d9504ffb06",
+    "receiving_workflow_run_id": 35130502118,
+    "receiving_result": "PASS_CURRENT_WORLD_BUILDING_HEADER_SEGMENTATION_BOUNDED_CONTINUITY"
+  },
+  "current_source_variant_id": "header-segmented-23",
+  "legacy_compatibility_variant_id": "base-closed-outward-19",
+  "selection_policy": "CURRENT_SOURCE_IS_NAMED__CONSUMER_REBIND_REQUIRED__NO_SILENT_DEFAULT_REWRITE",
+  "historical_build_result_policy": "KEEP_AXM_BUILDING_BUILD_RESULT_V0_1_AT_19_BOXES_FOR_COMPATIBILITY",
+  "truth_boundary": "This policy promotes only which already-source-owned proof-geometry representation counts as current for new Building source claims. It does not rewrite the historical build tuple or axm.building-build-result/v0.1, auto-migrate any consumer, change logical component or receiver semantics, approve materials or visuals, create a boolean-unioned/global-manifold shell, establish architectural/manufacturing validity, runtime/gameplay acceptance, CANON or production readiness."
+}
