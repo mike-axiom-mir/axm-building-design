@@ -46,7 +46,31 @@
         "rear-infill-center",
         "rear-infill-right"
       ]
+    },
+    {
+      "id": "front-rear-header-pair",
+      "axis": "y",
+      "base_center_m": [0.0, 0.0, 3.02],
+      "positive_offsets_m": [0.9],
+      "include_center": false,
+      "size_m": [7.2, 0.18, 0.18],
+      "component_ids_negative_to_positive": [
+        "front-header",
+        "rear-header"
+      ]
+    },
+    {
+      "id": "west-east-header-pair",
+      "axis": "x",
+      "base_center_m": [0.0, 0.0, 3.02],
+      "positive_offsets_m": [3.7],
+      "include_center": false,
+      "size_m": [0.18, 1.6, 0.18],
+      "component_ids_negative_to_positive": [
+        "west-header",
+        "east-header"
+      ]
     }
   ],
-  "truth_boundary": "This family only derives repeated box-row records already authored in service-pavilion-001. It does not add building semantics, new receiver frames, structural engineering, architecture, materials, runtime behavior, or visual acceptance."
+  "truth_boundary": "This family only derives repeated box-row records already authored in service-pavilion-001. It now covers the three established body rows plus the two exact symmetric header pairs; slab and roof remain explicit source records outside the family. It does not add building semantics, new receiver frames, structural engineering, architecture, materials, topology migration, runtime behavior, or visual acceptance."
 }
