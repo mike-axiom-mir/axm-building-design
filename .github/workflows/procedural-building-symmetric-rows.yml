@@ -28,6 +28,7 @@ jobs:
         run: |
           git merge-base --is-ancestor 57f66b1245812f0c3d402232a046b86c0b5c72d8 HEAD
           git merge-base --is-ancestor 595217be3cb9de25d3dc48b19447654533a20599 HEAD
+          git merge-base --is-ancestor 34124101e616c423c5a3ed5e122ddf09b98a1650 HEAD
       - name: Compile
         run: python -m compileall tools tests
       - name: Test
@@ -36,9 +37,12 @@ jobs:
         if: matrix.python-version == '3.11'
         run: |
           python tools/build_pavilion_symmetric_rows.py --output-dir evidence/service-pavilion-symmetric-rows-001
+          python tools/build_pavilion_header_segment_expansion.py --output-dir evidence/service-pavilion-header-segment-expansion-001
           echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-symmetric-rows-001/exact-head.txt
+          echo "${{ github.event.pull_request.head.sha || github.sha }}" > evidence/service-pavilion-header-segment-expansion-001/exact-head.txt
           echo "57f66b1245812f0c3d402232a046b86c0b5c72d8" > evidence/service-pavilion-symmetric-rows-001/source-hard-surface-head.txt
           echo "595217be3cb9de25d3dc48b19447654533a20599" > evidence/service-pavilion-symmetric-rows-001/build-result-contract-hard-surface-head.txt
+          echo "34124101e616c423c5a3ed5e122ddf09b98a1650" > evidence/service-pavilion-header-segment-expansion-001/source-hard-surface-head.txt
       - name: Verify exact evidence summary
         if: matrix.python-version == '3.11'
         run: |
@@ -78,11 +82,32 @@ jobs:
           assert inherited['topology_summary']['inward_triangle_count'] == 0
           assert len(data['negative_controls']) == 9
           assert all(v.startswith('HOLD:') for v in data['negative_controls'].values())
+
+          expansion_root = Path('evidence/service-pavilion-header-segment-expansion-001')
+          expansion = json.loads((expansion_root / 'summary.json').read_text())
+          assert expansion['result'] == 'PASS_SOURCE_EXACT_HEADER_SEGMENT_EXPANSION_FAMILY'
+          assert expansion['source_hard_surface_head'] == '34124101e616c423c5a3ed5e122ddf09b98a1650'
+          assert expansion['successor_contract_schema'] == 'axm.building-header-segmentation/v0.1'
+          assert expansion['successor_revision'] == 'service-pavilion-001/interpenetration-free-header-segmentation-003'
+          assert expansion['successor_contract_sha256'] == '84075473c7320bde6d40d7c7aa6501f88b1e172d05dd5877ab4dc20e1b7a084f'
+          assert expansion['logical_row_count_preserved'] == 5
+          assert expansion['logical_generated_component_count_preserved'] == 15
+          assert expansion['logical_generated_subset_digest_preserved'] == '659a5ecc192502b75e8c9f01fa1607b48b7ea8667b5447ee7da7cd5b76902b0e'
+          assert expansion['expanded_logical_header_count'] == 2
+          assert expansion['expanded_segment_count'] == 6
+          assert expansion['expanded_emitted_generated_component_count'] == 19
+          assert expansion['expanded_emitted_pavilion_coverage'] == '19/21'
+          assert expansion['distinct_expansion_digests'] == 2
+          assert expansion['distinct_total_output_digests'] == 7
+          assert len(expansion['negative_controls']) == 7
+          assert all(v.startswith('HOLD:') for v in expansion['negative_controls'].values())
           PY
       - name: Retain evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
-          name: service-pavilion-symmetric-rows-001-${{ github.event.pull_request.head.sha || github.sha }}
-          path: evidence/service-pavilion-symmetric-rows-001
+          name: service-pavilion-procedural-001-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/service-pavilion-symmetric-rows-001
+            evidence/service-pavilion-header-segment-expansion-001
           if-no-files-found: error
