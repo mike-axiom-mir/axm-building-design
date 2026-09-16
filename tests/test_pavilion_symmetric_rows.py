@@ -10,10 +10,23 @@ mod = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mod)
 
 
+EXPECTED_ROW_DIGESTS = {
+    "front-uprights": "af63a6d13fb8ad1b812780f6a381cd7c0c6d64179c343a0d40f31b6a6505e792",
+    "rear-uprights": "00478d2147e7dabcd43a1a0df7581dab158cb579b50cd10638c883e3d276b9db",
+    "rear-infill-row": "bfe8fe759c4ce7c64903817167cd72b836092248132894225442fb3d11b55a7a",
+    "front-rear-header-pair": "02373d7571a526b08da0a1ef05c7dc2581aad42b0b210f85b78f2e311ce7299c",
+    "west-east-header-pair": "15b90d8ae9c552ab4fca340d8897fab2457f3670dd664345e9448d902fb34734",
+}
+
+
 class PavilionSymmetricRowTests(unittest.TestCase):
     def test_generator_reproduces_five_materially_different_source_rows(self):
         summary = mod.build()
         self.assertEqual(summary["result"], "PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR")
+        self.assertEqual(
+            summary["source_rebind_result"],
+            "PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002",
+        )
         self.assertEqual(summary["row_count"], 5)
         self.assertEqual(summary["generated_component_count"], 15)
         self.assertEqual(summary["source_component_count"], 17)
@@ -21,6 +34,14 @@ class PavilionSymmetricRowTests(unittest.TestCase):
         self.assertEqual(summary["distinct_row_digests"], 5)
         self.assertGreaterEqual(summary["distinct_component_sizes"], 4)
         self.assertEqual(summary["distinct_station_counts"], [2, 3, 4])
+        self.assertEqual(
+            {row["row_id"]: row["row_digest"] for row in summary["rows"]},
+            EXPECTED_ROW_DIGESTS,
+        )
+        self.assertEqual(
+            summary["generated_subset_digest"],
+            "659a5ecc192502b75e8c9f01fa1607b48b7ea8667b5447ee7da7cd5b76902b0e",
+        )
 
     def test_exact_source_components_are_reproduced_without_rewrite(self):
         pavilion = mod.load(mod.PAVILION)
@@ -54,12 +75,43 @@ class PavilionSymmetricRowTests(unittest.TestCase):
 
     def test_source_identity_and_inherited_hard_surface_gate_remain_exact(self):
         summary = mod.build()
+        self.assertEqual(summary["source_schema"], "axm.building-hard-surface/v0.2")
+        self.assertEqual(
+            summary["source_revision"],
+            "service-pavilion-001/closed-outward-box-shells-002",
+        )
+        self.assertEqual(
+            summary["source_hard_surface_head"],
+            "57f66b1245812f0c3d402232a046b86c0b5c72d8",
+        )
         self.assertEqual(
             summary["source_sha256"],
-            "852038d2288ead9a0ee271e09f1a7f7207ec8fd74668e0c52e739e9a224f87d7",
+            "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a",
         )
         inherited = summary["inherited_hard_surface_gate"]
         self.assertEqual(inherited["result"], "PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF")
+        self.assertEqual(
+            inherited["topology_result"],
+            "PASS_SOURCE_OWNED_CLOSED_OUTWARD_BOX_SHELLS_19_REAL_OUTPUTS",
+        )
+        self.assertEqual(inherited["box_shell_topology"], "closed-outward-12-triangle-v1")
+        self.assertEqual(
+            inherited["topology_summary"],
+            {
+                "object_count": 19,
+                "vertex_count": 152,
+                "triangle_count": 228,
+                "boundary_edge_count": 0,
+                "nonmanifold_edge_count": 0,
+                "orientation_conflict_edge_count": 0,
+                "degenerate_triangle_count": 0,
+                "outward_triangle_count": 228,
+                "inward_triangle_count": 0,
+                "tangent_triangle_count": 0,
+            },
+        )
+        self.assertTrue(inherited["historical_predecessor_rejection"].startswith("REJECTED"))
+        self.assertTrue(inherited["single_triangle_flip_rejection"].startswith("REJECTED"))
         self.assertEqual(inherited["receiver_count"], 2)
         self.assertGreaterEqual(inherited["readable_path_gap_m"], 0.35)
         self.assertTrue(
@@ -68,13 +120,18 @@ class PavilionSymmetricRowTests(unittest.TestCase):
 
     def test_fail_closed_controls_hold(self):
         summary = mod.build()
-        self.assertEqual(set(summary["negative_controls"]), {
-            "unsupported_axis",
-            "duplicate_component_id",
-            "source_pattern_drift_0p001m",
-            "header_pattern_drift_0p001m",
-            "source_identity_drift",
-        })
+        self.assertEqual(
+            set(summary["negative_controls"]),
+            {
+                "unsupported_axis",
+                "duplicate_component_id",
+                "source_pattern_drift_0p001m",
+                "header_pattern_drift_0p001m",
+                "source_revision_drift",
+                "source_topology_contract_drift",
+                "source_identity_drift",
+            },
+        )
         self.assertTrue(
             all(value.startswith("HOLD:") for value in summary["negative_controls"].values())
         )
