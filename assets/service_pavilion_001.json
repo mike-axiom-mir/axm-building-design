@@ -1,10 +1,14 @@
 {
-  "schema": "axm.building-hard-surface/v0.1",
+  "schema": "axm.building-hard-surface/v0.2",
   "asset_id": "service-pavilion-001",
+  "source_revision": "service-pavilion-001/closed-outward-box-shells-002",
   "units": "meters",
   "purpose": "Bounded manufactured pavilion source sized for the existing Map building proxy, with two source-owned utility-panel receiver frames.",
   "provenance": {
     "authoring": "AXM self-authored deterministic source",
+    "predecessor_hard_surface_head": "4faa769b406bf3ad0ba9489a77141c27f122ce51",
+    "derived_topology_evidence_head": "407d3aaf36c26829a64d964143e34587df6d8ea1",
+    "derived_topology_evidence_scope": "Geometry PR #6 proved a closed/outward 12-triangle box-shell candidate over the exact predecessor vertices/components without source migration.",
     "map_reference_repo": "mike-axiom-mir/axm-map-design",
     "map_reference_ref": "studio/environment-composition-baseline-001",
     "map_reference_path": "examples/environment_baseline_001.json",
@@ -14,6 +18,12 @@
     "map_slot_size_m": [8.0, 2.4, 3.6],
     "map_readable_path_y_max_m": 5.5,
     "map_minimum_gap_m": 0.35
+  },
+  "generated_geometry_contract": {
+    "box_shell_topology": "closed-outward-12-triangle-v1",
+    "owner": "Building Hard Surface",
+    "scope": "all box proof geometry emitted for the 17 pavilion components and placed utility-panel proof boxes",
+    "migration_policy": "face membership/winding only; component IDs, centers, sizes, receiver frames and panel source semantics remain unchanged"
   },
   "body_envelope_m": [7.6, 2.0, 3.4],
   "components": [
@@ -59,5 +69,5 @@
       "mount_points_local_m": [[-0.50, -0.70], [0.50, -0.70], [0.50, 0.70], [-0.50, 0.70]]
     }
   ],
-  "truth_boundary": "This source defines deterministic proof geometry, a reserved Map-slot envelope and two building-local panel receiver frames. It does not establish architectural engineering, code compliance, weather sealing, structural loads, collision, navigation, final topology, materials, runtime import, gameplay, Art Direction acceptance or a universal attachment system."
+  "truth_boundary": "This source defines deterministic proof geometry, a reserved Map-slot envelope, two building-local panel receiver frames and the source-owned closed/outward 12-triangle box-shell representation used by the current builder. It does not establish a boolean-unioned pavilion shell, removal of hidden/interpenetrating internal faces between touching components, vertex-manifoldness, self-intersection freedom, final normals/tangents/smoothing/UVs, architectural engineering, code compliance, weather sealing, structural loads, collision, navigation, materials, runtime import, gameplay, Art Direction acceptance or a universal attachment/topology system."
 }
