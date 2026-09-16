@@ -3,14 +3,11 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib.util
 import json
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-from build_service_pavilion import build as build_pavilion, sha256 as source_sha256
 
 PROFILE_SCHEMA = "axm.building-material-profile/v0.1"
 PAYLOAD_SCHEMA = "axm.building-material-lookdev-payload/v0.1"
@@ -24,6 +21,15 @@ def sha256(path: Path) -> str:
 def canonical_digest(value) -> str:
     data = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(data).hexdigest()
+
+
+def _load_module(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load module: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def rgba(hex_value: str) -> list[float]:
@@ -73,8 +79,20 @@ def validate_profile(profile: dict, component_ids: set[str]) -> dict:
     return normalized
 
 
-def build_payload(pavilion_path: Path, panel_path: Path, profile_path: Path) -> tuple[dict, dict]:
-    pavilion, panel, fits, _obj, _mins, _maxs, _path_gap, _negatives = build_pavilion()
+def build_payload(
+    pavilion_path: Path,
+    panel_path: Path,
+    profile_path: Path,
+    source_root: Path | None = None,
+    source_head: str | None = None,
+) -> tuple[dict, dict]:
+    source_root = Path(source_root) if source_root is not None else ROOT
+    source_module = _load_module(source_root / "tools" / "build_service_pavilion.py", "axm_materials_building_source")
+    built = source_module.build()
+    if len(built) < 8:
+        raise AssertionError("Building source builder returned an unsupported contract")
+    pavilion, panel, fits, _obj, _mins, _maxs, _path_gap, _negatives = built[:8]
+    topology_summary = built[8] if len(built) > 8 else None
     profile = json.loads(profile_path.read_text(encoding="utf-8"))
 
     components = []
@@ -113,12 +131,22 @@ def build_payload(pavilion_path: Path, panel_path: Path, profile_path: Path) -> 
     geometry_contract = {
         "pavilion_asset_id": pavilion["asset_id"],
         "panel_asset_id": panel["asset_id"],
+        "source_schema": pavilion.get("schema"),
+        "source_revision": pavilion.get("source_revision"),
+        "box_topology_revision": getattr(source_module, "BOX_TOPOLOGY_REVISION", None),
         "components": components,
     }
     payload = {
         "schema": PAYLOAD_SCHEMA,
         "pavilion_asset_id": pavilion["asset_id"],
         "panel_asset_id": panel["asset_id"],
+        "source_identity": {
+            "hard_surface_head": source_head,
+            "source_schema": pavilion.get("schema"),
+            "source_revision": pavilion.get("source_revision"),
+            "box_topology_revision": getattr(source_module, "BOX_TOPOLOGY_REVISION", None),
+            "topology_summary": topology_summary,
+        },
         "components": components,
         "materials": normalized,
         "contexts": ["front_service", "east_service", "three_quarter"],
@@ -126,6 +154,7 @@ def build_payload(pavilion_path: Path, panel_path: Path, profile_path: Path) -> 
             "same_geometry_baseline_candidate": True,
             "source_component_material_assignment_only": True,
             "source_receiver_frames_preserved": True,
+            "source_identity_explicit": True,
             "uvs": False,
             "textures": False,
             "weathering": False,
@@ -144,12 +173,17 @@ def build_payload(pavilion_path: Path, panel_path: Path, profile_path: Path) -> 
     receipt = {
         "schema": RECEIPT_SCHEMA,
         "result": "PASS_SOURCE_BOUND_BUILDING_SURFACE_PAYLOAD",
-        "pavilion_source_sha256": source_sha256(pavilion_path),
-        "panel_source_sha256": source_sha256(panel_path),
+        "hard_surface_source_head": source_head,
+        "source_schema": pavilion.get("schema"),
+        "source_revision": pavilion.get("source_revision"),
+        "box_topology_revision": getattr(source_module, "BOX_TOPOLOGY_REVISION", None),
+        "pavilion_source_sha256": sha256(pavilion_path),
+        "panel_source_sha256": sha256(panel_path),
         "material_profile_sha256": sha256(profile_path),
         "geometry_contract_sha256": canonical_digest(geometry_contract),
         "component_count": len(components),
         "candidate_material_ids": sorted(normalized["candidate"]),
+        "topology_summary": topology_summary,
         "structural_prerequisite": structural_prerequisite,
         "truth_boundary": payload["truth_boundary"],
     }
@@ -158,18 +192,27 @@ def build_payload(pavilion_path: Path, panel_path: Path, profile_path: Path) -> 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pavilion", default="assets/service_pavilion_001.json")
-    parser.add_argument("--panel", default="assets/utility_access_panel_001.json")
+    parser.add_argument("--source-root", default=".")
+    parser.add_argument("--source-head", default=None)
+    parser.add_argument("--pavilion", default=None)
+    parser.add_argument("--panel", default=None)
     parser.add_argument("--profile", default="lookdev/building_material_profile_001.json")
     parser.add_argument("--out", default="lookdev-proof/generated")
     args = parser.parse_args()
 
-    pavilion_path = Path(args.pavilion)
-    panel_path = Path(args.panel)
+    source_root = Path(args.source_root)
+    pavilion_path = Path(args.pavilion) if args.pavilion else source_root / "assets/service_pavilion_001.json"
+    panel_path = Path(args.panel) if args.panel else source_root / "assets/utility_access_panel_001.json"
     profile_path = Path(args.profile)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    payload, receipt = build_payload(pavilion_path, panel_path, profile_path)
+    payload, receipt = build_payload(
+        pavilion_path,
+        panel_path,
+        profile_path,
+        source_root=source_root,
+        source_head=args.source_head,
+    )
     (out / "building_material_payload.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (out / "build_receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(receipt, indent=2, sort_keys=True))
