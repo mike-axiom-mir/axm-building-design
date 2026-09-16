@@ -1,0 +1,21 @@
+{
+  "schema": "axm.building-utility-panel/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "units": "meters",
+  "accepted_tag": "building-utility-panel",
+  "orientation_contract": "panel local +X maps to receiver outward normal; local +Y maps receiver lateral; local +Z maps receiver up",
+  "interface_footprint_m": [1.10, 1.50],
+  "body_depth_m": 0.08,
+  "standoff_from_receiver_origin_m": 0.08,
+  "required_body_clearance_beyond_plate_m": 0.02,
+  "mount_points_local_m": [[-0.50, -0.70], [0.50, -0.70], [0.50, 0.70], [-0.50, 0.70]],
+  "proof_geometry": {
+    "kind": "box",
+    "size_local_xyz_m": [0.08, 1.10, 1.50]
+  },
+  "provenance": {
+    "authoring": "AXM self-authored deterministic source",
+    "relationship": "separate receiving part for service-pavilion-001 receiver-frame test"
+  },
+  "truth_boundary": "This panel is sparse evidence geometry for repeated receiver-frame fit. It does not establish hinges, latches, fasteners, seals, engineering loads, materials, UVs, runtime attachment, collision or final visual quality."
+}
