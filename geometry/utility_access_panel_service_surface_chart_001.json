@@ -1,0 +1,86 @@
+{
+  "schema": "axm.building-utility-panel-service-surface-chart/v0.1",
+  "chart_id": "utility-panel-outer-service-surface-chart-001",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "source_surface": {
+    "owner": "Building Hard Surface",
+    "pr": 17,
+    "head": "32bbdd54f00aaac87ba8139bf932d8aff6109a66",
+    "contract_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "contract_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919",
+    "verifier_path": "tools/verify_utility_panel_service_surface_domain.py",
+    "verifier_blob_sha": "433e7ac713cc07b30a1f2b6e8f59aa78aa9068a9"
+  },
+  "historical_geometry_evidence": {
+    "pr": 16,
+    "head": "79e09f68a05770eb6dabbbbbb3b008fc8e050aa0",
+    "chart_contract_blob_sha": "56f1964b3360e371ac8c39d547cb300cd14fb997",
+    "source_surface_pr": 15,
+    "source_surface_head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+    "result": "PASS_BUILDING_UTILITY_PANEL_UV_READY_SOURCE_FRAME_CHART",
+    "transfer_policy": "HISTORICAL_PASS_RETAINED_NOT_TRANSFERRED__CURRENT_SOURCE_SUCCESSOR_REQUIRES_DIRECT_REBIND"
+  },
+  "derivation": "SOURCE_FRAME_BIJECTIVE_RECTANGULAR_UV_READY_CHART",
+  "vertices": [
+    {"source_corner_index": 0, "metric_st_m": [-0.55, -0.75], "chart_uv": [0.0, 0.0]},
+    {"source_corner_index": 1, "metric_st_m": [0.55, -0.75], "chart_uv": [1.0, 0.0]},
+    {"source_corner_index": 2, "metric_st_m": [0.55, 0.75], "chart_uv": [1.0, 1.0]},
+    {"source_corner_index": 3, "metric_st_m": [-0.55, 0.75], "chart_uv": [0.0, 1.0]}
+  ],
+  "triangles": [[0, 1, 2], [0, 2, 3]],
+  "boundary_loop": [0, 1, 2, 3],
+  "internal_diagonal": [0, 2],
+  "directional_sampling_interface": {
+    "pattern": "PHYSICAL_UV_AXIS_METRICS_AND_IMAGE_BINDING_GATE_BEFORE_DIRECTIONAL_TEXEL_DENSITY_CONSUMPTION",
+    "chart_axis_order": ["u", "v"],
+    "physical_extent_m_by_chart_axis": [1.1, 1.5],
+    "normalized_extent_by_chart_axis": [1.0, 1.0],
+    "metres_per_uv_unit_by_chart_axis": [1.1, 1.5],
+    "shared_observer": {
+      "repository": "mike-axiom-mir/axm-universal-creation",
+      "pull_request": 194,
+      "merge_commit": "aa53ee8aa803c19524b7edbef6250bf6ed9336c0",
+      "module": "src/axm_uc/material_uv_evidence.py",
+      "api": "inspect_material_uv_density"
+    },
+    "consumption_gate": {
+      "observer_consumed": false,
+      "directional_density_measured": false,
+      "state": "HOLD_BOUND_MATERIAL_BEARING_ARTIFACT_AND_IMAGE_DIMENSIONS_REQUIRED",
+      "required_downstream_inputs": [
+        "material_bearing_glb_artifact",
+        "embedded_image_width_px",
+        "embedded_image_height_px"
+      ]
+    },
+    "policy_boundary": {
+      "geometry_selects_texel_density_target": false,
+      "geometry_selects_anisotropy_threshold": false,
+      "geometry_selects_atlas_layout": false
+    }
+  },
+  "authority": {
+    "owner": "Geometry / Topology",
+    "owns": [
+      "derived source-corner chart identity",
+      "metric-to-normalized chart bijection",
+      "chart triangle connectivity and winding",
+      "UV-ready structural coordinates",
+      "exact source-successor rebind evidence",
+      "source-local physical extent per normalized chart axis"
+    ],
+    "holds": [
+      "texel density",
+      "atlas placement",
+      "material response",
+      "texture payload",
+      "normal or tangent transport",
+      "target receiver adoption",
+      "runtime storage",
+      "environment adoption",
+      "visual acceptance"
+    ]
+  },
+  "truth_boundary": "This Geometry contract directly rebinds the unchanged UV-ready structural chart to the exact Hard-Surface clearance successor and exposes source-local physical metres per normalized chart axis for an eventual directional-density consumer. Historical PR #16 evidence remains historical and is not transferred by geometric similarity. UC PR #194 is pinned as the shared observer identity but is explicitly not consumed here because no exact material-bearing GLB and bound embedded image dimensions are owned by this lane. This contract does not fabricate texel-density evidence, change source geometry, choose a density target or anisotropy threshold, choose atlas placement, author a material or texture, prescribe normal/tangent transport, authorize receiver/runtime/environment adoption, or establish visual, CANON, production or game readiness."
+}

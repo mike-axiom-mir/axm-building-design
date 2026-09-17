@@ -1,0 +1,94 @@
+{
+  "schema": "axm.building-utility-panel-review-atlas-directional-sampling-rebind/v0.1",
+  "pattern": "OWNER_BOUND_REVIEW_ATLAS_ACTIVE_REGION_TO_PHYSICAL_UV_SAMPLING_WITHOUT_GLTF_EVIDENCE_TRANSFER",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "geometry_chart": {
+    "owner": "Geometry / Topology",
+    "pull_request": 18,
+    "path": "geometry/utility_access_panel_service_surface_chart_001.json",
+    "git_blob_sha": "08431f75edff5ae7d8b8c32468190e7a1b81d526",
+    "source_surface_head": "32bbdd54f00aaac87ba8139bf932d8aff6109a66"
+  },
+  "materials_review": {
+    "owner": "Materials / LookDev",
+    "pull_request": 3,
+    "head": "fe4fdfb2033b0c3c2705a532b9e6b610a3d119c1",
+    "base_contract_path": "lookdev/building_utility_panel_uv_density_001.json",
+    "base_contract_blob_sha": "a35ed0b214d7d4443127decabe06c8b05e8bc49b",
+    "successor_contract_path": "lookdev/building_utility_panel_uv_density_clearance_successor_001.json",
+    "successor_contract_blob_sha": "61ba08fcef44fd685c60c833d39ec28171e78859",
+    "target_host_observer_path": "lookdev-utility-panel-uv-proof/observe.gd",
+    "target_host_observer_blob_sha": "7edaaa1550a21f482b27436a00d417ada4e90b35",
+    "exact_workflow_run": 35258376439,
+    "retained_artifact_id": 10512583778,
+    "retained_artifact_sha256": "0a0dc8dfe8b31f2ab27d0f431a0f9afe2b4a3854ab6e796e959cc9b7154e2a70",
+    "retained_artifact_size_bytes": 583483
+  },
+  "shared_glb_observer": {
+    "repository": "mike-axiom-mir/axm-universal-creation",
+    "pull_request": 194,
+    "merge_commit": "aa53ee8aa803c19524b7edbef6250bf6ed9336c0",
+    "module_path": "src/axm_uc/material_uv_evidence.py",
+    "module_blob_sha": "bc7aa2ffc2c598d75a78739c70fd349138f511e2",
+    "api": "inspect_material_uv_density"
+  },
+  "review_sampling_claim": {
+    "scope": "MATERIALS_GODOT_REVIEW_ATLAS_SPACE_ONLY",
+    "atlas_size_px": [
+      512,
+      512
+    ],
+    "active_region_px": [
+      352,
+      480
+    ],
+    "active_uv_span": [
+      0.6875,
+      0.9375
+    ],
+    "physical_extent_m_by_chart_axis": [
+      1.1,
+      1.5
+    ],
+    "directional_texels_per_m_by_chart_axis": [
+      320.0,
+      320.0
+    ],
+    "anisotropy_ratio": 1.0,
+    "negative_full_square_texels_per_m_by_chart_axis": [
+      465.45454545454544,
+      341.3333333333333
+    ],
+    "negative_full_square_anisotropy_ratio": 1.3636363636363638
+  },
+  "evidence_transfer_boundary": {
+    "materials_review_is_target_policy": true,
+    "geometry_selects_texel_density_target": false,
+    "geometry_selects_atlas_layout": false,
+    "geometry_selects_anisotropy_threshold": false,
+    "review_image_is_runtime_generated_godot_imagetexture": true,
+    "material_bearing_glb_bound": false,
+    "embedded_glb_image_dimensions_proven": false,
+    "uc_glb_observer_consumed": false,
+    "embedded_glb_directional_density_measured": false,
+    "transfer_policy": "REVIEW_ATLAS_MEASUREMENT_IS_NOT_EMBEDDED_GLTF_IMAGE_EVIDENCE__EXPLICIT_GLTF_BIND_AND_RERUN_REQUIRED"
+  },
+  "authority": {
+    "geometry_owns": [
+      "source-local physical extent per chart axis",
+      "chart-to-review-atlas directional sampling arithmetic",
+      "evidence-transfer boundary between review atlas and embedded GLB measurement"
+    ],
+    "materials_owns": [
+      "review texel-density target",
+      "review atlas dimensions and active region",
+      "checker design and visual interpretation"
+    ],
+    "technical_art_owns": [
+      "material-bearing GLB packaging",
+      "exact UV/material/image transport identity"
+    ]
+  },
+  "truth_boundary": "This companion evidence binds the exact current Geometry chart to the exact Materials review-atlas contract and measures only that declared Godot review-space sampling: 352 px / 1.10 m and 480 px / 1.50 m = 320 px/m in both chart directions. The retained Materials implementation builds a procedural Godot ImageTexture; it is not an embedded material-bearing GLB. Therefore this measurement must not be relabelled as UC inspect_material_uv_density evidence, and the shared UC GLB observer remains unconsumed until Technical Art or another explicit owner supplies a bound material-bearing GLB whose embedded image bytes can be measured directly. No source geometry, UV chart, density target, atlas policy, material, transport, receiver, runtime, environment, visual, CANON, production-readiness or game-readiness adoption is authorized."
+}
