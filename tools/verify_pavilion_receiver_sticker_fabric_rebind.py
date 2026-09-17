@@ -160,7 +160,6 @@ def negative_controls(shared, valid_frame, upstream):
     bad_upstream = copy.deepcopy(upstream)
     bad_upstream["files"][str(STICKER_PLACEMENT_PATH)] = "0" * 64
     try:
-        # Head/file identity are already exact; this isolates the retained upstream receipt gate.
         if bad_upstream.get("policy") != EXPECTED_UPSTREAM_POLICY:
             raise ValueError("Sticker Fabric upstream continuity policy drift")
         if bad_upstream.get("files", {}).get(str(STICKER_PLACEMENT_PATH)) != PINNED_STICKER_MODULE_SHA256:
@@ -182,11 +181,17 @@ def build(sticker_root):
     receiver_mod = load_module(RECEIVER_TOOL, "build_pavilion_utility_panel_receivers")
     shared = load_module(shared_path, "axm_sticker_fabric_placement_probe")
 
-    existing = receiver_mod.build()
+    existing = receiver_mod.build(sticker_root)
     if existing.get("result") != "PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY":
         raise ValueError("existing Building receiver family prerequisite is not PASS")
     if existing.get("receiver_count") != 2:
         raise ValueError("expected the exact two-receiver Building family")
+    if existing.get("local_rigid_frame_transform_implementation") is not False:
+        raise ValueError("Building receiver family still reports a local rigid-frame implementation")
+    if existing.get("shared_dependency", {}).get("head") != observed_sticker_head:
+        raise ValueError("Building receiver family Sticker Fabric dependency head mismatch")
+    if existing.get("shared_dependency", {}).get("module_sha256") != observed_module_sha:
+        raise ValueError("Building receiver family Sticker Fabric dependency module mismatch")
 
     hard_surface = receiver_mod.load_hard_surface_builder()
     panel = receiver_mod.load(receiver_mod.PANEL)
@@ -239,10 +244,13 @@ def build(sticker_root):
     controls = negative_controls(shared, rows[0]["target_frame"], upstream)
 
     return {
-        "schema": "axm.building-sticker-fabric-rigid-frame-rebind-evidence/v0.1",
+        "schema": "axm.building-sticker-fabric-rigid-frame-rebind-evidence/v0.2",
         "result": "PASS_EXACT_STICKER_FABRIC_REBIND_BUILDING_RECEIVERS",
         "authority": "RECEIVING_DOMAIN_SUCCESSOR_REBIND_ONLY",
         "migration_decision": "PASS_FIRST_CONSUMER_REBIND__LOCAL_HELPER_REMOVAL_HELD",
+        "migration_decision_semantics": "HISTORICAL_PRE_CONSOLIDATION_COMPATIBILITY_FIELD",
+        "current_migration_decision": "PASS_BUILDING_DIRECT_STICKER_FABRIC_CONSUMER_HELPER_CONSOLIDATION",
+        "local_rigid_frame_transform_implementation": existing["local_rigid_frame_transform_implementation"],
         "building_family_result": existing["result"],
         "building_receiver_count": existing["receiver_count"],
         "building_receiver_ids": existing["receiver_ids"],
@@ -271,15 +279,16 @@ def build(sticker_root):
         "receivers": rows,
         "negative_controls": controls,
         "truth_boundary": (
-            "This proves only that the exact existing Building utility-panel proof geometry for the "
-            "two source-owned orthogonal receiver frames can be rebound to the pinned standalone "
-            "Sticker Fabric placement module with unchanged retained vertex lists, mesh digests and "
-            "0.0 m residual under identity source anchor, identity offset and unit scale. The prior "
-            "UC-pinned equivalence receipt remains historical provenance. Building keeps receiver "
-            "IDs, tags, fit, mount, clearance, source, generator and acceptance semantics. This does "
-            "not yet remove the local placement implementation, migrate Object, create a universal "
-            "attachment schema, prove runtime attachment/physics/gameplay, or establish CANON or "
-            "production readiness."
+            "This proves that the exact existing Building utility-panel proof geometry for the two "
+            "source-owned orthogonal receiver frames is now produced directly through the exact pinned "
+            "Sticker Fabric neutral rigid-frame placement module, with unchanged retained vertex lists, "
+            "mesh digests and 0.0 m residual. The legacy migration_decision field is retained only as "
+            "historical receipt-schema compatibility and is superseded by current_migration_decision. "
+            "Building keeps receiver IDs, tags, fit, mount, clearance, shape, source and acceptance "
+            "semantics; no local rigid-frame transform implementation remains in the Building Procedural "
+            "family. This does not remove UC's standalone compatible copy, migrate other consumers, create "
+            "a universal attachment schema, prove runtime attachment/physics/gameplay, or establish CANON "
+            "or production readiness."
         ),
     }
 
