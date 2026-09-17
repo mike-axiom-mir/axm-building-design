@@ -1,0 +1,64 @@
+name: Hard-surface Building utility-panel receiver-clearance evidence
+
+on:
+  push:
+    branches:
+      - studio/hard-surface-utility-panel-receiver-clearance-001
+  pull_request:
+    paths:
+      - "assets/utility_access_panel_001.json"
+      - "assets/utility_access_panel_001_service_surface_domain.json"
+      - "assets/utility_access_panel_001_receiver_clearance_envelope.json"
+      - "assets/service_pavilion_001.json"
+      - "tools/verify_utility_panel_receiver_clearance_envelope.py"
+      - "tests/test_utility_panel_receiver_clearance_envelope.py"
+      - ".github/workflows/hard-surface-building-utility-panel-receiver-clearance.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile verifier and tests
+        run: |
+          python -m py_compile tools/verify_utility_panel_receiver_clearance_envelope.py
+          python -m py_compile tests/test_utility_panel_receiver_clearance_envelope.py
+
+      - name: Run complete Building unit suite
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact receiver-clearance receipt
+        run: |
+          mkdir -p evidence/utility-panel-receiver-clearance
+          printf '%s\n' "$GITHUB_SHA" > evidence/utility-panel-receiver-clearance/exact-head.txt
+          python tools/verify_utility_panel_receiver_clearance_envelope.py \
+            --output evidence/utility-panel-receiver-clearance/receipt.json
+
+      - name: Retain exact evidence on Python 3.11
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-receiver-clearance-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            evidence/utility-panel-receiver-clearance/receipt.json
+            evidence/utility-panel-receiver-clearance/exact-head.txt
+            assets/utility_access_panel_001.json
+            assets/utility_access_panel_001_service_surface_domain.json
+            assets/utility_access_panel_001_receiver_clearance_envelope.json
+            assets/service_pavilion_001.json
