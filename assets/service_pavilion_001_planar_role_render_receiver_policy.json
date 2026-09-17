@@ -1,0 +1,79 @@
+{
+  "schema": "axm.building-planar-role-render-receiver-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "policy_revision": "service-pavilion-001/planar-role-render-receiver-policy-007",
+  "owner": "Building Hard Surface",
+  "purpose": "Bound one render-only lower-topology receiving candidate that preserves the exact current-source occupied-union boundary and the exact currently accepted five-role Materials partition while allowing same-role coplanar source-component boundaries to collapse into deterministic rectangles.",
+  "semantic_source": {
+    "schema": "axm.building-current-emission-policy/v0.1",
+    "variant_id": "header-segmented-23",
+    "authority": "SEMANTIC_SOURCE_OF_TRUTH",
+    "expected_box_count": 23,
+    "expected_triangle_count": 276
+  },
+  "boundary_oracle": {
+    "schema": "axm.building-current-source-boundary-shell/v0.1",
+    "representation_id": "boundary-only-union-shell-001",
+    "tool_path": "tools/build_service_pavilion_union_shell_candidate.py",
+    "tool_git_blob_sha": "c7984fdf86a9eaded6cfea89f6b6d696b7faf3f0",
+    "role": "GEOMETRIC_SURFACE_COVERAGE_ORACLE_ONLY"
+  },
+  "material_role_binding": {
+    "authority": "CONSUMED_PINNED_BUILDING_MATERIALS_PARTITION__NOT_HARD_SURFACE_OWNED",
+    "donor_repository": "mike-axiom-mir/axm-building-design",
+    "donor_pr": 3,
+    "donor_head": "4179aa1401f5a9114399e2f998c96809d4b8ed2e",
+    "profile_path": "lookdev/building_material_profile_001.json",
+    "profile_git_blob_sha": "f7945f4c17b7720f176c1b0ac4e1baa298691b25",
+    "binding_policy": "EXACT_SOURCE_COMPONENT_ID_TO_MATERIAL_ROLE_ONLY__NO_SCALAR_OWNERSHIP_OR_RETUNE",
+    "source_component_material_roles": {
+      "slab": "slab_mineral",
+      "roof": "roof_membrane",
+      "front-left-corner": "frame_galvanized",
+      "front-door-left": "frame_galvanized",
+      "front-door-right": "frame_galvanized",
+      "front-right-corner": "frame_galvanized",
+      "rear-left-corner": "frame_galvanized",
+      "rear-left-mid": "frame_galvanized",
+      "rear-right-mid": "frame_galvanized",
+      "rear-right-corner": "frame_galvanized",
+      "front-header": "frame_galvanized",
+      "rear-header": "frame_galvanized",
+      "west-header": "frame_galvanized",
+      "east-header": "frame_galvanized",
+      "rear-infill-left": "infill_coating",
+      "rear-infill-center": "infill_coating",
+      "rear-infill-right": "infill_coating",
+      "panel-front-utility-bay": "utility_panel_ochre",
+      "panel-east-utility-bay": "utility_panel_ochre"
+    }
+  },
+  "candidate": {
+    "representation_id": "boundary-only-planar-role-rectangle-render-001",
+    "representation_kind": "NON_INDEXED_RENDER_SURFACE_RECTANGLE_COVER",
+    "status": "SOURCE_OWNED_DERIVED_RENDER_RECEIVING_OPTION_NOT_DEFAULT",
+    "merge_key": "solid_component + consumed_material_role + axis + outward_sign + plane",
+    "normal_policy": "EXACT_CARDINAL_HARD_NORMAL_PER_RECTANGLE",
+    "provenance_policy": "PRESERVE_CONTRIBUTOR_SOURCE_COMPONENT_ID_SET_AND_BOX_ID_SET_PER_RECTANGLE",
+    "allowed_roles": [
+      "render_receiving_candidate",
+      "material_surface_receiving_candidate"
+    ],
+    "forbidden_roles": [
+      "semantic_source",
+      "collision_mesh",
+      "navigation_mesh",
+      "manufacturing_mesh",
+      "structural_transport_mesh"
+    ]
+  },
+  "selection_policy": "EXPLICIT_RECEIVING_REPRESENTATION_ID_REQUIRED__NO_DEFAULT_OR_IMPLICIT_FALLBACK",
+  "evidence_transfer_policy": "NO_PASS_TRANSFER_FROM_COMPACT_V2_OR_SEGMENTED_RECEIVER__EXACT_ENVIRONMENT_RUNTIME_ART_QA_REBIND_REQUIRED",
+  "visual_target_provenance": {
+    "art_direction_status": "PASS_ART_DIRECTION_BUILDING_COMPACT_V2_HARD_SURFACE_LOOK_PREFERENCE_019",
+    "target": "Cleaner planar manufactured highlight language observed on the exact compact-v2 current-world review",
+    "constraint": "Do not silently pay the compact-v2 current-world receiver cost and do not claim visual equivalence from structural surface equivalence alone"
+  },
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_DOMAIN_EVIDENCE",
+  "truth_boundary": "This policy authorizes one Building-local render receiving candidate only. It consumes, but does not own or retune, the exact current five-role Building Materials component partition. It may merge same-material-role coplanar boundary cells across semantic source-component boundaries while retaining contributor sets. It does not replace header-segmented-23, the indexed compact-v2/reference shells, Materials scalars, collision or transport meshes; does not establish runtime savings on a target device; and does not establish Art/QA visual equivalence, manufacturing validity, CANON or production readiness."
+}
