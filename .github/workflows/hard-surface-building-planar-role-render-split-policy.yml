@@ -1,0 +1,97 @@
+name: Hard-surface Building planar-role render split evidence
+
+on:
+  pull_request:
+    paths:
+      - "assets/service_pavilion_001_planar_role_render_split_policy.json"
+      - "tools/verify_service_pavilion_planar_role_render_split_policy.py"
+      - "tests/test_service_pavilion_planar_role_render_split_policy.py"
+      - ".github/workflows/hard-surface-building-planar-role-render-split-policy.yml"
+      - "assets/service_pavilion_001_planar_role_render_receiver_policy.json"
+      - "tools/build_service_pavilion_planar_role_render_receiver.py"
+      - "tools/build_service_pavilion_union_shell_candidate.py"
+      - "tools/service_pavilion_current_emission_policy.py"
+      - "tools/service_pavilion_emission_variants.py"
+      - "assets/service_pavilion_001_current_emission_policy.json"
+      - "assets/service_pavilion_001_emission_variants.json"
+      - "assets/service_pavilion_001_header_segmentation.json"
+      - "assets/service_pavilion_001.json"
+      - "assets/utility_access_panel_001.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile Hard-Surface split-intent verifier
+        run: |
+          python -m py_compile tools/verify_service_pavilion_planar_role_render_split_policy.py
+
+      - name: Run complete Building test suite
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Build exact-head render split evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXACT_HEAD="${{ github.event.pull_request.head.sha || github.sha }}"
+          rm -rf evidence/service-pavilion-planar-role-render-split-001
+          python tools/verify_service_pavilion_planar_role_render_split_policy.py \
+            --exact-head "$EXACT_HEAD" \
+            --output-dir evidence/service-pavilion-planar-role-render-split-001 \
+            > evidence-planar-role-render-split-${{ matrix.python-version }}.json
+          test "$(cat evidence/service-pavilion-planar-role-render-split-001/exact-head.txt)" = "$EXACT_HEAD"
+
+      - name: Truth gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('evidence/service-pavilion-planar-role-render-split-001/render-split-evidence.json')
+          data = json.loads(path.read_text())
+          assert data['result'] == 'PASS_SOURCE_OWNED_PLANAR_ROLE_RENDER_SPLIT_INTENT'
+          assert data['representation_id'] == 'boundary-only-planar-role-rectangle-render-001'
+          assert data['semantic_source_variant'] == 'header-segmented-23'
+          assert data['rectangle_count'] == 168
+          assert data['triangle_count'] == 336
+          assert data['material_role_count'] == 5
+          assert data['source_intent']['triangle_corner_count'] == 1008
+          assert data['source_intent']['equivalence_group_count'] == 312
+          assert data['source_intent']['storage_group_reduction'] == 696
+          assert data['source_intent']['cross_rectangle_group_count'] > 0
+          assert data['source_intent']['all_protected_split_ids_explicit'] is True
+          assert data['source_intent']['all_current_protected_split_ids_null'] is True
+          assert all(str(value).startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert all(value == 'NOT_HARD_SURFACE_OWNED' for value in data['authority'].values())
+          print(data['result'])
+          print(json.dumps(data['source_intent'], indent=2, sort_keys=True))
+          PY
+
+      - name: Retain exact split-intent evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-planar-role-render-split-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/service-pavilion-planar-role-render-split-001/
+            evidence-planar-role-render-split-${{ matrix.python-version }}.json
+          if-no-files-found: error
