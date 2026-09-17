@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import unittest
 from pathlib import Path
 
@@ -7,22 +8,47 @@ MODULE_PATH = ROOT / "tools/build_pavilion_utility_panel_receivers.py"
 spec = importlib.util.spec_from_file_location("build_pavilion_utility_panel_receivers", MODULE_PATH)
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
+STICKER_ROOT = Path(
+    os.environ.get("AXM_STICKER_FABRIC_ROOT", ROOT / "external/axm-sticker-fabric")
+).resolve()
 
 
 class UtilityPanelReceiverPlacementTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.summary = mod.build()
+        # Shared placement code is intentionally not vendored into Building. Generic Building
+        # workflows that do not fetch this cross-repo dependency skip only this integration class;
+        # the Procedural workflow checks out the exact donor and runs the complete family suite.
+        if not STICKER_ROOT.is_dir():
+            raise unittest.SkipTest("exact axm-sticker-fabric donor is not present in this workflow")
+        cls.summary = mod.build(STICKER_ROOT)
 
     def test_exact_family_passes(self):
         data = self.summary
         self.assertEqual(data["result"], "PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY")
+        self.assertEqual(data["schema"], "axm.building-utility-panel-receiver-placement-evidence/v0.2")
         self.assertEqual(data["receiver_count"], 2)
         self.assertEqual(data["receiver_ids"], ["front-utility-bay", "east-utility-bay"])
         self.assertEqual(data["distinct_placement_digests"], 2)
         self.assertEqual(data["distinct_mesh_digests"], 2)
         self.assertEqual(data["distinct_frame_digests"], 2)
         self.assertAlmostEqual(data["receiver_normal_dot"], 0.0, places=12)
+
+    def test_exact_shared_dependency_is_direct_and_pinned(self):
+        data = self.summary
+        self.assertFalse(data["local_rigid_frame_transform_implementation"])
+        self.assertEqual(
+            data["placement_capability"],
+            "mike-axiom-mir/axm-sticker-fabric:src/axm_stickers/placement.py",
+        )
+        self.assertEqual(data["shared_dependency"]["repo"], "mike-axiom-mir/axm-sticker-fabric")
+        self.assertEqual(data["shared_dependency"]["head"], mod.PINNED_STICKER_HEAD)
+        self.assertEqual(
+            data["shared_dependency"]["module_sha256"],
+            mod.PINNED_STICKER_MODULE_SHA256,
+        )
+        for placement in data["placements"]:
+            self.assertEqual(placement["placement_capability"], data["placement_capability"])
 
     def test_materially_different_exact_outputs(self):
         by_id = {item["receiver_id"]: item for item in self.summary["placements"]}
@@ -32,6 +58,14 @@ class UtilityPanelReceiverPlacementTests(unittest.TestCase):
         self.assertEqual(east["center_m"], [3.88, 0.1, 1.65])
         self.assertEqual(front["basis_normal_lateral_up"][0], [0.0, -1.0, 0.0])
         self.assertEqual(east["basis_normal_lateral_up"][0], [1.0, 0.0, 0.0])
+        self.assertEqual(
+            front["mesh_digest"],
+            "dcadb6a7e938557c866259ed4a3ca7febb32b593b68b22073adc2617d63ef5c0",
+        )
+        self.assertEqual(
+            east["mesh_digest"],
+            "95bbe7d3feebcaeebdaa285ea2f69ee24989d16f140ef59abf08f4725d77a904",
+        )
         self.assertNotEqual(front["mesh_digest"], east["mesh_digest"])
         self.assertNotEqual(front["placement_digest"], east["placement_digest"])
 
