@@ -1,0 +1,171 @@
+name: Runtime Building compact-shell budget evidence
+
+on:
+  push:
+    branches: [studio/runtime-building-compact-shell-budget-001]
+    paths:
+      - "tools/runtime_building_compact_shell_budget.py"
+      - "runtime-proof/runtime_building_compact_shell_observe.gd"
+      - "runtime-proof/project.godot"
+      - "docs/RUNTIME_BUILDING_COMPACT_SHELL_BUDGET_001.md"
+      - ".github/workflows/runtime-building-compact-shell-budget.yml"
+  pull_request:
+    paths:
+      - "tools/runtime_building_compact_shell_budget.py"
+      - "runtime-proof/runtime_building_compact_shell_observe.gd"
+      - "runtime-proof/project.godot"
+      - "docs/RUNTIME_BUILDING_COMPACT_SHELL_BUDGET_001.md"
+      - ".github/workflows/runtime-building-compact-shell-budget.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact-building-compact-shell-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact Runtime head with ancestry
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Bind exact Hard-Surface parent and compile verifier
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > exact-head.txt
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git cat-file -e 35d0ba62d7e534b3cd00ac69e99386843ffa3f2e^{commit}
+          git merge-base --is-ancestor 35d0ba62d7e534b3cd00ac69e99386843ffa3f2e HEAD
+          python -m py_compile tools/runtime_building_compact_shell_budget.py
+
+      - name: Install exact image-analysis dependency
+        run: python -m pip install --disable-pip-version-check pillow
+
+      - name: Build exact reference and compact-v2 Runtime payload
+        run: |
+          set -euo pipefail
+          mkdir -p runtime-proof/generated evidence/runtime_building_compact_shell_budget_001
+          python tools/runtime_building_compact_shell_budget.py build \
+            --exact-head "$(cat exact-head.txt)" \
+            --output runtime-proof/generated/building_compact_shell_runtime_payload.json
+          cp runtime-proof/generated/building_compact_shell_runtime_payload.json evidence/runtime_building_compact_shell_budget_001/payload.json
+          cp exact-head.txt evidence/runtime_building_compact_shell_budget_001/exact-head.txt
+
+      - name: Download pinned Godot 4.7.2
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y xvfb; fi
+
+      - name: Observe exact reference-shell control
+        env:
+          AXM_RUNTIME_BUILDING_SHELL_MODE: REFERENCE_CONTROL
+          AXM_RUNTIME_BUILDING_SHELL_OUT: ${{ github.workspace }}/evidence/runtime_building_compact_shell_budget_001/control
+        run: |
+          set -euo pipefail
+          mkdir -p "$AXM_RUNTIME_BUILDING_SHELL_OUT"
+          set +e
+          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 --rendering-method gl_compatibility \
+            --path runtime-proof --script runtime_building_compact_shell_observe.gd \
+            2>&1 | tee "$AXM_RUNTIME_BUILDING_SHELL_OUT/godot.log"
+          status=${PIPESTATUS[0]}; set -e
+          exit "$status"
+
+      - name: Observe exact compact-v2 candidate
+        env:
+          AXM_RUNTIME_BUILDING_SHELL_MODE: COMPACT_V2_CANDIDATE
+          AXM_RUNTIME_BUILDING_SHELL_OUT: ${{ github.workspace }}/evidence/runtime_building_compact_shell_budget_001/candidate
+        run: |
+          set -euo pipefail
+          mkdir -p "$AXM_RUNTIME_BUILDING_SHELL_OUT"
+          set +e
+          xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 --rendering-method gl_compatibility \
+            --path runtime-proof --script runtime_building_compact_shell_observe.gd \
+            2>&1 | tee "$AXM_RUNTIME_BUILDING_SHELL_OUT/godot.log"
+          status=${PIPESTATUS[0]}; set -e
+          exit "$status"
+
+      - name: Verify exact Runtime A/B
+        run: |
+          set -euo pipefail
+          out=evidence/runtime_building_compact_shell_budget_001
+          python tools/runtime_building_compact_shell_budget.py verify \
+            --payload "$out/payload.json" \
+            --control-receipt "$out/control/runtime.json" \
+            --candidate-receipt "$out/candidate/runtime.json" \
+            --control-images "$out/control" \
+            --candidate-images "$out/candidate" \
+            --output "$out/report.json"
+          python - <<'PY'
+          import json
+          p=json.load(open('evidence/runtime_building_compact_shell_budget_001/report.json'))
+          assert p['state']=='PASS_BUILDING_COMPACT_SHELL_RUNTIME_REPRESENTATION_COST_CHARACTERIZED__HOLD_VISUAL_AND_RECEIVER_ADOPTION',p
+          assert p['render_domain']['candidate']['triangle_count']==2052,p
+          assert p['render_domain']['control']['triangle_count']==2884,p
+          assert p['render_domain']['modeled_payload_bytes_saved']>0,p
+          assert all(row['primitives']<0 for row in p['proof_host_counter_deltas'].values()),p
+          print(json.dumps({
+            'state':p['state'],
+            'render_domain':p['render_domain'],
+            'proof_host_counter_deltas':p['proof_host_counter_deltas'],
+            'visual_tradeoff':p['visual_tradeoff'],
+            'visual_delta':p['visual_delta'],
+          },indent=2,sort_keys=True))
+          PY
+
+      - name: Exercise fail-closed primitive-reduction control
+        run: |
+          set -euo pipefail
+          out=evidence/runtime_building_compact_shell_budget_001
+          cp "$out/candidate/runtime.json" "$out/candidate/runtime-mutated.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          control=json.loads(Path('evidence/runtime_building_compact_shell_budget_001/control/runtime.json').read_text())
+          path=Path('evidence/runtime_building_compact_shell_budget_001/candidate/runtime-mutated.json')
+          candidate=json.loads(path.read_text())
+          by_name={row['camera']:row for row in control['cameras']}
+          for row in candidate['cameras']:
+              row['primitives']=by_name[row['camera']]['primitives']
+          path.write_text(json.dumps(candidate,indent=2)+'\n')
+          PY
+          if python tools/runtime_building_compact_shell_budget.py verify \
+            --payload "$out/payload.json" \
+            --control-receipt "$out/control/runtime.json" \
+            --candidate-receipt "$out/candidate/runtime-mutated.json" \
+            --control-images "$out/control" \
+            --candidate-images "$out/candidate" \
+            --output "$out/should-not-pass.json"; then
+            echo 'negative control unexpectedly passed' >&2
+            exit 1
+          fi
+          rm -f "$out/should-not-pass.json"
+          echo PASS_FAIL_CLOSED_PRIMITIVE_REDUCTION_CONTROL
+
+      - name: Upload retained Runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-building-compact-shell-budget-001-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/runtime_building_compact_shell_budget_001
+          if-no-files-found: error
+          retention-days: 30
