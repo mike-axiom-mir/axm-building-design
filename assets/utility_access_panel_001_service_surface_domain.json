@@ -5,7 +5,7 @@
   "units": "meters",
   "source_panel": {
     "path": "assets/utility_access_panel_001.json",
-    "git_blob_sha": "4da242e35a84b20a80f4acf28146be613624e734",
+    "git_blob_sha": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
     "schema": "axm.building-utility-panel/v0.1"
   },
   "face_selector": "LOCAL_POSITIVE_X_OUTER_FACE",

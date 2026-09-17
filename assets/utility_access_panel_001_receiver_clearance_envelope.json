@@ -1,0 +1,79 @@
+{
+  "schema": "axm.building-utility-panel-receiver-clearance-envelope/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "owner": "Building Hard Surface",
+  "units": "meters",
+  "base_hard_surface_head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+  "predecessor_source_blob": "4da242e35a84b20a80f4acf28146be613624e734",
+  "successor_source_blob": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
+  "pavilion_source_blob": "5a5ec3ce6ee4e9b111db086ba93038a75c482a2e",
+  "receiver_fit_convention": {
+    "receiver_origin_semantics": "plate inner-face datum for the exact service-pavilion utility-bay proof convention",
+    "plate_interval_from_origin_m": "[0, plate_thickness_m] along receiver outward normal",
+    "panel_body_interval_from_origin_m": "[standoff_from_receiver_origin_m - body_depth_m/2, standoff_from_receiver_origin_m + body_depth_m/2]",
+    "physical_body_gap_formula": "standoff_from_receiver_origin_m - plate_thickness_m - body_depth_m/2",
+    "legacy_center_surplus_formula": "standoff_from_receiver_origin_m - plate_thickness_m",
+    "rule": "BODY_CLEARANCE_MUST_BE_MEASURED_FROM_THE_NEAREST_BODY_FACE__CENTER_OFFSET_MINUS_PLATE_THICKNESS_IS_NOT_BODY_GAP_WHEN_THE_BODY_HAS_DEPTH"
+  },
+  "expected_source": {
+    "body_depth_m": 0.08,
+    "standoff_from_receiver_origin_m": 0.10,
+    "required_body_clearance_beyond_plate_m": 0.02,
+    "interface_footprint_m": [1.10, 1.50],
+    "mount_points_local_m": [[-0.50, -0.70], [0.50, -0.70], [0.50, 0.70], [-0.50, 0.70]]
+  },
+  "expected_receivers": [
+    {
+      "interface_id": "front-utility-bay",
+      "origin": [-2.45, -1.00, 1.65],
+      "normal": [0.0, -1.0, 0.0],
+      "plate_footprint_m": [1.20, 1.60],
+      "plate_thickness_m": 0.04,
+      "expected_panel_center": [-2.45, -1.10, 1.65]
+    },
+    {
+      "interface_id": "east-utility-bay",
+      "origin": [3.80, 0.10, 1.65],
+      "normal": [1.0, 0.0, 0.0],
+      "plate_footprint_m": [1.20, 1.60],
+      "plate_thickness_m": 0.04,
+      "expected_panel_center": [3.90, 0.10, 1.65]
+    }
+  ],
+  "expected_clearance": {
+    "plate_outer_offset_m": 0.04,
+    "panel_body_inner_offset_m": 0.06,
+    "panel_body_outer_offset_m": 0.14,
+    "physical_body_gap_m": 0.02,
+    "successor_legacy_center_surplus_m": 0.06,
+    "per_side_footprint_margin_m": [0.05, 0.05],
+    "predecessor_standoff_m": 0.08,
+    "predecessor_physical_body_gap_m": 0.00,
+    "predecessor_clearance_shortfall_m": 0.02
+  },
+  "authority": {
+    "source_owned_facts": [
+      "panel receiver-normal standoff semantics",
+      "source-local nearest-body-face clearance envelope",
+      "source-local proof-box depth relative to receiver plate datum"
+    ],
+    "downstream_or_unproven_facts": [
+      "fastener geometry",
+      "tooling envelope",
+      "hinges",
+      "latches",
+      "seals",
+      "engineering loads",
+      "manufacturing tolerance",
+      "collision or physics",
+      "runtime attachment",
+      "materials or UVs",
+      "Map adoption",
+      "visual acceptance",
+      "Universal Creation implementation",
+      "Profession Fabric implementation"
+    ]
+  },
+  "status": "SOURCE_OWNED_CLEARANCE_SUCCESSOR_NOT_CANON",
+  "truth_boundary": "This contract corrects one source-local geometric truth defect in utility-access-panel-001: the prior 0.08 m center standoff left zero physical gap between the 0.08 m body and the outer face of the 0.04 m receiver plate even though the source declared 0.02 m required body clearance. The successor uses 0.10 m standoff so the nearest body face preserves exactly 0.02 m gap in both exact service-pavilion receivers. It does not select fasteners, tooling, retention, sealing, loads, manufacturing tolerances, runtime attachment, materials, UVs, visual acceptance, CANON or production readiness."
+}

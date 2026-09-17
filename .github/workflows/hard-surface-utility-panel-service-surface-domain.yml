@@ -20,11 +20,11 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - name: Bind exact head and unchanged panel source
+      - name: Bind exact head and successor panel source
         run: |
           echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
-          test "$(git rev-parse HEAD:assets/utility_access_panel_001.json)" = "4da242e35a84b20a80f4acf28146be613624e734"
+          test "$(git rev-parse HEAD:assets/utility_access_panel_001.json)" = "51b7fa61dd87934a89e033a2fdf5cc3b99992454"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -53,7 +53,7 @@ jobs:
           assert (root / 'exact-head.txt').read_text().strip() == os.environ['AXM_EXACT_HEAD']
           assert receipt['result'] == 'PASS_SOURCE_OWNED_BUILDING_UTILITY_PANEL_OUTER_SERVICE_SURFACE_METRIC_DOMAIN'
           assert receipt['surface_id'] == 'utility_panel_outer_service_surface'
-          assert receipt['source_panel_blob_sha'] == '4da242e35a84b20a80f4acf28146be613624e734'
+          assert receipt['source_panel_blob_sha'] == '51b7fa61dd87934a89e033a2fdf5cc3b99992454'
           assert receipt['metric_domain']['primary_extent_m'] == 1.1
           assert receipt['metric_domain']['secondary_extent_m'] == 1.5
           assert receipt['metric_domain']['area_m2'] == 1.6500000000000001 or receipt['metric_domain']['area_m2'] == 1.65
