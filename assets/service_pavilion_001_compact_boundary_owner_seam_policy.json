@@ -1,0 +1,28 @@
+{
+  "schema": "axm.building-compact-boundary-owner-seam-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "policy_revision": "service-pavilion-001/compact-boundary-owner-seam-policy-006",
+  "semantic_source_variant_id": "header-segmented-23",
+  "compact_receiving_policy": {
+    "schema": "axm.building-compact-boundary-shell-policy/v0.1",
+    "git_blob_sha": "ccb06b004f96d1ecfaacd39f093b88cf5194e6c0",
+    "reference_representation_id": "boundary-only-union-shell-001",
+    "compact_representation_id": "boundary-only-union-shell-conforming-compact-v2-001"
+  },
+  "geometry_lineage": {
+    "reference_geometry_head": "b6d14d48c59859ae6ff2aaed7dea86b4e00a5402",
+    "compaction_geometry_head": "16253e7dd2f8cd590667f9631e4b50fdfcc7280d",
+    "compact_payload_sha256": "d51d853ce95216ad66f6ce88cf5bca6aecfa19e22e5e8ce4045cf481b719936a"
+  },
+  "owner_seam_definition": "MANIFOLD_EDGE_INCIDENT_TO_EXACTLY_TWO_TRIANGLES_WITH_DIFFERENT_SOURCE_COMPONENT_ID",
+  "owner_seam_identity_basis": "SORTED_SOURCE_COMPONENT_PAIR_PLUS_SORTED_DONOR_SOURCE_VERTEX_IDS",
+  "expected_owner_seam_edge_count": 268,
+  "expected_owner_pair_count": 30,
+  "expected_total_owner_seam_length_m": 34.72,
+  "expected_owner_seam_identity_sha256": "75b865c2b6f0559410549c03ac1c3b44fd00a71b186289d8a2ccb1e06df2c322",
+  "preservation_policy": "EXACT_OWNER_SEAM_IDENTITY_AND_GEOMETRY_REQUIRED_ON_COMPACT_V2",
+  "same_owner_internal_policy": "MAY_CHANGE_INSIDE_ONE_OWNER_PLANAR_PATCH_SUBJECT_TO_EXISTING_GEOMETRY_GATES",
+  "physical_seam_inference": "NOT_CLAIMED_NO_GAP_BEVEL_WELD_FASTENER_OR_MATERIAL_BOUNDARY_INFERRED",
+  "downstream_evidence_policy": "OWNER_SEAM_PRESERVATION_DOES_NOT_TRANSFER_MATERIAL_NORMAL_TANGENT_UV_TRANSPORT_RUNTIME_OR_VISUAL_PASS",
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_MANUFACTURED_DOMAIN_EVIDENCE"
+}

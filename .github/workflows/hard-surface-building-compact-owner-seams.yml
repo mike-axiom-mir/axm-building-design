@@ -1,0 +1,104 @@
+name: Hard-surface Building compact owner-seam evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-boundary-shell-compaction-policy-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PRIOR_HARD_SURFACE_HEAD: 35d0ba62d7e534b3cd00ac69e99386843ffa3f2e
+      REFERENCE_GEOMETRY_HEAD: b6d14d48c59859ae6ff2aaed7dea86b4e00a5402
+      COMPACTION_GEOMETRY_HEAD: 16253e7dd2f8cd590667f9631e4b50fdfcc7280d
+      COMPACT_POLICY_BLOB: ccb06b004f96d1ecfaacd39f093b88cf5194e6c0
+    steps:
+      - name: Checkout exact Hard-Surface successor head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bind exact Hard-Surface and Geometry lineage
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$PRIOR_HARD_SURFACE_HEAD" HEAD
+          git merge-base --is-ancestor "$REFERENCE_GEOMETRY_HEAD" HEAD
+          git merge-base --is-ancestor "$COMPACTION_GEOMETRY_HEAD" HEAD
+          test "$(git rev-parse HEAD:assets/service_pavilion_001_compact_boundary_shell_policy.json)" = "$COMPACT_POLICY_BLOB"
+          git diff --exit-code "$COMPACTION_GEOMETRY_HEAD" HEAD -- \
+            assets/service_pavilion_001.json \
+            assets/service_pavilion_001_header_segmentation.json \
+            assets/service_pavilion_001_emission_variants.json \
+            assets/service_pavilion_001_current_emission_policy.json \
+            tools/build_service_pavilion.py \
+            tools/build_service_pavilion_header_segmentation.py \
+            tools/service_pavilion_emission_variants.py \
+            tools/service_pavilion_current_emission_policy.py \
+            tools/build_service_pavilion_union_shell_candidate.py \
+            tools/build_service_pavilion_boundary_shell_compaction.py \
+            tools/build_service_pavilion_boundary_shell_compaction_v2.py
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact Hard-Surface owner-seam evidence
+        run: >-
+          python tools/verify_service_pavilion_compact_boundary_owner_seams.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-compact-boundary-owner-seams-001
+
+      - name: Truth-gate exact source-owner seam result
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          exact = os.environ['EXACT_HEAD']
+          root = pathlib.Path('evidence/service-pavilion-compact-boundary-owner-seams-001')
+          data = json.loads((root / 'receipt.json').read_text())
+          assert data['result'] == 'PASS_SOURCE_OWNED_COMPACT_BOUNDARY_OWNER_SEAM_GRAPH_PRESERVED'
+          assert data['exact_hard_surface_head'] == exact
+          assert data['reference_geometry_head'] == os.environ['REFERENCE_GEOMETRY_HEAD']
+          assert data['compaction_geometry_head'] == os.environ['COMPACTION_GEOMETRY_HEAD']
+          assert data['semantic_source_variant_id'] == 'header-segmented-23'
+          assert data['reference_representation_id'] == 'boundary-only-union-shell-001'
+          assert data['compact_representation_id'] == 'boundary-only-union-shell-conforming-compact-v2-001'
+          assert data['owner_seam_definition'] == 'MANIFOLD_EDGE_INCIDENT_TO_EXACTLY_TWO_TRIANGLES_WITH_DIFFERENT_SOURCE_COMPONENT_ID'
+          assert data['physical_seam_inference'] == 'NOT_CLAIMED_NO_GAP_BEVEL_WELD_FASTENER_OR_MATERIAL_BOUNDARY_INFERRED'
+          metrics = data['metrics']
+          assert metrics['reference_owner_seam_edge_count'] == 268
+          assert metrics['compact_owner_seam_edge_count'] == 268
+          assert metrics['owner_pair_count'] == 30
+          assert abs(metrics['total_owner_seam_length_m'] - 34.72) <= 1e-9
+          assert metrics['owner_seam_identity_sha256'] == '75b865c2b6f0559410549c03ac1c3b44fd00a71b186289d8a2ccb1e06df2c322'
+          assert metrics['missing_owner_seam_identities'] == 0
+          assert metrics['added_owner_seam_identities'] == 0
+          assert metrics['maximum_seam_endpoint_residual_m'] <= 1e-9
+          assert metrics['maximum_seam_length_residual_m'] <= 1e-9
+          assert metrics['same_owner_internal_edge_reduction'] > 0
+          assert all(value.startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          PY
+
+      - name: Retain exact Hard-Surface owner-seam evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-compact-owner-seams-${{ env.EXACT_HEAD }}
+          path: evidence/service-pavilion-compact-boundary-owner-seams-001
+          if-no-files-found: error
