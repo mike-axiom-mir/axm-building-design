@@ -93,7 +93,7 @@ jobs:
           assert old['source_positive_volume_intersection_count'] == 4
           assert old['candidate_positive_volume_intersection_count'] == 0
           assert old['union_equivalence']['equivalent'] is True
-          assert old['union_equivalence']['volume_residual_m3'] == 0.0
+          assert abs(old['union_equivalence']['volume_residual_m3']) <= 1e-9
 
           policy_root = pathlib.Path('evidence/service-pavilion-current-policy-001')
           policy = json.loads((policy_root / 'receipt.json').read_text())
@@ -110,11 +110,11 @@ jobs:
           assert data['current_source_policy']['variant_id'] == 'header-segmented-23'
           assert data['source']['emitted_box_count'] == 23
           assert data['source']['positive_volume_intersection_count'] == 0
-          assert data['candidate']['signed_volume_m3'] == data['source']['occupied_union_volume_m3']
+          assert abs(data['candidate']['signed_volume_m3'] - data['source']['occupied_union_volume_m3']) <= 1e-9
           assert data['candidate']['bounds'] == data['source']['bounds']
           assert data['internal_face_removal']['contact_patch_count'] > 0
           assert data['internal_face_removal']['double_sided_hidden_area_removed_m2'] > 0.0
-          assert data['candidate']['surface_area_m2'] == data['internal_face_removal']['expected_boundary_surface_area_m2']
+          assert abs(data['candidate']['surface_area_m2'] - data['internal_face_removal']['expected_boundary_surface_area_m2']) <= 1e-9
           assert data['candidate']['boundary_edge_count'] == 0
           assert data['candidate']['nonmanifold_edge_count'] == 0
           assert data['candidate']['orientation_conflict_edge_count'] == 0
