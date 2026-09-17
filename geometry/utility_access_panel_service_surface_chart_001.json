@@ -1,0 +1,46 @@
+{
+  "schema": "axm.building-utility-panel-service-surface-chart/v0.1",
+  "chart_id": "utility-panel-outer-service-surface-chart-001",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "source_surface": {
+    "owner": "Building Hard Surface",
+    "pr": 15,
+    "head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+    "contract_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "contract_blob_sha": "14037a0fb939104ea319c9ac96fbe9fdaa949a18",
+    "verifier_path": "tools/verify_utility_panel_service_surface_domain.py",
+    "verifier_blob_sha": "433e7ac713cc07b30a1f2b6e8f59aa78aa9068a9"
+  },
+  "derivation": "SOURCE_FRAME_BIJECTIVE_RECTANGULAR_UV_READY_CHART",
+  "vertices": [
+    {"source_corner_index": 0, "metric_st_m": [-0.55, -0.75], "chart_uv": [0.0, 0.0]},
+    {"source_corner_index": 1, "metric_st_m": [0.55, -0.75], "chart_uv": [1.0, 0.0]},
+    {"source_corner_index": 2, "metric_st_m": [0.55, 0.75], "chart_uv": [1.0, 1.0]},
+    {"source_corner_index": 3, "metric_st_m": [-0.55, 0.75], "chart_uv": [0.0, 1.0]}
+  ],
+  "triangles": [[0, 1, 2], [0, 2, 3]],
+  "boundary_loop": [0, 1, 2, 3],
+  "internal_diagonal": [0, 2],
+  "authority": {
+    "owner": "Geometry / Topology",
+    "owns": [
+      "derived source-corner chart identity",
+      "metric-to-normalized chart bijection",
+      "chart triangle connectivity and winding",
+      "UV-ready structural coordinates"
+    ],
+    "holds": [
+      "texel density",
+      "atlas placement",
+      "material response",
+      "texture payload",
+      "normal or tangent transport",
+      "target receiver adoption",
+      "runtime storage",
+      "environment adoption",
+      "visual acceptance"
+    ]
+  },
+  "truth_boundary": "This Geometry contract derives one deterministic UV-ready structural chart from the exact Hard-Surface-owned planar frame and metric domain. It does not change source geometry, choose texel density or atlas placement, author a material or texture, prescribe normal/tangent transport, authorize receiver/runtime/environment adoption, or establish visual, CANON, production or game readiness."
+}

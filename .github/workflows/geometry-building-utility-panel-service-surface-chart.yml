@@ -1,0 +1,100 @@
+name: Geometry Building utility-panel UV-ready chart evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/geometry-utility-panel-service-surface-chart-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      HARD_SURFACE_HEAD: 97120eb78a72b0a07aff1c65b9b92229d0a42aff
+      HARD_SURFACE_DOMAIN_BLOB: 14037a0fb939104ea319c9ac96fbe9fdaa949a18
+      HARD_SURFACE_VERIFIER_BLOB: 433e7ac713cc07b30a1f2b6e8f59aa78aa9068a9
+    steps:
+      - name: Checkout exact Geometry head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - name: Bind exact Hard Surface donor and unchanged source surface
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$HARD_SURFACE_HEAD" HEAD
+          test "$(git rev-parse HEAD:assets/utility_access_panel_001_service_surface_domain.json)" = "$HARD_SURFACE_DOMAIN_BLOB"
+          test "$(git rev-parse HEAD:tools/verify_utility_panel_service_surface_domain.py)" = "$HARD_SURFACE_VERIFIER_BLOB"
+          git diff --exit-code "$HARD_SURFACE_HEAD" HEAD -- \
+            assets/utility_access_panel_001.json \
+            assets/utility_access_panel_001_service_surface_domain.json \
+            tools/verify_utility_panel_service_surface_domain.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Run complete Building repository suite
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact Geometry chart evidence
+        run: |
+          mkdir -p evidence/utility-panel-service-surface-chart-001
+          python tools/verify_utility_panel_service_surface_chart.py \
+            --exact-head "$EXACT_HEAD" \
+            --output evidence/utility-panel-service-surface-chart-001/receipt.json
+
+      - name: Truth-gate bounded chart result
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path("evidence/utility-panel-service-surface-chart-001")
+          receipt = json.loads((root / "receipt.json").read_text())
+          assert receipt["exact_geometry_head"] == os.environ["EXACT_HEAD"]
+          assert receipt["result"] == "PASS_BUILDING_UTILITY_PANEL_UV_READY_SOURCE_FRAME_CHART"
+          assert receipt["decision"] == "PASS_DERIVED_GEOMETRY_CHART_ONLY__NO_TEXEL_DENSITY_ATLAS_MATERIAL_RECEIVER_OR_VISUAL_ADOPTION"
+          assert receipt["source_surface_head"] == os.environ["HARD_SURFACE_HEAD"]
+          assert receipt["source_surface_contract_blob_sha"] == os.environ["HARD_SURFACE_DOMAIN_BLOB"]
+          assert receipt["source_surface_verifier_blob_sha"] == os.environ["HARD_SURFACE_VERIFIER_BLOB"]
+          assert receipt["vertex_count"] == 4
+          assert receipt["triangle_count"] == 2
+          assert receipt["boundary_edge_count"] == 4
+          assert receipt["internal_edge_count"] == 1
+          assert receipt["unreferenced_chart_vertex_count"] == 0
+          assert abs(receipt["metric_area_m2"] - 1.65) <= 1e-12
+          assert abs(receipt["normalized_chart_area"] - 1.0) <= 1e-12
+          assert receipt["max_source_reconstruction_residual_m"] <= 1e-12
+          assert receipt["max_metric_projection_residual_m"] <= 1e-12
+          assert receipt["max_normalized_mapping_residual"] <= 1e-12
+          assert receipt["source_geometry_changed"] is False
+          assert receipt["production_uv_adopted"] is False
+          assert receipt["downstream_adoption_authorized"] is False
+          assert all(value.startswith("REJECTED:") for value in receipt["negative_controls"].values())
+          PY
+
+      - name: Retain exact Geometry evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          cp geometry/utility_access_panel_service_surface_chart_001.json evidence/utility-panel-service-surface-chart-001/chart-contract.json
+          cp assets/utility_access_panel_001_service_surface_domain.json evidence/utility-panel-service-surface-chart-001/source-surface-domain.json
+          printf '%s\n' "$EXACT_HEAD" > evidence/utility-panel-service-surface-chart-001/exact-head.txt
+
+      - name: Upload retained evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-service-surface-chart-${{ env.EXACT_HEAD }}
+          path: evidence/utility-panel-service-surface-chart-001
+          if-no-files-found: error
+          retention-days: 30
