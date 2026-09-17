@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,6 +13,10 @@ PAVILION = ROOT / "assets/service_pavilion_001.json"
 PANEL = ROOT / "assets/utility_access_panel_001.json"
 PROFILE = ROOT / "procedural/service_pavilion_utility_panel_receivers_001.json"
 HARD_SURFACE_BUILDER = ROOT / "tools/build_service_pavilion.py"
+PINNED_STICKER_HEAD = "3aa93b0132eea9becefb20c716c6ec1a023ad28b"
+PINNED_STICKER_MODULE_SHA256 = "1344884f14cbe2fa25617664521291b96c4bde067ba0cba31e043045ca3f1436"
+STICKER_PLACEMENT_PATH = Path("src/axm_stickers/placement.py")
+SOCKET_KIND = "axm-building-utility-panel-rigid-frame"
 EPS = 1e-9
 
 
@@ -26,6 +31,49 @@ def sha256(path):
 def digest_json(value):
     payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def load_module(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"unable to load module: {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def git_head(repo_root):
+    proc = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return proc.stdout.strip()
+
+
+def load_shared_placement(sticker_root):
+    sticker_root = Path(sticker_root).resolve()
+    observed_head = git_head(sticker_root)
+    if observed_head != PINNED_STICKER_HEAD:
+        raise ValueError(
+            f"Sticker Fabric dependency head drift: {observed_head} != {PINNED_STICKER_HEAD}"
+        )
+    module_path = sticker_root / STICKER_PLACEMENT_PATH
+    if not module_path.is_file():
+        raise ValueError(f"Sticker Fabric placement module missing: {module_path}")
+    observed_sha = sha256(module_path)
+    if observed_sha != PINNED_STICKER_MODULE_SHA256:
+        raise ValueError(
+            "Sticker Fabric placement module identity drift: "
+            f"{observed_sha} != {PINNED_STICKER_MODULE_SHA256}"
+        )
+    return load_module(module_path, "axm_building_sticker_fabric_placement"), {
+        "repo": "mike-axiom-mir/axm-sticker-fabric",
+        "head": observed_head,
+        "module": str(STICKER_PLACEMENT_PATH),
+        "module_sha256": observed_sha,
+    }
 
 
 def load_hard_surface_builder():
@@ -69,7 +117,44 @@ def verify_profile(pavilion, panel, profile, observed_pavilion_sha256, observed_
         raise ValueError("receiver id/order set drift from exact source")
 
 
-def generate_placement(hard_surface, receiver, panel):
+def target_frame(center, basis):
+    normal, lateral, up = basis
+    return [
+        float(normal[0]), float(lateral[0]), float(up[0]), float(center[0]),
+        float(normal[1]), float(lateral[1]), float(up[1]), float(center[1]),
+        float(normal[2]), float(lateral[2]), float(up[2]), float(center[2]),
+        0.0, 0.0, 0.0, 1.0,
+    ]
+
+
+def exact_shared_matrix(shared_placement, center, basis):
+    frame = target_frame(center, basis)
+    identity = shared_placement.identity()
+    definition = {
+        "attachment": {
+            "space": "3d",
+            "socket": SOCKET_KIND,
+            "anchor": identity,
+        }
+    }
+    placed = {"placement": {"offset": identity, "scale": 1.0}}
+    target = {"space": "3d", "socket": SOCKET_KIND, "frame": frame}
+    matrix = shared_placement.attachment_matrix(definition, placed, target)
+    if matrix != frame:
+        raise ValueError("Sticker Fabric neutral placement changed exact Building target frame")
+    return matrix
+
+
+def apply_matrix(matrix, point):
+    x, y, z = [float(value) for value in point]
+    return [
+        matrix[0] * x + matrix[1] * y + matrix[2] * z + matrix[3],
+        matrix[4] * x + matrix[5] * y + matrix[6] * z + matrix[7],
+        matrix[8] * x + matrix[9] * y + matrix[10] * z + matrix[11],
+    ]
+
+
+def generate_placement(hard_surface, receiver, panel, shared_placement):
     fit = hard_surface.fit_panel(receiver, panel)
     basis = [
         [float(v) for v in receiver["normal"]],
@@ -78,7 +163,12 @@ def generate_placement(hard_surface, receiver, panel):
     ]
     size = [float(v) for v in panel["proof_geometry"]["size_local_xyz_m"]]
     center = [float(v) for v in fit["panel_center_local_m"]]
-    vertices = hard_surface.box_vertices(center, size, tuple(basis))
+
+    # Shape ownership stays in Building. Only the already-proven neutral rigid-frame
+    # transform is delegated to the pinned shared Sticker Fabric implementation.
+    local_vertices = hard_surface.box_vertices([0.0, 0.0, 0.0], size)
+    matrix = exact_shared_matrix(shared_placement, center, basis)
+    vertices = [apply_matrix(matrix, point) for point in local_vertices]
     hard_surface.require_closed_outward_box(vertices)
     mins = [min(vertex[axis] for vertex in vertices) for axis in range(3)]
     maxs = [max(vertex[axis] for vertex in vertices) for axis in range(3)]
@@ -96,6 +186,7 @@ def generate_placement(hard_surface, receiver, panel):
         "body_clearance_beyond_plate_m": float(fit["body_clearance_beyond_plate_m"]),
         "scale": [1.0, 1.0, 1.0],
         "extra_rotation_deg": [0.0, 0.0, 0.0],
+        "placement_capability": "mike-axiom-mir/axm-sticker-fabric:src/axm_stickers/placement.py",
     }
     placement["frame_digest"] = digest_json(basis)
     placement["mesh_digest"] = digest_json(vertices)
@@ -111,7 +202,7 @@ def generate_placement(hard_surface, receiver, panel):
     return placement
 
 
-def run_negative_controls(hard_surface, pavilion, panel, profile, pavilion_sha, panel_sha):
+def run_negative_controls(hard_surface, pavilion, panel, profile, pavilion_sha, panel_sha, shared_placement):
     controls = {}
 
     bad = copy.deepcopy(profile)
@@ -157,7 +248,7 @@ def run_negative_controls(hard_surface, pavilion, panel, profile, pavilion_sha, 
     bad_receiver = copy.deepcopy(pavilion["interfaces"][0])
     bad_receiver["lateral"] = list(bad_receiver["normal"])
     try:
-        generate_placement(hard_surface, bad_receiver, panel)
+        generate_placement(hard_surface, bad_receiver, panel, shared_placement)
         controls["nonorthogonal_receiver_frame"] = "UNEXPECTED_PASS"
     except ValueError as exc:
         controls["nonorthogonal_receiver_frame"] = "HOLD: " + str(exc)
@@ -165,7 +256,7 @@ def run_negative_controls(hard_surface, pavilion, panel, profile, pavilion_sha, 
     bad_panel = copy.deepcopy(panel)
     bad_panel["accepted_tag"] = "unknown-panel-tag"
     try:
-        generate_placement(hard_surface, pavilion["interfaces"][0], bad_panel)
+        generate_placement(hard_surface, pavilion["interfaces"][0], bad_panel, shared_placement)
         controls["panel_receiver_tag_mismatch"] = "UNEXPECTED_PASS"
     except ValueError as exc:
         controls["panel_receiver_tag_mismatch"] = "HOLD: " + str(exc)
@@ -175,7 +266,9 @@ def run_negative_controls(hard_surface, pavilion, panel, profile, pavilion_sha, 
     return controls
 
 
-def build():
+def build(sticker_root=None):
+    sticker_root = Path(sticker_root or (ROOT / "external/axm-sticker-fabric")).resolve()
+    shared_placement, shared_identity = load_shared_placement(sticker_root)
     pavilion = load(PAVILION)
     panel = load(PANEL)
     profile = load(PROFILE)
@@ -200,7 +293,7 @@ def build():
 
     receiver_by_id = {item["id"]: item for item in pavilion["interfaces"]}
     placements = [
-        generate_placement(hard_surface, receiver_by_id[receiver_id], panel)
+        generate_placement(hard_surface, receiver_by_id[receiver_id], panel, shared_placement)
         for receiver_id in profile["receiver_ids"]
     ]
 
@@ -220,12 +313,12 @@ def build():
         raise ValueError("source receiver normals are no longer orthogonal")
 
     negatives = run_negative_controls(
-        hard_surface, pavilion, panel, profile, pavilion_sha, panel_sha
+        hard_surface, pavilion, panel, profile, pavilion_sha, panel_sha, shared_placement
     )
 
     return {
         "result": "PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY",
-        "schema": "axm.building-utility-panel-receiver-placement-evidence/v0.1",
+        "schema": "axm.building-utility-panel-receiver-placement-evidence/v0.2",
         "family_id": profile["family_id"],
         "source_asset_id": pavilion["asset_id"],
         "source_schema": pavilion["schema"],
@@ -238,6 +331,9 @@ def build():
         "transform_policy": profile["transform_policy"],
         "authority": profile["authority"],
         "failure_policy": profile["failure_policy"],
+        "placement_capability": "mike-axiom-mir/axm-sticker-fabric:src/axm_stickers/placement.py",
+        "shared_dependency": shared_identity,
+        "local_rigid_frame_transform_implementation": False,
         "receiver_count": len(placements),
         "receiver_ids": [item["receiver_id"] for item in placements],
         "distinct_placement_digests": len({item["placement_digest"] for item in placements}),
@@ -256,15 +352,24 @@ def build():
             "triangle_count": topology_summary.get("triangle_count"),
         },
         "negative_controls": negatives,
-        "truth_boundary": profile["truth_boundary"],
+        "truth_boundary": (
+            "This family only derives deterministic proof placement of the exact utility-access-panel-001 "
+            "through the exact source-owned Building receiver frames that already pass Hard-Surface fit "
+            "checks. Neutral rigid-frame transform math is consumed directly from the exact pinned "
+            "axm-sticker-fabric placement module; Building retains receiver IDs, tags, fit, mount, "
+            "clearance, shape and acceptance semantics. It does not make panels optional, invent receiver "
+            "frames, alter source geometry, prove runtime attachment, physical retention, collision, "
+            "engineering validity, final materials or visual quality, or define a universal attachment system."
+        ),
     }
 
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--sticker-root", type=Path, default=ROOT / "external/axm-sticker-fabric")
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
-    summary = build()
+    summary = build(args.sticker_root)
     print(json.dumps(summary, indent=2, sort_keys=True))
     if args.output_dir:
         args.output_dir.mkdir(parents=True, exist_ok=True)
