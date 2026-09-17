@@ -1,0 +1,32 @@
+{
+  "schema": "axm.building-utility-panel-clearance-rebind-family/v0.1",
+  "family_id": "axm.building-utility-panel-clearance-rebind-family/v0.1",
+  "source_authority": {
+    "owner": "Building Hard Surface",
+    "pr": 17,
+    "head": "6585c62d9e21cd56244d35817ec40f1f92889c6f",
+    "panel_path": "assets/utility_access_panel_001.json",
+    "panel_blob_sha": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
+    "clearance_policy_path": "assets/utility_access_panel_001_receiver_clearance_envelope.json",
+    "clearance_policy_blob_sha": "99af5195d9f05658668be829d18873b142ab209d",
+    "service_surface_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "service_surface_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919",
+    "required_result": "PASS_SOURCE_OWNED_BUILDING_UTILITY_PANEL_RECEIVER_CLEARANCE_ENVELOPE"
+  },
+  "predecessor": {
+    "panel_path": "assets/utility_access_panel_001.json",
+    "panel_blob_sha": "4da242e35a84b20a80f4acf28146be613624e734",
+    "standoff_m": 0.08,
+    "service_surface_blob_sha": "14037a0fb939104ea319c9ac96fbe9fdaa949a18"
+  },
+  "receiver_ids": ["front-utility-bay", "east-utility-bay"],
+  "required_successor_standoff_m": 0.10,
+  "required_standoff_delta_m": 0.02,
+  "required_physical_body_gap_m": 0.02,
+  "transform_policy": "REBIND_ONLY_RECEIVER_NORMAL_TRANSLATION_FROM_EXACT_SOURCE_SUCCESSOR__PRESERVE_RECEIVER_FRAME_AND_LOCAL_SERVICE_SURFACE",
+  "canonical_output_order": "RECEIVER_ID_LEXICOGRAPHIC",
+  "authority": "DERIVE_ONLY_EXACT_SUCCESSOR_PLACEMENT_AND_SERVICE_SURFACE_WORLD_FRAME",
+  "failure_policy": "FAIL_CLOSED_NO_SOURCE_REWRITE_NO_FRAME_INFERENCE_NO_DELTA_GUESSING_NO_AUTO_RECEIVER_ADOPTION",
+  "automatic_receiver_adoption": false,
+  "truth_boundary": "This family rebinds the existing Building Procedural utility-panel receiver placement to the exact Hard-Surface-owned 0.10 m standoff successor and derives the resulting world-space service-surface frame for the two already-owned receivers. It does not rewrite Hard Surface source authority, adopt production UV/material state, infer fasteners or tooling, authorize Map/Environment/Runtime adoption, establish manufacturing validity, CANON or production readiness."
+}
