@@ -26,7 +26,9 @@ class UtilityPanelReceiverClearanceEnvelopeTests(unittest.TestCase):
             self.assertAlmostEqual(row["panel_body_inner_offset_m"], 0.06, places=12)
             self.assertAlmostEqual(row["panel_body_outer_offset_m"], 0.14, places=12)
             self.assertAlmostEqual(row["plate_outer_offset_m"], 0.04, places=12)
-            self.assertEqual(row["per_side_footprint_margin_m"], [0.05, 0.05])
+            self.assertEqual(len(row["per_side_footprint_margin_m"]), 2)
+            self.assertAlmostEqual(row["per_side_footprint_margin_m"][0], 0.05, places=12)
+            self.assertAlmostEqual(row["per_side_footprint_margin_m"][1], 0.05, places=12)
 
     def test_predecessor_center_standoff_was_not_physical_body_clearance(self):
         receipt = mod.verify()
