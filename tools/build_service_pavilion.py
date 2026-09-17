@@ -55,9 +55,15 @@ def fit_panel(interface, panel):
     residual = max(math.dist(a,b) for a,b in zip(hp,pp)) if hp else 0.0
     if residual > EPS:
         raise ValueError(f"mount-pattern residual {residual}")
-    clearance = panel["standoff_from_receiver_origin_m"] - interface["plate_thickness_m"]
+
+    # The source standoff locates the panel BODY CENTER, not its nearest face.
+    # Preserve the center-offset surplus as a separately named diagnostic, but
+    # source-own physical body clearance from the nearest body face.
+    center_surplus = panel["standoff_from_receiver_origin_m"] - interface["plate_thickness_m"]
+    clearance = center_surplus - 0.5 * panel["body_depth_m"]
     if clearance + EPS < panel["required_body_clearance_beyond_plate_m"]:
-        raise ValueError("insufficient body clearance")
+        raise ValueError("insufficient nearest-body-face clearance")
+
     center = add(interface["origin"], mul(interface["normal"], panel["standoff_from_receiver_origin_m"]))
     return {
         "interface_id": interface["id"],
@@ -66,6 +72,7 @@ def fit_panel(interface, panel):
         "up": interface["up"],
         "mount_pattern_residual_m": residual,
         "footprint_margin_m": [hf[0]-pf[0], hf[1]-pf[1]],
+        "body_center_surplus_beyond_plate_m": center_surplus,
         "body_clearance_beyond_plate_m": clearance,
         "panel_center_local_m": center,
     }
