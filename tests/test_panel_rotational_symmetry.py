@@ -95,10 +95,10 @@ class PanelRotationalSymmetryTests(unittest.TestCase):
         self.assertFalse(receipt["geometry_changed"])
         self.assertFalse(receipt["source_role_adoption_changed"])
 
-    def test_one_millimetre_asymmetric_mount_drift_breaks_reversibility(self):
+    def test_one_millimetre_asymmetric_panel_edit_fails_closed(self):
         panel = mod.load(mod.PANEL)
         panel["mount_points_local_m"][0][0] += 0.001
-        with self.assertRaisesRegex(ValueError, "180-degree reversible"):
+        with self.assertRaisesRegex(ValueError, "named build-result panel source drift"):
             mod.verify(panel=panel)
 
     def test_keyed_claim_is_rejected_without_source_owned_key(self):
