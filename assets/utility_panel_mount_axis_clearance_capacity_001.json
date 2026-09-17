@@ -1,0 +1,34 @@
+{
+  "schema": "axm.building-panel-mount-axis-clearance-capacity/v0.1",
+  "contract_id": "utility-panel-mount-axis-clearance-capacity-001",
+  "applies_to_asset_id": "utility-access-panel-001",
+  "units": "meters",
+  "source_authority": {
+    "hard_surface_pr5_donor_head": "7f518b55c6bab083a3c8bbe368bfe77823f31547",
+    "panel_source_sha256": "df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253",
+    "rotational_symmetry_contract_git_blob": "35fb9d76fad8fd1f8157c3e15a1a3d7c2653bfeb"
+  },
+  "scope": "DERIVED_COMMON_MOUNT_AXIS_PLANAR_CLEARANCE_CAPACITY_WITHOUT_SELECTING_RETENTION_OR_TOOLING_GEOMETRY",
+  "source_coordinate_interpretation": {
+    "mount_point_components": ["local_y_m", "local_z_m"],
+    "footprint_components": ["local_y_span_m", "local_z_span_m"],
+    "orientation_source": "utility-access-panel-001.orientation_contract"
+  },
+  "observed_capacity": {
+    "mount_axis_count": 4,
+    "minimum_axis_to_footprint_boundary_m": 0.05,
+    "minimum_axis_pair_distance_m": 1.0,
+    "closed_common_reservation_tangency_cap_m": 0.05,
+    "limiting_constraint": "FOOTPRINT_EDGE",
+    "strict_no_encroachment_common_radius_condition": "0 <= radius_m < closed_common_reservation_tangency_cap_m",
+    "capacity_invariant_under_supported_180_degree_reversal": true
+  },
+  "reservation_radius_selected": false,
+  "fastener_geometry_established": false,
+  "tooling_envelope_established": false,
+  "retention_method_established": false,
+  "geometry_changed": false,
+  "source_role_adoption_changed": false,
+  "reuse_boundary": "The source-owned four-point panel interface can expose a purely geometric common circular reservation capacity around its existing mount axes without choosing a bolt, screw, pin, driver, tool, retention method or downstream detail. This capacity is bounded by the exact panel footprint and mount-axis spacing. Object's existing 0.01 m fastener-axis reservation is independent evidence and must not be copied into Building by analogy.",
+  "truth_boundary": "This contract proves only the exact planar geometric capacity implied by the current utility-access-panel-001 footprint and mount-axis coordinates. The 0.05 m value is the first closed tangency limit at the panel footprint edge, not a selected clearance radius and not evidence that edge tangency is a valid fabricated or serviceable design. Any strict no-encroachment reservation must remain below that cap. It does not establish fastener geometry, driver or tooling access, holes, threads, retention, sealing, loads, manufacturing tolerances, collision, runtime attachment, gameplay, visual acceptance, CANON or production readiness."
+}
