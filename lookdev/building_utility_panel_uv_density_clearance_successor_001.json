@@ -47,6 +47,18 @@
     "receiver_ids": ["front-utility-bay", "east-utility-bay"],
     "required_receiver_translation_m": 0.02
   },
+  "renderer_receiver": {
+    "accepted_payload_schemas": [
+      "axm.building-utility-panel-uv-density-payload/v0.1",
+      "axm.building-utility-panel-uv-density-clearance-successor-payload/v0.1"
+    ],
+    "successor_requires_historical_geometry_chart_rebound": false,
+    "successor_requires_automatic_receiver_adoption": false,
+    "successor_required_receiver_rebind_count": 2,
+    "payload_schema_rewrite": false,
+    "visual_thresholds_changed": false,
+    "purpose": "The same bounded Godot UV-density observer may receive the historical comparator or this exact owner-bound clearance successor. The successor keeps its own schema and must carry explicit continuity evidence; the renderer must not disguise it as the historical payload."
+  },
   "receiving_policy": "CONSUME_OWNER_SUCCESSOR_REBIND_FOR_MATERIALS_REVIEW_ONLY__PRESERVE_HISTORICAL_CHART_IDENTITY__NO_AUTOMATIC_PRODUCT_ADOPTION",
   "provenance": {
     "authoring": "AXM self-authored deterministic Materials successor-receiving contract",
