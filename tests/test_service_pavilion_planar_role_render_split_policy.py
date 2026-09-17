@@ -37,9 +37,12 @@ class PlanarRoleRenderSplitPolicyTests(unittest.TestCase):
     def test_exact_render_corner_grouping_is_bounded(self):
         intent = self.result["source_intent"]
         self.assertEqual(intent["triangle_corner_count"], 1008)
-        self.assertEqual(intent["equivalence_group_count"], 312)
-        self.assertEqual(intent["storage_group_reduction"], 696)
-        self.assertAlmostEqual(intent["storage_group_reduction_fraction"], 696 / 1008)
+        # Source-owner grouping is intentionally stricter than the current downstream
+        # Godot 312-vertex receiver because the Hard-Surface candidate owns exact
+        # cardinal hard normals. Do not weaken this test to match a consumer result.
+        self.assertEqual(intent["equivalence_group_count"], 604)
+        self.assertEqual(intent["storage_group_reduction"], 404)
+        self.assertAlmostEqual(intent["storage_group_reduction_fraction"], 404 / 1008)
         self.assertGreater(intent["cross_rectangle_group_count"], 0)
         self.assertGreaterEqual(intent["maximum_group_member_count"], 2)
 
