@@ -20,6 +20,8 @@ class UtilityPanelServiceSurfaceChartTests(unittest.TestCase):
         self.assertEqual(receipt["result"], mod.RESULT)
         self.assertEqual(receipt["decision"], mod.DECISION)
         self.assertEqual(receipt["pattern"], mod.PATTERN)
+        self.assertEqual(receipt["directional_sampling_pattern"], mod.DIRECTIONAL_PATTERN)
+        self.assertEqual(receipt["directional_sampling_state"], mod.DIRECTIONAL_STATE)
         self.assertEqual(receipt["source_surface_pr"], 17)
         self.assertEqual(receipt["source_surface_head"], mod.SOURCE_HEAD)
         self.assertEqual(receipt["historical_geometry_pr"], 16)
@@ -35,9 +37,26 @@ class UtilityPanelServiceSurfaceChartTests(unittest.TestCase):
         self.assertLessEqual(receipt["max_source_reconstruction_residual_m"], mod.EPS)
         self.assertLessEqual(receipt["max_metric_projection_residual_m"], mod.EPS)
         self.assertLessEqual(receipt["max_normalized_mapping_residual"], mod.EPS)
+        self.assertEqual(receipt["chart_axis_order"], ["u", "v"])
+        self.assertEqual(receipt["physical_extent_m_by_chart_axis"], [1.1, 1.5])
+        self.assertEqual(receipt["normalized_extent_by_chart_axis"], [1.0, 1.0])
+        self.assertEqual(receipt["metres_per_uv_unit_by_chart_axis"], [1.1, 1.5])
+        self.assertEqual(receipt["shared_directional_density_observer"]["repository"], mod.UC_OBSERVER_REPOSITORY)
+        self.assertEqual(receipt["shared_directional_density_observer"]["pull_request"], mod.UC_OBSERVER_PR)
+        self.assertEqual(receipt["shared_directional_density_observer"]["merge_commit"], mod.UC_OBSERVER_MERGE)
+        self.assertEqual(receipt["shared_directional_density_observer"]["module"], mod.UC_OBSERVER_MODULE)
+        self.assertEqual(receipt["shared_directional_density_observer"]["api"], mod.UC_OBSERVER_API)
+        self.assertFalse(receipt["shared_observer_consumed"])
+        self.assertFalse(receipt["directional_density_measured"])
+        self.assertEqual(receipt["directional_density_consumption_state"], mod.CONSUMPTION_HOLD)
+        self.assertEqual(receipt["required_directional_density_inputs"], mod.REQUIRED_DOWNSTREAM_INPUTS)
+        self.assertFalse(receipt["directional_density_policy_boundary"]["geometry_selects_texel_density_target"])
+        self.assertFalse(receipt["directional_density_policy_boundary"]["geometry_selects_anisotropy_threshold"])
+        self.assertFalse(receipt["directional_density_policy_boundary"]["geometry_selects_atlas_layout"])
         self.assertFalse(receipt["source_geometry_changed"])
         self.assertFalse(receipt["production_uv_adopted"])
         self.assertFalse(receipt["downstream_adoption_authorized"])
+        self.assertEqual(len(receipt["negative_controls"]), 13)
         self.assertTrue(all(value.startswith("REJECTED:") for value in receipt["negative_controls"].values()))
 
     def test_chart_uv_swap_fails_closed(self):
@@ -86,6 +105,36 @@ class UtilityPanelServiceSurfaceChartTests(unittest.TestCase):
         bad = copy.deepcopy(PROFILE)
         bad["authority"]["holds"].remove("atlas placement")
         with self.assertRaisesRegex(ValueError, "authority boundary weakened"):
+            mod.verify_core(bad, copy.deepcopy(DOMAIN))
+
+    def test_directional_metric_extent_drift_fails_closed(self):
+        bad = copy.deepcopy(PROFILE)
+        bad["directional_sampling_interface"]["physical_extent_m_by_chart_axis"][0] += 0.01
+        with self.assertRaisesRegex(ValueError, "physical extent declaration drift"):
+            mod.verify_core(bad, copy.deepcopy(DOMAIN))
+
+    def test_uc_observer_identity_drift_fails_closed(self):
+        bad = copy.deepcopy(PROFILE)
+        bad["directional_sampling_interface"]["shared_observer"]["merge_commit"] = "0" * 40
+        with self.assertRaisesRegex(ValueError, "observer identity drift"):
+            mod.verify_core(bad, copy.deepcopy(DOMAIN))
+
+    def test_fabricated_uc_observer_consumption_fails_closed(self):
+        bad = copy.deepcopy(PROFILE)
+        bad["directional_sampling_interface"]["consumption_gate"]["observer_consumed"] = True
+        with self.assertRaisesRegex(ValueError, "must remain unconsumed"):
+            mod.verify_core(bad, copy.deepcopy(DOMAIN))
+
+    def test_fabricated_directional_density_measurement_fails_closed(self):
+        bad = copy.deepcopy(PROFILE)
+        bad["directional_sampling_interface"]["consumption_gate"]["directional_density_measured"] = True
+        with self.assertRaisesRegex(ValueError, "must remain unmeasured"):
+            mod.verify_core(bad, copy.deepcopy(DOMAIN))
+
+    def test_geometry_density_policy_escalation_fails_closed(self):
+        bad = copy.deepcopy(PROFILE)
+        bad["directional_sampling_interface"]["policy_boundary"]["geometry_selects_texel_density_target"] = True
+        with self.assertRaisesRegex(ValueError, "may not select the product texel-density target"):
             mod.verify_core(bad, copy.deepcopy(DOMAIN))
 
 
