@@ -22,6 +22,8 @@ The dedicated workflow must:
 
 A green workflow may establish only a bounded Runtime characterization. It does not transfer Materials, Art Direction, Visual QA, Technical Art, Environment, collision, gameplay, CANON, or production acceptance across receiving identities.
 
+The workflow binds its payload and receipts to the **actual checked-out Runtime commit** at execution time; this document intentionally does not freeze a guessed future Runtime head.
+
 ## Expected decision boundary
 
 If the exact-head workflow is green, the intended scoped state is:
