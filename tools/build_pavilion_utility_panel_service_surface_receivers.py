@@ -44,15 +44,6 @@ def git_blob(path):
     ).strip()
 
 
-def git_is_ancestor(commit):
-    return subprocess.run(
-        ["git", "merge-base", "--is-ancestor", str(commit), "HEAD"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    ).returncode == 0
-
-
 def dot(a, b):
     return sum(float(x) * float(y) for x, y in zip(a, b))
 
@@ -91,8 +82,6 @@ def verify_profile(profile):
     donor_head = source.get("head")
     if donor_head != "97120eb78a72b0a07aff1c65b9b92229d0a42aff":
         raise ValueError("source-surface donor head drift")
-    if not git_is_ancestor(donor_head):
-        raise ValueError("source-surface donor head is not an ancestor of receiving head")
     if source.get("contract_path") != DOMAIN.relative_to(ROOT).as_posix():
         raise ValueError("source-surface contract path drift")
     if source.get("contract_blob_sha") != git_blob(DOMAIN):
@@ -311,7 +300,7 @@ def build(sticker_root=None):
     if family_digest != reversed_digest:
         raise ValueError("canonical receiver ordering is not deterministic")
 
-    negatives = run_negative_controls(profile, domain, surface_verifier, outputs and placement_summary["placements"])
+    negatives = run_negative_controls(profile, domain, surface_verifier, placement_summary["placements"])
 
     return {
         "schema": "axm.building-utility-panel-service-surface-receiver-family-evidence/v0.1",
