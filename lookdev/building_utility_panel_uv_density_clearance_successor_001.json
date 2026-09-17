@@ -1,0 +1,74 @@
+{
+  "schema": "axm.building-utility-panel-uv-density-clearance-successor-review/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "material_role": "utility_panel_ochre",
+  "historical_materials_uv_evidence": {
+    "owner": "Materials / LookDev",
+    "pr": 3,
+    "head": "c12766ecdc3e47a6d422a5af67b4cd28ec68c1ac",
+    "contract_path": "lookdev/building_utility_panel_uv_density_001.json",
+    "purpose": "historical metric/UV lookdev comparator only; preserved rather than silently rebound"
+  },
+  "historical_geometry_chart": {
+    "owner": "Geometry / Topology",
+    "pr": 16,
+    "head": "79e09f68a05770eb6dabbbbbb3b008fc8e050aa0",
+    "git_blob_sha": "56f1964b3360e371ac8c39d547cb300cd14fb997",
+    "adopted_for_successor": false,
+    "purpose": "historical metric-to-UV comparator; Geometry has not rebound this exact chart identity to the clearance successor"
+  },
+  "source_successor": {
+    "owner": "Building Hard Surface",
+    "pr": 17,
+    "evidence_head": "6585c62d9e21cd56244d35817ec40f1f92889c6f",
+    "panel_git_blob_sha": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
+    "service_surface_git_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919",
+    "required_standoff_m": 0.10,
+    "required_physical_body_gap_m": 0.02
+  },
+  "procedural_rebind": {
+    "owner": "Procedural Design",
+    "pr": 4,
+    "head": "0d019e64a9788c05e259e8dde50498e9392469d1",
+    "required_result": "PASS_BOUNDED_BUILDING_UTILITY_PANEL_CLEARANCE_REBIND_FAMILY",
+    "required_decision": "PASS_DERIVED_CLEARANCE_SUCCESSOR_REBIND_ONLY__NO_SOURCE_REWRITE_OR_RECEIVER_ADOPTION",
+    "automatic_receiver_adoption": false
+  },
+  "continuity_requirements": {
+    "local_reference_frame_unchanged": true,
+    "metric_domain_unchanged": true,
+    "primary_extent_m": 1.10,
+    "secondary_extent_m": 1.50,
+    "area_m2": 1.65,
+    "review_texel_density_px_per_m": 320,
+    "review_active_region_px": [352, 480],
+    "review_checker_period_m": 0.05,
+    "receiver_ids": ["front-utility-bay", "east-utility-bay"],
+    "required_receiver_translation_m": 0.02
+  },
+  "receiving_policy": "CONSUME_OWNER_SUCCESSOR_REBIND_FOR_MATERIALS_REVIEW_ONLY__PRESERVE_HISTORICAL_CHART_IDENTITY__NO_AUTOMATIC_PRODUCT_ADOPTION",
+  "provenance": {
+    "authoring": "AXM self-authored deterministic Materials successor-receiving contract",
+    "external_textures": [],
+    "external_material_assets": [],
+    "reason": "The Hard-Surface clearance successor changes world placement while preserving the local service-surface metric domain. Materials therefore re-runs the existing physical-density lookdev on the explicit Procedural successor rebind instead of silently transferring predecessor evidence."
+  },
+  "truth_boundary": {
+    "source_geometry_rewritten": false,
+    "procedural_rebind_rederived_by_materials": false,
+    "geometry_chart_rebound": false,
+    "production_uv_adopted": false,
+    "production_texel_density_adopted": false,
+    "atlas_padding_selected": false,
+    "production_texture_authored": false,
+    "normal_map_authored": false,
+    "weathering_authored": false,
+    "runtime_storage_selected": false,
+    "environment_adoption": false,
+    "art_direction_acceptance": false,
+    "visual_qa_acceptance": false,
+    "canon": false,
+    "production_ready": false
+  }
+}
