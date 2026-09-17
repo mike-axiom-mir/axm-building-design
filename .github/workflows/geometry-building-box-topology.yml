@@ -1,0 +1,95 @@
+name: Geometry building interpenetration evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/geometry-building-box-topology-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      HARD_SURFACE_SOURCE_HEAD: 57f66b1245812f0c3d402232a046b86c0b5c72d8
+      PREDECESSOR_GEOMETRY_HEAD: 407d3aaf36c26829a64d964143e34587df6d8ea1
+    steps:
+      - name: Checkout exact Building Geometry head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bind exact lineage and unchanged source owner files
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$HARD_SURFACE_SOURCE_HEAD" HEAD
+          git merge-base --is-ancestor "$PREDECESSOR_GEOMETRY_HEAD" HEAD
+          git diff --exit-code "$HARD_SURFACE_SOURCE_HEAD" HEAD -- \
+            assets/service_pavilion_001.json \
+            assets/utility_access_panel_001.json \
+            tools/build_service_pavilion.py
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Rebuild inherited source-owned Hard-Surface evidence
+        run: >-
+          python tools/build_service_pavilion.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-001
+
+      - name: Build exact Geometry interpenetration evidence
+        run: >-
+          python tools/build_service_pavilion_interpenetration_candidate.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-interpenetration-001
+
+      - name: Truth-gate exact Geometry result
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('evidence/service-pavilion-interpenetration-001')
+          data = json.loads((root / 'interpenetration-evidence.json').read_text())
+          assert data['result'] == 'PASS_EXACT_UNION_HEADER_SEGMENTATION_REMOVES_ALL_POSITIVE_VOLUME_INTERPENETRATIONS'
+          assert data['exact_geometry_head'] == os.environ['EXACT_HEAD']
+          assert data['hard_surface_source_head'] == os.environ['HARD_SURFACE_SOURCE_HEAD']
+          assert data['predecessor_geometry_head'] == os.environ['PREDECESSOR_GEOMETRY_HEAD']
+          assert data['source_box_count'] == 19
+          assert data['candidate_box_count'] == 23
+          assert data['source_positive_volume_intersection_count'] == 4
+          assert data['source_positive_overlap_volume_m3'] == 0.02592
+          assert data['candidate_positive_volume_intersection_count'] == 0
+          assert data['removed_double_covered_volume_m3'] == 0.02592
+          assert data['union_equivalence']['equivalent'] is True
+          assert data['union_equivalence']['volume_residual_m3'] == 0.0
+          assert data['candidate_box_topology']['boundary_edge_count'] == 0
+          assert data['candidate_box_topology']['nonmanifold_edge_count'] == 0
+          assert data['candidate_box_topology']['orientation_conflict_edge_count'] == 0
+          assert data['candidate_box_topology']['outward_triangle_count'] == 276
+          assert data['candidate_box_topology']['inward_triangle_count'] == 0
+          assert data['negative_controls']['front_header_segment_overlap_plus_0p001m']['accepted'] is False
+          assert data['negative_controls']['front_header_segment_gap_plus_0p001m']['accepted'] is False
+          assert (root / 'exact-head.txt').read_text().strip() == os.environ['EXACT_HEAD']
+          PY
+
+      - name: Retain exact Geometry evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-interpenetration-001-${{ env.EXACT_HEAD }}
+          path: evidence/service-pavilion-interpenetration-001
+          if-no-files-found: error
