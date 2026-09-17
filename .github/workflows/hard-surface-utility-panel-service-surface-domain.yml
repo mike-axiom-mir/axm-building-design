@@ -1,0 +1,74 @@
+name: Hard Surface Building utility-panel service-surface domain evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-utility-panel-surface-domain-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Bind exact head and unchanged panel source
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD:assets/utility_access_panel_001.json)" = "4da242e35a84b20a80f4acf28146be613624e734"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Run full Building repository suite
+        run: python -m unittest discover -s tests -v
+      - name: Build exact retained service-surface-domain evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          mkdir -p evidence/utility-panel-service-surface-domain-001
+          python tools/verify_utility_panel_service_surface_domain.py \
+            --output evidence/utility-panel-service-surface-domain-001/receipt.json
+          cp assets/utility_access_panel_001.json evidence/utility-panel-service-surface-domain-001/source-panel.json
+          cp assets/utility_access_panel_001_service_surface_domain.json evidence/utility-panel-service-surface-domain-001/source-surface-domain.json
+          git rev-parse HEAD > evidence/utility-panel-service-surface-domain-001/exact-head.txt
+          git rev-parse HEAD:assets/utility_access_panel_001.json > evidence/utility-panel-service-surface-domain-001/source-panel-blob.txt
+      - name: Assert exact bounded result and authority boundary
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('evidence/utility-panel-service-surface-domain-001')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          assert (root / 'exact-head.txt').read_text().strip() == os.environ['AXM_EXACT_HEAD']
+          assert receipt['result'] == 'PASS_SOURCE_OWNED_BUILDING_UTILITY_PANEL_OUTER_SERVICE_SURFACE_METRIC_DOMAIN'
+          assert receipt['surface_id'] == 'utility_panel_outer_service_surface'
+          assert receipt['source_panel_blob_sha'] == '4da242e35a84b20a80f4acf28146be613624e734'
+          assert receipt['metric_domain']['primary_extent_m'] == 1.1
+          assert receipt['metric_domain']['secondary_extent_m'] == 1.5
+          assert receipt['metric_domain']['area_m2'] == 1.6500000000000001 or receipt['metric_domain']['area_m2'] == 1.65
+          assert receipt['source_face_structure'] == {'vertex_count': 4, 'triangle_count': 2}
+          assert receipt['source_geometry_changed'] is False
+          assert receipt['uv_authored_or_selected'] is False
+          assert receipt['material_authored_or_selected'] is False
+          assert receipt['downstream_adoption_authorized'] is False
+          assert receipt['reusable_observation'] == 'MANUFACTURED_SERVICE_SURFACE_SOURCE_OWNS_IDENTITY_FRAME_AND_METRIC_DOMAIN_BEFORE_SPATIAL_PARAMETERIZATION'
+          PY
+      - name: Upload retained evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-service-surface-domain-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/utility-panel-service-surface-domain-001
+          if-no-files-found: error
+          retention-days: 30

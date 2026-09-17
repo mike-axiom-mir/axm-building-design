@@ -1,0 +1,56 @@
+{
+  "schema": "axm.building-utility-panel-service-surface-domain/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "units": "meters",
+  "source_panel": {
+    "path": "assets/utility_access_panel_001.json",
+    "git_blob_sha": "4da242e35a84b20a80f4acf28146be613624e734",
+    "schema": "axm.building-utility-panel/v0.1"
+  },
+  "face_selector": "LOCAL_POSITIVE_X_OUTER_FACE",
+  "reference_frame": {
+    "origin_local_m": [0.04, 0.0, 0.0],
+    "primary_axis_local": [0.0, 1.0, 0.0],
+    "secondary_axis_local": [0.0, 0.0, 1.0],
+    "outward_axis_local": [1.0, 0.0, 0.0],
+    "handedness_contract": "cross(primary_axis_local, secondary_axis_local) == outward_axis_local"
+  },
+  "metric_domain": {
+    "primary_extent_m": 1.10,
+    "secondary_extent_m": 1.50,
+    "area_m2": 1.65,
+    "corner_positions_local_m": [
+      [0.04, -0.55, -0.75],
+      [0.04, 0.55, -0.75],
+      [0.04, 0.55, 0.75],
+      [0.04, -0.55, 0.75]
+    ]
+  },
+  "source_face_structure": {
+    "vertex_count": 4,
+    "triangle_count": 2,
+    "derived_from_proof_box": true
+  },
+  "authority": {
+    "owner": "Building Hard Surface",
+    "source_owned_facts": [
+      "manufactured service-surface identity",
+      "local planar reference frame",
+      "physical metric extent",
+      "outward face orientation"
+    ],
+    "downstream_owned_facts": [
+      "UV mapping",
+      "texel density",
+      "atlas placement",
+      "material response",
+      "texture payload",
+      "normal or tangent transport",
+      "runtime storage",
+      "environment adoption",
+      "visual acceptance"
+    ]
+  },
+  "truth_boundary": "This contract source-owns only the exact outer +X planar service surface already implied by utility-access-panel-001 proof geometry. It does not add geometry, choose UVs or materials, authorize texture placement, alter receiver fit, establish manufacturing or sealing, or imply downstream adoption, CANON or production readiness."
+}
