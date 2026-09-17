@@ -1,0 +1,146 @@
+name: Geometry Building utility-panel review-atlas sampling boundary evidence
+
+on:
+  pull_request:
+    paths:
+      - "geometry/utility_access_panel_review_atlas_directional_sampling_001.json"
+      - "tools/verify_utility_panel_review_atlas_directional_sampling.py"
+      - "tests/test_utility_panel_review_atlas_directional_sampling.py"
+      - ".github/workflows/geometry-building-utility-panel-review-atlas-sampling.yml"
+  push:
+    branches:
+      - studio/geometry-utility-panel-service-surface-chart-clearance-rebind-001
+    paths:
+      - "geometry/utility_access_panel_review_atlas_directional_sampling_001.json"
+      - "tools/verify_utility_panel_review_atlas_directional_sampling.py"
+      - "tests/test_utility_panel_review_atlas_directional_sampling.py"
+      - ".github/workflows/geometry-building-utility-panel-review-atlas-sampling.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      MATERIALS_HEAD: fe4fdfb2033b0c3c2705a532b9e6b610a3d119c1
+      MATERIALS_BASE_BLOB: a35ed0b214d7d4443127decabe06c8b05e8bc49b
+      MATERIALS_SUCCESSOR_BLOB: 61ba08fcef44fd685c60c833d39ec28171e78859
+      MATERIALS_OBSERVER_BLOB: 7edaaa1550a21f482b27436a00d417ada4e90b35
+      UC_MERGE: aa53ee8aa803c19524b7edbef6250bf6ed9336c0
+      UC_MODULE_BLOB: bc7aa2ffc2c598d75a78739c70fd349138f511e2
+    steps:
+      - name: Checkout exact Geometry head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 1
+
+      - name: Checkout exact Materials review owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.MATERIALS_HEAD }}
+          path: materials-donor
+          fetch-depth: 1
+
+      - name: Checkout exact merged UC GLB observer
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-universal-creation
+          ref: ${{ env.UC_MERGE }}
+          path: uc-donor
+          fetch-depth: 1
+
+      - name: Verify exact donor identities
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          test "$(git -C materials-donor rev-parse HEAD)" = "$MATERIALS_HEAD"
+          test "$(git -C materials-donor rev-parse HEAD:lookdev/building_utility_panel_uv_density_001.json)" = "$MATERIALS_BASE_BLOB"
+          test "$(git -C materials-donor rev-parse HEAD:lookdev/building_utility_panel_uv_density_clearance_successor_001.json)" = "$MATERIALS_SUCCESSOR_BLOB"
+          test "$(git -C materials-donor rev-parse HEAD:lookdev-utility-panel-uv-proof/observe.gd)" = "$MATERIALS_OBSERVER_BLOB"
+          test "$(git -C uc-donor rev-parse HEAD)" = "$UC_MERGE"
+          test "$(git -C uc-donor rev-parse HEAD:src/axm_uc/material_uv_evidence.py)" = "$UC_MODULE_BLOB"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile and run complete Building suite
+        run: |
+          python -m compileall -q tools tests
+          python -m unittest discover -s tests -v
+
+      - name: Build exact owner-bound review sampling evidence
+        run: |
+          mkdir -p evidence/utility-panel-review-atlas-directional-sampling-001
+          python tools/verify_utility_panel_review_atlas_directional_sampling.py \
+            --exact-head "$EXACT_HEAD" \
+            --materials-root materials-donor \
+            --uc-root uc-donor \
+            --output evidence/utility-panel-review-atlas-directional-sampling-001/receipt.json
+
+      - name: Truth-gate review-space measurement and GLB non-transfer
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads(Path("evidence/utility-panel-review-atlas-directional-sampling-001/receipt.json").read_text())
+          assert r["exact_geometry_head"] == os.environ["EXACT_HEAD"], r
+          assert r["result"] == "PASS_BUILDING_REVIEW_ATLAS_DIRECTIONAL_SAMPLING_INTERFACE__HOLD_EMBEDDED_GLB_OBSERVER", r
+          assert r["decision"] == "PASS_OWNER_BOUND_REVIEW_SAMPLING_MEASUREMENT__NO_TRANSFER_TO_UC_GLTF_EVIDENCE_OR_POLICY_ADOPTION", r
+          assert r["pattern"] == "OWNER_BOUND_REVIEW_ATLAS_ACTIVE_REGION_TO_PHYSICAL_UV_SAMPLING_WITHOUT_GLTF_EVIDENCE_TRANSFER", r
+          assert r["atlas_size_px"] == [512,512], r
+          assert r["active_region_px"] == [352,480], r
+          assert r["active_uv_span"] == [0.6875,0.9375], r
+          assert r["physical_extent_m_by_chart_axis"] == [1.1,1.5], r
+          assert r["directional_texels_per_m_by_chart_axis"] == [320.0,320.0], r
+          assert abs(r["anisotropy_ratio"]-1.0) <= 1e-12, r
+          assert abs(r["negative_full_square_texels_per_m_by_chart_axis"][0]-(512/1.1)) <= 1e-9, r
+          assert abs(r["negative_full_square_texels_per_m_by_chart_axis"][1]-(512/1.5)) <= 1e-9, r
+          assert abs(r["negative_full_square_anisotropy_ratio"]-(15/11)) <= 1e-12, r
+          assert r["materials_workflow_run"] == 35258376439, r
+          assert r["materials_artifact_id"] == 10512583778, r
+          assert r["materials_artifact_sha256"] == "0a0dc8dfe8b31f2ab27d0f431a0f9afe2b4a3854ab6e796e959cc9b7154e2a70", r
+          assert r["review_density_is_materials_owned"] is True, r
+          assert r["uc_glb_observer_consumed"] is False, r
+          assert r["embedded_glb_directional_density_measured"] is False, r
+          assert r["source_geometry_changed"] is False, r
+          assert r["uv_chart_changed"] is False, r
+          assert r["production_uv_adopted"] is False, r
+          assert r["production_texel_density_adopted"] is False, r
+          assert r["downstream_adoption_authorized"] is False, r
+          assert len(r["negative_controls"]) == 9, r
+          assert all(v.startswith("REJECTED:") for v in r["negative_controls"].values()), r
+          PY
+
+      - name: Retain exact evidence bundle
+        if: matrix.python-version == '3.11'
+        run: |
+          cp geometry/utility_access_panel_review_atlas_directional_sampling_001.json \
+            evidence/utility-panel-review-atlas-directional-sampling-001/contract.json
+          cp geometry/utility_access_panel_service_surface_chart_001.json \
+            evidence/utility-panel-review-atlas-directional-sampling-001/current-geometry-chart.json
+          cp materials-donor/lookdev/building_utility_panel_uv_density_001.json \
+            evidence/utility-panel-review-atlas-directional-sampling-001/materials-base-review-contract.json
+          cp materials-donor/lookdev/building_utility_panel_uv_density_clearance_successor_001.json \
+            evidence/utility-panel-review-atlas-directional-sampling-001/materials-successor-review-contract.json
+          printf '%s\n' "$EXACT_HEAD" > evidence/utility-panel-review-atlas-directional-sampling-001/exact-geometry-head.txt
+          printf '%s\n' "$MATERIALS_HEAD" > evidence/utility-panel-review-atlas-directional-sampling-001/materials-head.txt
+          printf '%s\n' "$UC_MERGE" > evidence/utility-panel-review-atlas-directional-sampling-001/uc-merge.txt
+
+      - name: Upload retained evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-review-atlas-directional-sampling-${{ env.EXACT_HEAD }}
+          path: evidence/utility-panel-review-atlas-directional-sampling-001
+          if-no-files-found: error
+          retention-days: 30
