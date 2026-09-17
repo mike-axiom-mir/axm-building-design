@@ -1,0 +1,90 @@
+name: Building panel rotational-symmetry evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-panel-rotational-symmetry-002
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Bind exact current Building source lineage
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git merge-base --is-ancestor a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3 HEAD
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Test complete Building receiving suite
+        run: python -m unittest discover -s tests -v
+      - name: Build exact current-and-legacy source-role rotational-symmetry evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/verify_panel_rotational_symmetry.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/utility-panel-rotational-symmetry-004
+      - name: Verify retained exact binding and source-role invariance
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('evidence/utility-panel-rotational-symmetry-004')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          exact = os.environ['AXM_EXACT_HEAD']
+          assert receipt['exact_hard_surface_head'] == exact
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          assert receipt['source_authority']['hard_surface_pr2_head'] == 'a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3'
+          assert receipt['source_authority']['current_emission_policy_schema'] == 'axm.building-current-emission-policy/v0.1'
+          assert receipt['source_authority']['current_emission_policy_sha256'] == 'c26f25c789404919bdb8e40f35d517c444e35f0a7aaf9358ad399296a7afe47a'
+          assert receipt['source_role_policy']['selection_policy'] == 'CURRENT_SOURCE_IS_NAMED__CONSUMER_REBIND_REQUIRED__NO_SILENT_DEFAULT_REWRITE'
+          assert receipt['source_role_policy']['current_source_variant_id'] == 'header-segmented-23'
+          assert receipt['source_role_policy']['legacy_compatibility_variant_id'] == 'base-closed-outward-19'
+          assert receipt['result'] == 'PASS_BUILDING_PANEL_180_DEGREE_REVERSIBILITY_ACROSS_CURRENT_AND_LEGACY_SOURCE_ROLES'
+          assert receipt['named_build_result']['schema'] == 'axm.building-build-result/v0.1'
+          assert receipt['named_build_result']['role'] == 'LEGACY_COMPATIBILITY_INTERFACE'
+          assert receipt['named_build_result']['legacy_output_count_observed'] == 9
+          assert receipt['named_build_result']['topology_object_count'] == 19
+          assert receipt['source_mount_pattern_180_residual_m'] == 0.0
+          assert receipt['box_proof_geometry_180_residual_m'] == 0.0
+          assert receipt['source_role_adoption_changed'] is False
+          roles = receipt['representation_role_results']
+          assert [(row['role'], row['variant_id']) for row in roles] == [
+              ('CURRENT_SOURCE', 'header-segmented-23'),
+              ('LEGACY_COMPATIBILITY', 'base-closed-outward-19'),
+          ]
+          assert [(row['emitted_box_count'], row['vertex_count'], row['triangle_count']) for row in roles] == [(23, 184, 276), (19, 152, 228)]
+          assert [row['positive_volume_intersection_count'] for row in roles] == [0, 4]
+          assert [row['historical_emission_contract_status'] for row in roles] == ['OPT_IN_ONLY', 'CURRENT_DEFAULT_UNCHANGED']
+          for representation in roles:
+              assert representation['receiver_mount_residual_max_m'] == 0.0
+              assert len(representation['receiver_reversibility']) == 2
+              for row in representation['receiver_reversibility']:
+                  assert row['zero_degree_mount_pattern_residual_m'] == 0.0
+                  assert row['one_eighty_degree_unordered_mount_pattern_residual_m'] == 0.0
+          comparison = receipt['current_legacy_comparison']
+          assert comparison['occupied_union_volume_residual_m3'] == 0.0
+          assert comparison['receiver_ids_equal'] is True
+          assert comparison['receiver_fit_residual_equal'] is True
+          assert comparison['current_source_positive_volume_intersections'] == 0
+          assert comparison['legacy_positive_volume_intersections'] == 4
+          assert all(value.startswith('REJECTED:') for value in receipt['negative_controls'].values())
+          PY
+      - name: Retain evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: utility-panel-rotational-symmetry-004-evidence
+          path: evidence/utility-panel-rotational-symmetry-004
+          if-no-files-found: error

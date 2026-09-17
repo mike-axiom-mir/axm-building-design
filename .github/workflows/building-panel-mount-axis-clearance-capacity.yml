@@ -1,0 +1,82 @@
+name: Building panel mount-axis clearance-capacity evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-panel-rotational-symmetry-002
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Bind exact prior Hard-Surface panel interface lineage
+        run: |
+          echo "AXM_EXACT_HEAD=${{ github.event.pull_request.head.sha || github.sha }}" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git merge-base --is-ancestor 7f518b55c6bab083a3c8bbe368bfe77823f31547 HEAD
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Test complete Building suite
+        run: python -m unittest discover -s tests -v
+      - name: Build exact mount-axis clearance-capacity evidence
+        if: matrix.python-version == '3.11'
+        run: python tools/verify_panel_mount_axis_clearance_capacity.py --exact-head "$AXM_EXACT_HEAD" --output-dir evidence/utility-panel-mount-axis-clearance-capacity-001
+      - name: Verify retained source-owned capacity boundary
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('evidence/utility-panel-mount-axis-clearance-capacity-001')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          exact = os.environ['AXM_EXACT_HEAD']
+          assert receipt['exact_hard_surface_head'] == exact
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          assert receipt['result'] == 'PASS_SOURCE_OWNED_BUILDING_PANEL_MOUNT_AXIS_CLEARANCE_CAPACITY'
+          assert receipt['source_authority']['hard_surface_pr5_donor_head'] == '7f518b55c6bab083a3c8bbe368bfe77823f31547'
+          assert receipt['source_authority']['panel_source_sha256'] == 'df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253'
+          assert receipt['source_authority']['rotational_symmetry_contract_git_blob_observed'] == '35fb9d76fad8fd1f8157c3e15a1a3d7c2653bfeb'
+          cap = receipt['capacity']
+          assert cap['mount_axis_count'] == 4
+          assert abs(cap['minimum_axis_to_footprint_boundary_m'] - 0.05) < 1e-9
+          assert abs(cap['minimum_axis_pair_distance_m'] - 1.0) < 1e-9
+          assert abs(cap['pairwise_tangency_cap_m'] - 0.5) < 1e-9
+          assert abs(cap['closed_common_reservation_tangency_cap_m'] - 0.05) < 1e-9
+          assert cap['limiting_constraint'] == 'FOOTPRINT_EDGE'
+          assert receipt['supported_180_degree_reversal']['closed_cap_residual_m'] == 0.0
+          below = receipt['boundary_probes']['one_mm_below_closed_cap']
+          tangent = receipt['boundary_probes']['at_closed_tangency_cap']
+          above = receipt['boundary_probes']['one_mm_above_closed_cap']
+          assert below['strictly_inside_footprint'] is True
+          assert tangent['within_closed_footprint'] is True
+          assert tangent['strictly_inside_footprint'] is False
+          assert tangent['pairwise_nonoverlap'] is True
+          assert above['within_closed_footprint'] is False
+          assert above['pairwise_nonoverlap'] is True
+          assert receipt['reservation_radius_selected'] is False
+          assert receipt['fastener_geometry_established'] is False
+          assert receipt['tooling_envelope_established'] is False
+          assert receipt['retention_method_established'] is False
+          assert receipt['geometry_changed'] is False
+          assert all(value.startswith('REJECTED:') for value in receipt['negative_controls'].values())
+          PY
+      - name: Retain evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: utility-panel-mount-axis-clearance-capacity-001-evidence
+          path: evidence/utility-panel-mount-axis-clearance-capacity-001
+          if-no-files-found: error
