@@ -373,7 +373,7 @@ def build(sticker_root=None):
         raise ValueError("Hard-Surface capacity contract/panel SHA-256 disagreement")
 
     surface_builder = load_module(SURFACE_BUILDER, "axm_building_service_surface_receiver_family")
-    surface_summary = surface_builder.build(sticker_root)
+    surface_summary, _, _ = surface_builder.build(sticker_root)
     required_surface = profile["receiver_surface_family"]
     if surface_summary.get("result") != required_surface["required_result"]:
         raise ValueError("receiver surface-family prerequisite result drift")
