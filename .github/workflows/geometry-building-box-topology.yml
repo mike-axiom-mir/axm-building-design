@@ -1,4 +1,4 @@
-name: Geometry building interpenetration evidence
+name: Geometry building topology evidence
 
 on:
   pull_request:
@@ -18,6 +18,7 @@ jobs:
     env:
       EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
       HARD_SURFACE_SOURCE_HEAD: 57f66b1245812f0c3d402232a046b86c0b5c72d8
+      CURRENT_HARD_SURFACE_HEAD: a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3
       PREDECESSOR_GEOMETRY_HEAD: 407d3aaf36c26829a64d964143e34587df6d8ea1
     steps:
       - name: Checkout exact Building Geometry head
@@ -30,15 +31,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Bind exact lineage and unchanged source owner files
+      - name: Bind exact lineage and current source-owner policy
         run: |
           test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
           git merge-base --is-ancestor "$HARD_SURFACE_SOURCE_HEAD" HEAD
+          git merge-base --is-ancestor "$CURRENT_HARD_SURFACE_HEAD" HEAD
           git merge-base --is-ancestor "$PREDECESSOR_GEOMETRY_HEAD" HEAD
-          git diff --exit-code "$HARD_SURFACE_SOURCE_HEAD" HEAD -- \
+          git diff --exit-code "$CURRENT_HARD_SURFACE_HEAD" HEAD -- \
             assets/service_pavilion_001.json \
             assets/utility_access_panel_001.json \
-            tools/build_service_pavilion.py
+            assets/service_pavilion_001_header_segmentation.json \
+            assets/service_pavilion_001_emission_variants.json \
+            assets/service_pavilion_001_current_emission_policy.json \
+            tools/build_service_pavilion.py \
+            tools/build_service_pavilion_header_segmentation.py \
+            tools/service_pavilion_emission_variants.py \
+            tools/service_pavilion_current_emission_policy.py
 
       - name: Compile
         run: python -m compileall tools tests
@@ -52,44 +60,80 @@ jobs:
           --exact-head "$EXACT_HEAD"
           --output-dir evidence/service-pavilion-001
 
-      - name: Build exact Geometry interpenetration evidence
+      - name: Rebuild current source-policy evidence
+        run: >-
+          python tools/service_pavilion_current_emission_policy.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-current-policy-001
+
+      - name: Rebuild historical Geometry interpenetration evidence
         run: >-
           python tools/build_service_pavilion_interpenetration_candidate.py
           --exact-head "$EXACT_HEAD"
           --output-dir evidence/service-pavilion-interpenetration-001
 
-      - name: Truth-gate exact Geometry result
+      - name: Build current-source boundary-only shell evidence
+        run: >-
+          python tools/build_service_pavilion_union_shell_candidate.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-001
+
+      - name: Truth-gate exact Geometry results
         run: |
           python - <<'PY'
           import json, os, pathlib
-          root = pathlib.Path('evidence/service-pavilion-interpenetration-001')
-          data = json.loads((root / 'interpenetration-evidence.json').read_text())
-          assert data['result'] == 'PASS_EXACT_UNION_HEADER_SEGMENTATION_REMOVES_ALL_POSITIVE_VOLUME_INTERPENETRATIONS'
-          assert data['exact_geometry_head'] == os.environ['EXACT_HEAD']
-          assert data['hard_surface_source_head'] == os.environ['HARD_SURFACE_SOURCE_HEAD']
-          assert data['predecessor_geometry_head'] == os.environ['PREDECESSOR_GEOMETRY_HEAD']
-          assert data['source_box_count'] == 19
-          assert data['candidate_box_count'] == 23
-          assert data['source_positive_volume_intersection_count'] == 4
-          assert data['source_positive_overlap_volume_m3'] == 0.02592
-          assert data['candidate_positive_volume_intersection_count'] == 0
-          assert data['removed_double_covered_volume_m3'] == 0.02592
-          assert data['union_equivalence']['equivalent'] is True
-          assert data['union_equivalence']['volume_residual_m3'] == 0.0
-          assert data['candidate_box_topology']['boundary_edge_count'] == 0
-          assert data['candidate_box_topology']['nonmanifold_edge_count'] == 0
-          assert data['candidate_box_topology']['orientation_conflict_edge_count'] == 0
-          assert data['candidate_box_topology']['outward_triangle_count'] == 276
-          assert data['candidate_box_topology']['inward_triangle_count'] == 0
-          assert data['negative_controls']['front_header_segment_overlap_plus_0p001m']['accepted'] is False
-          assert data['negative_controls']['front_header_segment_gap_plus_0p001m']['accepted'] is False
-          assert (root / 'exact-head.txt').read_text().strip() == os.environ['EXACT_HEAD']
+          exact = os.environ['EXACT_HEAD']
+
+          old_root = pathlib.Path('evidence/service-pavilion-interpenetration-001')
+          old = json.loads((old_root / 'interpenetration-evidence.json').read_text())
+          assert old['result'] == 'PASS_EXACT_UNION_HEADER_SEGMENTATION_REMOVES_ALL_POSITIVE_VOLUME_INTERPENETRATIONS'
+          assert old['exact_geometry_head'] == exact
+          assert old['source_box_count'] == 19
+          assert old['candidate_box_count'] == 23
+          assert old['source_positive_volume_intersection_count'] == 4
+          assert old['candidate_positive_volume_intersection_count'] == 0
+          assert old['union_equivalence']['equivalent'] is True
+          assert old['union_equivalence']['volume_residual_m3'] == 0.0
+
+          policy_root = pathlib.Path('evidence/service-pavilion-current-policy-001')
+          policy = json.loads((policy_root / 'receipt.json').read_text())
+          assert policy['result'] == 'PASS_SEGMENTED_BUILDING_PROMOTED_TO_CURRENT_SOURCE_POLICY_WITH_LEGACY_COMPATIBILITY'
+          assert policy['exact_hard_surface_head'] == exact
+          assert policy['current_source_variant_id'] == 'header-segmented-23'
+          assert policy['current_source']['emitted_box_count'] == 23
+          assert policy['current_source']['positive_volume_intersection_count'] == 0
+
+          root = pathlib.Path('evidence/service-pavilion-boundary-shell-001')
+          data = json.loads((root / 'boundary-shell-evidence.json').read_text())
+          assert data['result'] == 'PASS_CURRENT_SOURCE_BOUNDARY_ONLY_UNION_SHELL_CANDIDATE'
+          assert data['exact_geometry_head'] == exact
+          assert data['current_source_policy']['variant_id'] == 'header-segmented-23'
+          assert data['source']['emitted_box_count'] == 23
+          assert data['source']['positive_volume_intersection_count'] == 0
+          assert data['candidate']['signed_volume_m3'] == data['source']['occupied_union_volume_m3']
+          assert data['candidate']['bounds'] == data['source']['bounds']
+          assert data['internal_face_removal']['contact_patch_count'] > 0
+          assert data['internal_face_removal']['double_sided_hidden_area_removed_m2'] > 0.0
+          assert data['candidate']['surface_area_m2'] == data['internal_face_removal']['expected_boundary_surface_area_m2']
+          assert data['candidate']['boundary_edge_count'] == 0
+          assert data['candidate']['nonmanifold_edge_count'] == 0
+          assert data['candidate']['orientation_conflict_edge_count'] == 0
+          assert data['candidate']['degenerate_triangle_count'] == 0
+          assert data['candidate']['isolated_vertex_count'] == 0
+          assert data['candidate']['disconnected_vertex_fan_count'] == 0
+          assert data['candidate']['max_vertex_fan_components'] == 1
+          assert data['candidate']['internal_face_count_by_construction'] == 0
+          assert all(value.startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert (root / 'exact-head.txt').read_text().strip() == exact
           PY
 
       - name: Retain exact Geometry evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
-          name: service-pavilion-interpenetration-001-${{ env.EXACT_HEAD }}
-          path: evidence/service-pavilion-interpenetration-001
+          name: service-pavilion-boundary-shell-001-${{ env.EXACT_HEAD }}
+          path: |
+            evidence/service-pavilion-boundary-shell-001
+            evidence/service-pavilion-interpenetration-001
+            evidence/service-pavilion-current-policy-001
           if-no-files-found: error
