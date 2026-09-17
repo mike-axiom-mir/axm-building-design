@@ -4,6 +4,8 @@ const PAYLOAD := "res://generated/utility_panel_uv_density_payload.json"
 const RECEIPT := "res://utility-panel-uv-density-runtime-receipt.json"
 const VARIANT_PHYSICAL := "physical_density"
 const VARIANT_NEGATIVE := "normalized_full_square_negative"
+const PAYLOAD_SCHEMA_HISTORICAL := "axm.building-utility-panel-uv-density-payload/v0.1"
+const PAYLOAD_SCHEMA_CLEARANCE_SUCCESSOR := "axm.building-utility-panel-uv-density-clearance-successor-payload/v0.1"
 
 var payload: Dictionary = {}
 var atlas_texture: ImageTexture
@@ -287,9 +289,28 @@ func compare_images(a: Image, b: Image) -> Dictionary:
 
 func _initialize() -> void:
     payload = read_json(PAYLOAD)
-    if payload.get("schema") != "axm.building-utility-panel-uv-density-payload/v0.1":
+    var payload_schema := String(payload.get("schema", ""))
+    if payload_schema != PAYLOAD_SCHEMA_HISTORICAL and payload_schema != PAYLOAD_SCHEMA_CLEARANCE_SUCCESSOR:
         fail("missing or invalid utility-panel UV density payload")
         return
+    if payload_schema == PAYLOAD_SCHEMA_CLEARANCE_SUCCESSOR:
+        var continuity_value = payload.get("successor_continuity", {})
+        if not continuity_value is Dictionary:
+            fail("clearance-successor payload is missing continuity evidence")
+            return
+        var continuity := continuity_value as Dictionary
+        if continuity.get("historical_geometry_chart_rebound", true) != false:
+            fail("clearance-successor payload unexpectedly rebinds historical Geometry chart")
+            return
+        if continuity.get("automatic_receiver_adoption", true) != false:
+            fail("clearance-successor payload unexpectedly authorizes receiver adoption")
+            return
+        var rebinds_value = continuity.get("receiver_rebinds", [])
+        if not rebinds_value is Array or (rebinds_value as Array).size() != 2:
+            fail("clearance-successor payload requires exactly two owner-provided receiver rebinds")
+            return
+    receipt["payload_schema"] = payload_schema
+    receipt["receiver_mode"] = "CLEARANCE_SUCCESSOR" if payload_schema == PAYLOAD_SCHEMA_CLEARANCE_SUCCESSOR else "HISTORICAL"
     atlas_texture = build_atlas_texture()
     if atlas_texture == null:
         fail("failed to build diagnostic atlas texture")
