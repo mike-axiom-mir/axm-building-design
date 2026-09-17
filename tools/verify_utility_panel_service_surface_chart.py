@@ -16,12 +16,25 @@ EPS = 1e-12
 RESULT = "PASS_BUILDING_UTILITY_PANEL_UV_READY_SOURCE_FRAME_CHART_SUCCESSOR_REBIND"
 DECISION = "PASS_DERIVED_GEOMETRY_CHART_REBOUND_TO_CLEARANCE_SUCCESSOR__NO_TEXEL_DENSITY_ATLAS_MATERIAL_RECEIVER_OR_VISUAL_ADOPTION"
 PATTERN = "DERIVED_CHART_MUST_REBIND_TO_EXACT_SOURCE_SUCCESSOR_BEFORE_EVIDENCE_TRANSFER"
+DIRECTIONAL_PATTERN = "PHYSICAL_UV_AXIS_METRICS_AND_IMAGE_BINDING_GATE_BEFORE_DIRECTIONAL_TEXEL_DENSITY_CONSUMPTION"
+DIRECTIONAL_STATE = "PASS_SOURCE_LOCAL_DIRECTIONAL_SAMPLING_INTERFACE__HOLD_SHARED_OBSERVER_CONSUMPTION_PENDING_BOUND_ARTIFACT_AND_IMAGE"
 SOURCE_PR = 17
 SOURCE_HEAD = "32bbdd54f00aaac87ba8139bf932d8aff6109a66"
 HISTORICAL_GEOMETRY_PR = 16
 HISTORICAL_GEOMETRY_HEAD = "79e09f68a05770eb6dabbbbbb3b008fc8e050aa0"
 HISTORICAL_CHART_BLOB = "56f1964b3360e371ac8c39d547cb300cd14fb997"
 HISTORICAL_SOURCE_HEAD = "97120eb78a72b0a07aff1c65b9b92229d0a42aff"
+UC_OBSERVER_REPOSITORY = "mike-axiom-mir/axm-universal-creation"
+UC_OBSERVER_PR = 194
+UC_OBSERVER_MERGE = "aa53ee8aa803c19524b7edbef6250bf6ed9336c0"
+UC_OBSERVER_MODULE = "src/axm_uc/material_uv_evidence.py"
+UC_OBSERVER_API = "inspect_material_uv_density"
+CONSUMPTION_HOLD = "HOLD_BOUND_MATERIAL_BEARING_ARTIFACT_AND_IMAGE_DIMENSIONS_REQUIRED"
+REQUIRED_DOWNSTREAM_INPUTS = [
+    "material_bearing_glb_artifact",
+    "embedded_image_width_px",
+    "embedded_image_height_px",
+]
 
 
 def load(path):
@@ -213,6 +226,64 @@ def verify_core(profile, domain):
     if len({tuple(point) for point in metric_points}) != 4 or len({tuple(point) for point in uv_points}) != 4:
         raise ValueError("Geometry chart vertex coordinates are not bijective")
 
+    metric_extent_by_axis = [
+        max(point[axis] for point in metric_points) - min(point[axis] for point in metric_points)
+        for axis in range(2)
+    ]
+    normalized_extent_by_axis = [
+        max(point[axis] for point in uv_points) - min(point[axis] for point in uv_points)
+        for axis in range(2)
+    ]
+    if not vec2_approx(metric_extent_by_axis, [primary_extent, secondary_extent]):
+        raise ValueError("derived physical chart-axis extent drift")
+    if any(value <= EPS for value in normalized_extent_by_axis):
+        raise ValueError("normalized chart-axis extent is singular")
+    metres_per_uv_unit = [
+        metric_extent_by_axis[index] / normalized_extent_by_axis[index]
+        for index in range(2)
+    ]
+
+    directional = profile.get("directional_sampling_interface", {})
+    if directional.get("pattern") != DIRECTIONAL_PATTERN:
+        raise ValueError("directional sampling pattern drift")
+    if directional.get("chart_axis_order") != ["u", "v"]:
+        raise ValueError("directional sampling chart-axis order drift")
+    if not vec2_approx(directional.get("physical_extent_m_by_chart_axis", []), metric_extent_by_axis):
+        raise ValueError("directional physical extent declaration drift")
+    if not vec2_approx(directional.get("normalized_extent_by_chart_axis", []), normalized_extent_by_axis):
+        raise ValueError("directional normalized extent declaration drift")
+    if not vec2_approx(directional.get("metres_per_uv_unit_by_chart_axis", []), metres_per_uv_unit):
+        raise ValueError("directional metres-per-UV declaration drift")
+
+    shared = directional.get("shared_observer", {})
+    expected_shared = {
+        "repository": UC_OBSERVER_REPOSITORY,
+        "pull_request": UC_OBSERVER_PR,
+        "merge_commit": UC_OBSERVER_MERGE,
+        "module": UC_OBSERVER_MODULE,
+        "api": UC_OBSERVER_API,
+    }
+    if shared != expected_shared:
+        raise ValueError("shared directional-density observer identity drift")
+
+    gate = directional.get("consumption_gate", {})
+    if gate.get("observer_consumed") is not False:
+        raise ValueError("shared directional-density observer must remain unconsumed without bound product inputs")
+    if gate.get("directional_density_measured") is not False:
+        raise ValueError("directional texel density must remain unmeasured without bound product inputs")
+    if gate.get("state") != CONSUMPTION_HOLD:
+        raise ValueError("directional-density consumption HOLD state drift")
+    if gate.get("required_downstream_inputs") != REQUIRED_DOWNSTREAM_INPUTS:
+        raise ValueError("directional-density required downstream inputs drift")
+
+    policy = directional.get("policy_boundary", {})
+    if policy.get("geometry_selects_texel_density_target") is not False:
+        raise ValueError("Geometry may not select the product texel-density target")
+    if policy.get("geometry_selects_anisotropy_threshold") is not False:
+        raise ValueError("Geometry may not select an anisotropy threshold")
+    if policy.get("geometry_selects_atlas_layout") is not False:
+        raise ValueError("Geometry may not select atlas layout")
+
     triangles = profile.get("triangles")
     if not isinstance(triangles, list) or len(triangles) != 2:
         raise ValueError("Geometry chart must contain exactly two triangles")
@@ -280,6 +351,13 @@ def verify_core(profile, domain):
         "max_metric_projection_residual_m": max(projection_residuals),
         "max_normalized_mapping_residual": max(normalized_residuals),
         "minimum_outward_winding_dot": min(outward_dots),
+        "chart_axis_order": ["u", "v"],
+        "physical_extent_m_by_chart_axis": metric_extent_by_axis,
+        "normalized_extent_by_chart_axis": normalized_extent_by_axis,
+        "metres_per_uv_unit_by_chart_axis": metres_per_uv_unit,
+        "shared_directional_density_observer": shared,
+        "directional_density_consumption_gate": gate,
+        "directional_density_policy_boundary": policy,
     }
 
 
@@ -325,6 +403,26 @@ def run_negative_controls(profile, domain):
     bad["authority"]["holds"].remove("atlas placement")
     expect_reject("downstream_authority_weakening", bad)
 
+    bad = copy.deepcopy(profile)
+    bad["directional_sampling_interface"]["physical_extent_m_by_chart_axis"][0] += 0.01
+    expect_reject("directional_metric_extent_drift", bad)
+
+    bad = copy.deepcopy(profile)
+    bad["directional_sampling_interface"]["shared_observer"]["merge_commit"] = "0" * 40
+    expect_reject("uc_observer_identity_drift", bad)
+
+    bad = copy.deepcopy(profile)
+    bad["directional_sampling_interface"]["consumption_gate"]["observer_consumed"] = True
+    expect_reject("fabricated_uc_observer_consumption", bad)
+
+    bad = copy.deepcopy(profile)
+    bad["directional_sampling_interface"]["consumption_gate"]["directional_density_measured"] = True
+    expect_reject("fabricated_directional_density_measurement", bad)
+
+    bad = copy.deepcopy(profile)
+    bad["directional_sampling_interface"]["policy_boundary"]["geometry_selects_texel_density_target"] = True
+    expect_reject("geometry_density_policy_escalation", bad)
+
     if any(not value.startswith("REJECTED:") for value in controls.values()):
         raise ValueError("one or more Geometry chart negative controls unexpectedly passed")
     return controls
@@ -336,11 +434,14 @@ def build(exact_head=None, profile=None, domain=None):
     core = verify_core(profile, domain)
     negatives = run_negative_controls(profile, domain)
     historical = profile["historical_geometry_evidence"]
+    gate = core["directional_density_consumption_gate"]
     return {
-        "schema": "axm.building-utility-panel-service-surface-chart-evidence/v0.1",
+        "schema": "axm.building-utility-panel-service-surface-chart-evidence/v0.2",
         "result": RESULT,
         "decision": DECISION,
         "pattern": PATTERN,
+        "directional_sampling_pattern": DIRECTIONAL_PATTERN,
+        "directional_sampling_state": DIRECTIONAL_STATE,
         "exact_geometry_head": exact_head,
         "chart_id": profile["chart_id"],
         "asset_id": profile["asset_id"],
@@ -366,6 +467,16 @@ def build(exact_head=None, profile=None, domain=None):
         "max_metric_projection_residual_m": core["max_metric_projection_residual_m"],
         "max_normalized_mapping_residual": core["max_normalized_mapping_residual"],
         "minimum_outward_winding_dot": core["minimum_outward_winding_dot"],
+        "chart_axis_order": core["chart_axis_order"],
+        "physical_extent_m_by_chart_axis": core["physical_extent_m_by_chart_axis"],
+        "normalized_extent_by_chart_axis": core["normalized_extent_by_chart_axis"],
+        "metres_per_uv_unit_by_chart_axis": core["metres_per_uv_unit_by_chart_axis"],
+        "shared_directional_density_observer": core["shared_directional_density_observer"],
+        "shared_observer_consumed": gate["observer_consumed"],
+        "directional_density_measured": gate["directional_density_measured"],
+        "directional_density_consumption_state": gate["state"],
+        "required_directional_density_inputs": gate["required_downstream_inputs"],
+        "directional_density_policy_boundary": core["directional_density_policy_boundary"],
         "source_geometry_changed": False,
         "production_uv_adopted": False,
         "downstream_adoption_authorized": False,
