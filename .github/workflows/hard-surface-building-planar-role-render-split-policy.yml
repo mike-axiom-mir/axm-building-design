@@ -75,8 +75,11 @@ jobs:
           assert data['triangle_count'] == 336
           assert data['material_role_count'] == 5
           assert data['source_intent']['triangle_corner_count'] == 1008
-          assert data['source_intent']['equivalence_group_count'] == 312
-          assert data['source_intent']['storage_group_reduction'] == 696
+          # The source owner retains exact cardinal hard normals. That yields a
+          # stricter 604-group domain than the current downstream 312-vertex
+          # generated-normal receiver; do not weaken source intent to fit a consumer.
+          assert data['source_intent']['equivalence_group_count'] == 604
+          assert data['source_intent']['storage_group_reduction'] == 404
           assert data['source_intent']['cross_rectangle_group_count'] > 0
           assert data['source_intent']['all_protected_split_ids_explicit'] is True
           assert data['source_intent']['all_current_protected_split_ids_null'] is True
