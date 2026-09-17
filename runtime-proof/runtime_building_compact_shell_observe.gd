@@ -157,7 +157,7 @@ func run()->void:
     var bmax := v3(payload["bounds"]["max"])
     var center := (bmin + bmax) * 0.5
     var extent := bmax - bmin
-    var radius := max(max(extent.x, extent.y), extent.z)
+    var radius:float = maxf(maxf(extent.x, extent.y), extent.z)
     if radius <= 0.0:
         fail("invalid shell bounds")
         quit(1)
