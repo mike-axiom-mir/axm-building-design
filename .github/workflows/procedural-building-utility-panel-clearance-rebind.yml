@@ -1,0 +1,71 @@
+name: Procedural Building utility-panel clearance rebind family evidence
+
+on:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+  pull_request:
+    branches:
+      - studio/hard-surface-pavilion-interface-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Procedural branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout exact Hard Surface clearance successor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 6585c62d9e21cd56244d35817ec40f1f92889c6f
+          path: external/hard-surface-clearance
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile bounded generator
+        run: python -m py_compile tools/build_pavilion_utility_panel_clearance_rebind_family.py tests/test_pavilion_utility_panel_clearance_rebind_family.py
+
+      - name: Run bounded clearance-rebind tests
+        env:
+          AXM_CLEARANCE_DONOR_ROOT: ${{ github.workspace }}/external/hard-surface-clearance
+        run: python -m unittest tests.test_pavilion_utility_panel_clearance_rebind_family -v
+
+      - name: Build retained evidence
+        if: matrix.python-version == '3.11'
+        env:
+          AXM_CLEARANCE_DONOR_ROOT: ${{ github.workspace }}/external/hard-surface-clearance
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/utility-panel-clearance-rebind
+          python tools/build_pavilion_utility_panel_clearance_rebind_family.py \
+            --donor-root "$AXM_CLEARANCE_DONOR_ROOT" \
+            --output evidence/utility-panel-clearance-rebind/summary.json
+          cp procedural/service_pavilion_utility_panel_clearance_rebind_family_001.json evidence/utility-panel-clearance-rebind/profile.json
+          git rev-parse HEAD > evidence/utility-panel-clearance-rebind/procedural_head.txt
+          git -C "$AXM_CLEARANCE_DONOR_ROOT" rev-parse HEAD > evidence/utility-panel-clearance-rebind/hard_surface_head.txt
+          git -C "$AXM_CLEARANCE_DONOR_ROOT" show HEAD:assets/utility_access_panel_001_receiver_clearance_envelope.json > evidence/utility-panel-clearance-rebind/hard_surface_clearance_policy.json
+          git -C "$AXM_CLEARANCE_DONOR_ROOT" show HEAD:assets/utility_access_panel_001_service_surface_domain.json > evidence/utility-panel-clearance-rebind/hard_surface_service_surface_domain.json
+          git -C "$AXM_CLEARANCE_DONOR_ROOT" show HEAD:assets/utility_access_panel_001.json > evidence/utility-panel-clearance-rebind/hard_surface_successor_panel.json
+
+      - name: Upload retained evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-utility-panel-clearance-rebind-${{ github.sha }}
+          path: evidence/utility-panel-clearance-rebind
+          if-no-files-found: error
