@@ -5,9 +5,9 @@ const RECEIPT := "res://runtime_receipt.json"
 
 var payload: Dictionary = {}
 var receipt := {
-    "schema": "axm.building-material-boundary-shell-compaction-runtime/v0.1",
+    "schema": "axm.building-material-boundary-shell-compaction-runtime/v0.2",
     "promotion_effect": "NONE",
-    "renderer_boundary": "Godot 4.7.2 GL Compatibility. Exact Geometry reference boundary shell and exact compacted boundary shell receive the unchanged Building five-surface scalar PBR family. Normals are explicit per triangle from the exact plane, with no vertex smoothing."
+    "renderer_boundary": "Godot 4.7.2 GL Compatibility. Exact Geometry reference boundary shell and explicitly selected compact receiving shell receive the unchanged Building five-surface scalar PBR family. Normals are explicit per triangle from the exact plane, with no vertex smoothing."
 }
 
 func write_receipt() -> void:
@@ -68,8 +68,6 @@ func make_mesh_variant(variant: String) -> Array:
             var b := source_vec3(vertices[int(face[1])] as Array)
             var c := source_vec3(vertices[int(face[2])] as Array)
             var normal := (b - a).cross(c - a).normalized()
-            # Preserve source physical normal while reversing source b/c once for
-            # the proof host's front-face convention, matching prior Building Materials evidence.
             surface.set_normal(normal)
             surface.add_vertex(a)
             surface.set_normal(normal)
@@ -212,10 +210,25 @@ func compare_images(a: Image, b: Image) -> Dictionary:
 
 func _initialize() -> void:
     payload = read_json(PAYLOAD)
-    if payload.get("schema") != "axm.building-material-boundary-shell-compaction-lookdev/v0.1":
+    var payload_schema := String(payload.get("schema", ""))
+    if payload_schema != "axm.building-material-boundary-shell-compaction-lookdev/v0.1" and payload_schema != "axm.building-material-boundary-shell-compaction-lookdev/v0.2":
         fail("missing or invalid Materials boundary-shell payload")
         return
-    if payload.get("geometry_donor_head") != "43ace6fc44e6f6c0f637cd3436a94099c97c2d48":
+
+    var expected_geometry_head := "43ace6fc44e6f6c0f637cd3436a94099c97c2d48"
+    if payload_schema == "axm.building-material-boundary-shell-compaction-lookdev/v0.2":
+        expected_geometry_head = "16253e7dd2f8cd590667f9631e4b50fdfcc7280d"
+        if payload.get("hard_surface_owner_head") != "35d0ba62d7e534b3cd00ac69e99386843ffa3f2e":
+            fail("Hard-Surface compact-v2 owner head drift")
+            return
+        if payload.get("selected_representation_id") != "boundary-only-union-shell-conforming-compact-v2-001":
+            fail("compact-v2 representation selection drift")
+            return
+        receipt["schema"] = "axm.building-material-boundary-shell-compaction-runtime/v0.2"
+    else:
+        receipt["schema"] = "axm.building-material-boundary-shell-compaction-runtime/v0.1"
+
+    if payload.get("geometry_donor_head") != expected_geometry_head:
         fail("Geometry donor head drift")
         return
     if payload.get("normal_policy") != "EXPLICIT_PER_TRIANGLE_PLANE_NORMAL__NO_VERTEX_SMOOTHING__HARD_SURFACE_REVIEW":
@@ -243,6 +256,7 @@ func _initialize() -> void:
         }
 
     receipt["state"] = "PASS_TARGET_HOST_BUILDING_BOUNDARY_SHELL_COMPACTION_MATERIAL_CONTINUITY_CAPTURED"
+    receipt["payload_schema"] = payload_schema
     receipt["contexts"] = rows
     receipt["godot_version"] = Engine.get_version_info()
     receipt["exact_materials_head"] = payload["exact_materials_head"]
@@ -253,6 +267,13 @@ func _initialize() -> void:
     receipt["geometry_evidence"] = payload["geometry_evidence"]
     receipt["material_profile_sha256"] = payload["material_profile_sha256"]
     receipt["truth_boundary"] = payload["truth_boundary"]
+    if payload_schema == "axm.building-material-boundary-shell-compaction-lookdev/v0.2":
+        receipt["hard_surface_owner_head"] = payload["hard_surface_owner_head"]
+        receipt["hard_surface_owner_policy_sha256"] = payload["hard_surface_owner_policy_sha256"]
+        receipt["semantic_source_variant_id"] = payload["semantic_source_variant_id"]
+        receipt["reference_representation_id"] = payload["reference_representation_id"]
+        receipt["selected_representation_id"] = payload["selected_representation_id"]
+        receipt["geometry_compact_payload_sha256"] = payload["geometry_compact_payload_sha256"]
     write_receipt()
     print("AXM BUILDING BOUNDARY SHELL COMPACTION MATERIAL LOOKDEV ", JSON.stringify(receipt))
     quit(0)

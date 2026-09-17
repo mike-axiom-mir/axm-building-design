@@ -1,0 +1,311 @@
+name: Building material compact-v2 source-owner rebind evidence
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+  pull_request:
+    paths:
+      - "lookdev/building_material_profile_001.json"
+      - "lookdev-boundary-shell-compaction-proof/**"
+      - "tools/build_building_material_boundary_shell_compact_v2_evidence.py"
+      - ".github/workflows/building-material-boundary-shell-compaction-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compact-v2-lookdev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GEOMETRY_HEAD: 16253e7dd2f8cd590667f9631e4b50fdfcc7280d
+      HARD_SURFACE_HEAD: 35d0ba62d7e534b3cd00ac69e99386843ffa3f2e
+    steps:
+      - name: Checkout exact Materials head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Checkout exact Geometry compact-v2 donor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.GEOMETRY_HEAD }}
+          path: geometry-donor
+          fetch-depth: 1
+
+      - name: Checkout exact Hard-Surface owner policy
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.HARD_SURFACE_HEAD }}
+          path: owner-donor
+          fetch-depth: 1
+
+      - name: Verify exact donor heads
+        run: |
+          set -euo pipefail
+          test "$(git -C geometry-donor rev-parse HEAD)" = "$GEOMETRY_HEAD"
+          test "$(git -C owner-donor rev-parse HEAD)" = "$HARD_SURFACE_HEAD"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Compile and run complete Building tests
+        run: |
+          python -m compileall -q tools tests
+          python -m unittest discover -s tests -v
+
+      - name: Rebuild exact Geometry reference and compact-v2 evidence
+        run: |
+          set -euo pipefail
+          rm -rf \
+            geometry-donor/evidence/service-pavilion-boundary-shell-001 \
+            geometry-donor/evidence/service-pavilion-boundary-shell-compaction-v2-001
+          python geometry-donor/tools/build_service_pavilion_union_shell_candidate.py \
+            --exact-head "$GEOMETRY_HEAD" \
+            --output-dir geometry-donor/evidence/service-pavilion-boundary-shell-001
+          python geometry-donor/tools/build_service_pavilion_boundary_shell_compaction_v2.py \
+            --exact-head "$GEOMETRY_HEAD" \
+            --output-dir geometry-donor/evidence/service-pavilion-boundary-shell-compaction-v2-001
+
+      - name: Build exact source-owner Materials rebind packet
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          rm -rf lookdev-boundary-shell-compaction-proof/generated
+          python tools/build_building_material_boundary_shell_compact_v2_evidence.py \
+            --geometry-root geometry-donor \
+            --owner-root owner-donor \
+            --exact-head "$HEAD_SHA"
+
+      - name: Validate exact owner selection, material continuity and reduction
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('lookdev-boundary-shell-compaction-proof/generated')
+          receipt = json.loads((root / 'build_receipt.json').read_text())
+          payload = json.loads((root / 'payload.json').read_text())
+
+          assert receipt['result'] == 'PASS_BUILDING_COMPACT_V2_SOURCE_OWNER_MATERIAL_REBIND_PACKET', receipt
+          assert receipt['geometry_donor_head'] == '16253e7dd2f8cd590667f9631e4b50fdfcc7280d', receipt
+          assert receipt['hard_surface_owner_head'] == '35d0ba62d7e534b3cd00ac69e99386843ffa3f2e', receipt
+          assert receipt['semantic_source_variant_id'] == 'header-segmented-23', receipt
+          assert receipt['reference_representation_id'] == 'boundary-only-union-shell-001', receipt
+          assert receipt['selected_representation_id'] == 'boundary-only-union-shell-conforming-compact-v2-001', receipt
+          assert receipt['reference_stats']['vertex_count'] == 1420, receipt
+          assert receipt['reference_stats']['triangle_count'] == 2884, receipt
+          assert receipt['compact_stats']['vertex_count'] == 1004, receipt
+          assert receipt['compact_stats']['triangle_count'] == 2052, receipt
+          assert receipt['reference_stats']['source_component_owner_count'] == 19, receipt
+          assert receipt['compact_stats']['source_component_owner_count'] == 19, receipt
+          assert receipt['geometry_evidence']['vertex_reduction'] == 416, receipt
+          assert receipt['geometry_evidence']['triangle_reduction'] == 832, receipt
+          assert receipt['geometry_evidence']['historical_v1_vertex_count'] == 1402, receipt
+          assert receipt['geometry_evidence']['historical_v1_triangle_count'] == 2848, receipt
+          assert receipt['geometry_evidence']['additional_vertex_reduction_vs_v1'] == 398, receipt
+          assert receipt['geometry_evidence']['additional_triangle_reduction_vs_v1'] == 796, receipt
+          assert receipt['geometry_evidence']['maximum_source_component_area_residual_m2'] <= 1e-9, receipt
+          assert receipt['geometry_evidence']['max_patch_area_residual_m2'] <= 1e-9, receipt
+          assert payload['normal_policy'] == 'EXPLICIT_PER_TRIANGLE_PLANE_NORMAL__NO_VERTEX_SMOOTHING__HARD_SURFACE_REVIEW', payload
+          assert payload['selection_policy'] == 'EXPLICIT_RECEIVING_REPRESENTATION_ID_REQUIRED__NO_DEFAULT_OR_IMPLICIT_FALLBACK', payload
+          assert payload['evidence_transfer_policy'] == 'NO_DOWNSTREAM_PASS_TRANSFER_ACROSS_REFERENCE_V1_OR_COMPACT_V2_IDENTITIES__EXACT_CONSUMER_REBIND_REQUIRED', payload
+          for key in (
+              'material_scalars_changed',
+              'source_component_material_mapping_changed',
+              'geometry_owned_by_materials',
+              'semantic_source_replaced',
+              'compact_v2_selected_as_default',
+              'uvs_or_textures_tested',
+              'environment_adoption',
+              'technical_art_transport_acceptance',
+              'runtime_acceptance',
+              'art_direction_acceptance',
+              'visual_qa_acceptance',
+          ):
+              assert payload['truth_boundary'][key] is False, (key, payload['truth_boundary'])
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Negative control rejects lost source-component material ownership
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('geometry-donor/evidence/service-pavilion-boundary-shell-compaction-v2-001/compacted-boundary-shell-v2.json')
+          data = json.loads(path.read_text())
+          data['triangle_owners'][0]['source_component_id'] = 'unknown-material-owner'
+          path.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
+          PY
+          if python tools/build_building_material_boundary_shell_compact_v2_evidence.py \
+            --geometry-root geometry-donor \
+            --owner-root owner-donor \
+            --exact-head NEGATIVE-LOST-OWNER \
+            --out /tmp/negative-lost-owner; then
+            echo "lost source-component material ownership unexpectedly passed" >&2
+            exit 1
+          fi
+
+      - name: Rebuild exact compact-v2 after lost-owner control
+        run: |
+          set -euo pipefail
+          rm -rf geometry-donor/evidence/service-pavilion-boundary-shell-compaction-v2-001
+          python geometry-donor/tools/build_service_pavilion_boundary_shell_compaction_v2.py \
+            --exact-head "$GEOMETRY_HEAD" \
+            --output-dir geometry-donor/evidence/service-pavilion-boundary-shell-compaction-v2-001
+
+      - name: Negative control rejects Hard-Surface compact payload identity drift
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('owner-donor/assets/service_pavilion_001_compact_boundary_shell_policy.json')
+          data = json.loads(path.read_text())
+          data['compact_representation']['expected_payload_sha256'] = '0' * 64
+          path.write_text(json.dumps(data, indent=2, sort_keys=True) + '\n')
+          PY
+          if python tools/build_building_material_boundary_shell_compact_v2_evidence.py \
+            --geometry-root geometry-donor \
+            --owner-root owner-donor \
+            --exact-head NEGATIVE-OWNER-PAYLOAD \
+            --out /tmp/negative-owner-payload; then
+            echo "Hard-Surface compact payload identity drift unexpectedly passed" >&2
+            exit 1
+          fi
+
+      - name: Restore exact owner policy and final packet
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          git -C owner-donor checkout -- assets/service_pavilion_001_compact_boundary_shell_policy.json
+          rm -rf lookdev-boundary-shell-compaction-proof/generated
+          python tools/build_building_material_boundary_shell_compact_v2_evidence.py \
+            --geometry-root geometry-donor \
+            --owner-root owner-donor \
+            --exact-head "$HEAD_SHA"
+
+      - name: Download pinned Godot 4.7.2
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+      - name: Render exact reference and compact-v2 material receivers
+        run: |
+          set -euo pipefail
+          rm -f lookdev-boundary-shell-compaction-proof/runtime_receipt.json lookdev-boundary-shell-compaction-proof/*.png
+          xvfb-run --auto-servernum --server-args="-screen 0 1100x820x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path lookdev-boundary-shell-compaction-proof \
+            --script observe.gd
+
+      - name: Classify compact-v2 material continuity
+        id: classify
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path('lookdev-boundary-shell-compaction-proof')
+          receipt = json.loads((root / 'runtime_receipt.json').read_text())
+          assert receipt['state'] == 'PASS_TARGET_HOST_BUILDING_BOUNDARY_SHELL_COMPACTION_MATERIAL_CONTINUITY_CAPTURED', receipt
+          assert receipt['payload_schema'] == 'axm.building-material-boundary-shell-compaction-lookdev/v0.2', receipt
+          assert receipt['geometry_donor_head'] == '16253e7dd2f8cd590667f9631e4b50fdfcc7280d', receipt
+          assert receipt['hard_surface_owner_head'] == '35d0ba62d7e534b3cd00ac69e99386843ffa3f2e', receipt
+          assert receipt['selected_representation_id'] == 'boundary-only-union-shell-conforming-compact-v2-001', receipt
+          assert set(receipt['contexts']) == {'front_service', 'east_service', 'three_quarter'}, receipt
+
+          rows = receipt['contexts']
+          changed = {}
+          max_fraction = 0.0
+          max_delta = 0.0
+          for context, row in rows.items():
+              assert row['reference']['state'] == 'PASS', (context, row)
+              assert row['compact']['state'] == 'PASS', (context, row)
+              comparison = row['comparison']
+              assert comparison['state'] == 'PASS', (context, row)
+              changed[context] = int(comparison['changed_pixels'])
+              max_fraction = max(max_fraction, float(comparison['changed_fraction']))
+              max_delta = max(max_delta, float(comparison['max_rgb_channel_delta']))
+              for variant in ('reference', 'compact'):
+                  path = root / f'{variant}-{context}.png'
+                  assert path.stat().st_size > 2000, path
+
+          if max(changed.values()) == 0:
+              decision = 'PASS_COMPACT_V2_EXPLICIT_HARD_NORMAL_MATERIAL_CONTINUITY_PIXEL_IDENTICAL'
+          elif max_fraction <= 0.001:
+              decision = 'PASS_COMPACT_V2_EXPLICIT_HARD_NORMAL_MATERIAL_CONTINUITY_BOUNDED_DELTA'
+          else:
+              decision = 'HOLD_COMPACT_V2_VISIBLE_MATERIAL_CONTINUITY_DELTA'
+
+          receipt['continuity_decision'] = decision
+          receipt['maximum_changed_fraction'] = max_fraction
+          receipt['maximum_rgb_channel_delta'] = max_delta
+          (root / 'runtime_receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+
+          summary = {
+              'decision': decision,
+              'changed_pixels': changed,
+              'maximum_changed_fraction': max_fraction,
+              'maximum_rgb_channel_delta': max_delta,
+          }
+          (root / 'continuity_summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n')
+          print(json.dumps(summary, indent=2))
+
+          if decision == 'HOLD_COMPACT_V2_VISIBLE_MATERIAL_CONTINUITY_DELTA':
+              raise SystemExit('compact-v2 material continuity exceeded bounded 0.1% full-frame threshold')
+
+          output = Path(os.environ['GITHUB_OUTPUT'])
+          with output.open('a', encoding='utf-8') as stream:
+              stream.write(f"front_service={changed['front_service']}\n")
+              stream.write(f"east_service={changed['east_service']}\n")
+              stream.write(f"three_quarter={changed['three_quarter']}\n")
+              stream.write(f"decision={decision}\n")
+          PY
+
+      - name: Retain exact compact-v2 Materials evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-material-compact-v2-${{ github.event.pull_request.head.sha || github.sha }}-fs${{ steps.classify.outputs.front_service }}-es${{ steps.classify.outputs.east_service }}-tq${{ steps.classify.outputs.three_quarter }}
+          path: |
+            lookdev/building_material_profile_001.json
+            owner-donor/assets/service_pavilion_001_compact_boundary_shell_policy.json
+            lookdev-boundary-shell-compaction-proof/generated/payload.json
+            lookdev-boundary-shell-compaction-proof/generated/build_receipt.json
+            lookdev-boundary-shell-compaction-proof/runtime_receipt.json
+            lookdev-boundary-shell-compaction-proof/continuity_summary.json
+            lookdev-boundary-shell-compaction-proof/reference-front_service.png
+            lookdev-boundary-shell-compaction-proof/compact-front_service.png
+            lookdev-boundary-shell-compaction-proof/reference-east_service.png
+            lookdev-boundary-shell-compaction-proof/compact-east_service.png
+            lookdev-boundary-shell-compaction-proof/reference-three_quarter.png
+            lookdev-boundary-shell-compaction-proof/compact-three_quarter.png
+          if-no-files-found: warn
+          retention-days: 30
