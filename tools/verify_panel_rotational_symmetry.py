@@ -250,6 +250,8 @@ def verify(
 
     if panel["asset_id"] != contract["applies_to_asset_id"]:
         raise ValueError("contract asset identity mismatch")
+    # Source-owner policy must be valid before any consumer role interpretation.
+    load_current_policy_tool().validate_policy(source_policy)
     authority, state = validate_contract(contract, source_policy)
     validate_source_policy(source_policy, authority)
 
