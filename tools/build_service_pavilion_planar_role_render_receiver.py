@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Build one low-topology render-only receiver from the exact Building union boundary.
 
-This Hard-Surface lane deliberately does not replace the semantic 23-box source or the
-indexed Geometry shells. It consumes the exact current-source boundary oracle, then
-merges only coplanar boundary cells that share solid component, material role, axis,
-outward sign and plane. Each resulting rectangle keeps contributor source-component
-and source-box sets. The representation is intentionally a hard-normal render surface
-cover, not a collision/manufacturing/transport topology claim.
+Hard Surface keeps the 23-box semantic source and the indexed Geometry shells intact.
+This derived candidate consumes the exact current-source boundary oracle plus one pinned
+Building-Materials source-component -> material-role partition, then merges only
+coplanar boundary cells that share solid component, consumed material role, axis,
+outward sign and plane. Every rectangle retains all contributing source-component and
+source-box identities. The output is deliberately a non-indexed hard-normal render
+surface cover, not a collision, manufacturing, navigation or transport topology claim.
 """
 from __future__ import annotations
 
@@ -29,6 +30,7 @@ EXPECTED_ROLES = {
     "slab_mineral",
     "utility_panel_ochre",
 }
+EXPECTED_SOURCE_OWNER_COUNT = 19
 
 
 def load_module(path: Path, name: str):
@@ -61,14 +63,35 @@ def load_policy() -> dict:
         raise ValueError("planar-role receiver owner drift")
     if policy.get("selection_policy") != "EXPLICIT_RECEIVING_REPRESENTATION_ID_REQUIRED__NO_DEFAULT_OR_IMPLICIT_FALLBACK":
         raise ValueError("planar-role receiver selection policy drift")
+
     semantic = policy.get("semantic_source", {})
     if semantic.get("variant_id") != "header-segmented-23":
         raise ValueError("planar-role receiver semantic source drift")
+
     candidate = policy.get("candidate", {})
     if candidate.get("representation_id") != "boundary-only-planar-role-rectangle-render-001":
         raise ValueError("planar-role receiver identity drift")
     if candidate.get("representation_kind") != "NON_INDEXED_RENDER_SURFACE_RECTANGLE_COVER":
         raise ValueError("planar-role receiver representation-kind drift")
+    if candidate.get("status") != "SOURCE_OWNED_DERIVED_RENDER_RECEIVING_OPTION_NOT_DEFAULT":
+        raise ValueError("planar-role receiver default/adoption status drift")
+
+    material = policy.get("material_role_binding", {})
+    if material.get("authority") != "CONSUMED_PINNED_BUILDING_MATERIALS_PARTITION__NOT_HARD_SURFACE_OWNED":
+        raise ValueError("Materials partition authority drift")
+    if material.get("donor_repository") != "mike-axiom-mir/axm-building-design" or material.get("donor_pr") != 3:
+        raise ValueError("Materials donor identity drift")
+    if material.get("donor_head") != "4179aa1401f5a9114399e2f998c96809d4b8ed2e":
+        raise ValueError("Materials donor head drift")
+    if material.get("profile_path") != "lookdev/building_material_profile_001.json":
+        raise ValueError("Materials profile path drift")
+    if material.get("profile_git_blob_sha") != "f7945f4c17b7720f176c1b0ac4e1baa298691b25":
+        raise ValueError("Materials profile blob identity drift")
+    role_map = material.get("source_component_material_roles", {})
+    if len(role_map) != EXPECTED_SOURCE_OWNER_COUNT:
+        raise ValueError("Materials source-component owner-count drift")
+    if set(role_map.values()) != EXPECTED_ROLES:
+        raise ValueError("Materials five-role partition drift")
     return policy
 
 
@@ -112,7 +135,11 @@ def bounds(vertices):
     }
 
 
-def quad_record(shell: dict, quad: dict, atomic_id: int) -> dict:
+def material_role_map(policy: dict) -> dict[str, str]:
+    return dict(policy["material_role_binding"]["source_component_material_roles"])
+
+
+def quad_record(shell: dict, quad: dict, atomic_id: int, role_map: dict[str, str]) -> dict:
     source_indices = []
     for triangle_index in quad["triangle_indices"]:
         for vertex_index in shell["triangles"][triangle_index]:
@@ -120,6 +147,14 @@ def quad_record(shell: dict, quad: dict, atomic_id: int) -> dict:
                 source_indices.append(vertex_index)
     if len(source_indices) != 4:
         raise ValueError(f"boundary quad {atomic_id} does not resolve to four unique vertices")
+
+    source_component_id = str(quad["source_component_id"])
+    if source_component_id not in role_map:
+        raise ValueError(f"boundary quad {atomic_id} has no pinned Materials owner for {source_component_id!r}")
+    material_role = role_map[source_component_id]
+    if material_role not in EXPECTED_ROLES:
+        raise ValueError(f"boundary quad {atomic_id} has unsupported consumed material role {material_role!r}")
+
     points = [shell["vertices"][index] for index in source_indices]
     axis = int(quad["axis"])
     sign = int(quad["sign"])
@@ -137,10 +172,12 @@ def quad_record(shell: dict, quad: dict, atomic_id: int) -> dict:
     measured_area = q12((u1 - u0) * (v1 - v0))
     if abs(measured_area - float(quad["area_m2"])) > EPS:
         raise ValueError(f"boundary quad {atomic_id} area drift")
+
     return {
         "atomic_id": atomic_id,
         "solid_component": int(quad["solid_component"]),
-        "role": str(quad["role"]),
+        "role": material_role,
+        "oracle_role": str(quad["role"]),
         "axis": axis,
         "sign": sign,
         "plane": plane,
@@ -149,7 +186,7 @@ def quad_record(shell: dict, quad: dict, atomic_id: int) -> dict:
         "v0": v0,
         "v1": v1,
         "area_m2": measured_area,
-        "source_component_id": str(quad["source_component_id"]),
+        "source_component_id": source_component_id,
         "box_id": str(quad["box_id"]),
     }
 
@@ -211,7 +248,10 @@ def rectangle_cover(records: list[dict]) -> list[dict]:
             raise ValueError("duplicate atomic planar boundary cell")
         occupied[key] = row
 
-    candidates = [_greedy_cover(occupied, u_coords, v_coords, "u"), _greedy_cover(occupied, u_coords, v_coords, "v")]
+    candidates = [
+        _greedy_cover(occupied, u_coords, v_coords, "u"),
+        _greedy_cover(occupied, u_coords, v_coords, "v"),
+    ]
     selected = min(
         candidates,
         key=lambda rows: (
@@ -224,6 +264,7 @@ def rectangle_cover(records: list[dict]) -> list[dict]:
         rectangle["atomic_ids"] = sorted(row["atomic_id"] for row in contributors)
         rectangle["source_component_ids"] = sorted({row["source_component_id"] for row in contributors})
         rectangle["box_ids"] = sorted({row["box_id"] for row in contributors})
+        rectangle["oracle_roles"] = sorted({row["oracle_role"] for row in contributors})
         rectangle["atomic_face_count"] = len(contributors)
         rectangle["area_m2"] = q12((rectangle["u1"] - rectangle["u0"]) * (rectangle["v1"] - rectangle["v0"]))
         expected = q12(sum(row["area_m2"] for row in contributors))
@@ -242,8 +283,17 @@ def _rectangle_points(donor, axis: int, sign: int, plane: float, u0: float, u1: 
     return [list(point) for point in donor.face_quad(axis, sign, lo, hi)]
 
 
-def derive_candidate(shell: dict, donor) -> dict:
-    atomic = [quad_record(shell, quad, index) for index, quad in enumerate(shell["boundary_quads"])]
+def derive_candidate(shell: dict, donor, role_map: dict[str, str]) -> dict:
+    atomic = [
+        quad_record(shell, quad, index, role_map)
+        for index, quad in enumerate(shell["boundary_quads"])
+    ]
+    observed_owners = {row["source_component_id"] for row in atomic}
+    if observed_owners != set(role_map):
+        missing = sorted(set(role_map) - observed_owners)
+        unexpected = sorted(observed_owners - set(role_map))
+        raise ValueError(f"boundary-oracle Materials owner coverage drift: missing={missing}, unexpected={unexpected}")
+
     grouped = collections.defaultdict(list)
     for row in atomic:
         key = (row["solid_component"], row["role"], row["axis"], row["sign"], row["plane"])
@@ -257,8 +307,14 @@ def derive_candidate(shell: dict, donor) -> dict:
         solid_component, role, axis, sign, plane = key
         for merged in rectangle_cover(grouped[key]):
             points = _rectangle_points(
-                donor, axis, sign, plane,
-                merged["u0"], merged["u1"], merged["v0"], merged["v1"]
+                donor,
+                axis,
+                sign,
+                plane,
+                merged["u0"],
+                merged["u1"],
+                merged["v0"],
+                merged["v1"],
             )
             offset = len(vertices)
             vertices.extend(points)
@@ -293,6 +349,7 @@ def derive_candidate(shell: dict, donor) -> dict:
                 "atomic_ids": merged["atomic_ids"],
                 "source_component_ids": merged["source_component_ids"],
                 "box_ids": merged["box_ids"],
+                "oracle_roles": merged["oracle_roles"],
                 "vertex_range": [offset, offset + 4],
                 "triangle_range": [len(triangles) - 2, len(triangles)],
             })
@@ -306,21 +363,14 @@ def derive_candidate(shell: dict, donor) -> dict:
     }
 
 
-def role_areas_from_atomic(atomic: list[dict]) -> dict:
+def role_areas(rows: list[dict]) -> dict:
     values = collections.defaultdict(float)
-    for row in atomic:
+    for row in rows:
         values[row["role"]] += row["area_m2"]
     return {key: q12(value) for key, value in sorted(values.items())}
 
 
-def role_areas_from_rectangles(rectangles: list[dict]) -> dict:
-    values = collections.defaultdict(float)
-    for row in rectangles:
-        values[row["role"]] += row["area_m2"]
-    return {key: q12(value) for key, value in sorted(values.items())}
-
-
-def validate_cover(candidate: dict, donor_result: dict) -> dict:
+def validate_cover(candidate: dict, donor_result: dict, role_map: dict[str, str]) -> dict:
     atomic = candidate["atomic_faces"]
     rectangles = candidate["rectangles"]
     atomic_by_id = {row["atomic_id"]: row for row in atomic}
@@ -329,6 +379,8 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
 
     seen = set()
     for rectangle in rectangles:
+        if rectangle["role"] not in EXPECTED_ROLES:
+            raise ValueError("rectangle has unsupported consumed material role")
         if not rectangle["source_component_ids"] or not rectangle["box_ids"]:
             raise ValueError("rectangle lost contributor provenance")
         contributors = []
@@ -339,17 +391,22 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
                 raise ValueError("rectangle cover references unknown atomic boundary face")
             row = atomic_by_id[atomic_id]
             if row["role"] != rectangle["role"] or row["solid_component"] != rectangle["solid_component"]:
-                raise ValueError("rectangle cover crossed role or solid-component authority")
+                raise ValueError("rectangle cover crossed consumed role or solid-component authority")
             if row["axis"] != rectangle["axis"] or row["sign"] != rectangle["sign"] or row["plane"] != rectangle["plane"]:
                 raise ValueError("rectangle cover crossed planar boundary authority")
+            if role_map[row["source_component_id"]] != rectangle["role"]:
+                raise ValueError("rectangle role no longer matches pinned Materials owner mapping")
             contributors.append(row)
             seen.add(atomic_id)
         expected_components = sorted({row["source_component_id"] for row in contributors})
         expected_boxes = sorted({row["box_id"] for row in contributors})
         if rectangle["source_component_ids"] != expected_components or rectangle["box_ids"] != expected_boxes:
             raise ValueError("rectangle contributor provenance set drift")
+
     if seen != set(atomic_by_id):
         raise ValueError("rectangle cover dropped atomic boundary faces")
+    if {row["source_component_id"] for row in atomic} != set(role_map):
+        raise ValueError("candidate no longer covers the exact 19 pinned Materials source owners")
 
     vertices = candidate["vertices"]
     triangles = candidate["triangles"]
@@ -358,10 +415,11 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
     if set(candidate["triangle_roles"]) != EXPECTED_ROLES:
         raise ValueError("planar-role receiver lost exact five material roles")
 
-    donor_role_areas = role_areas_from_atomic(atomic)
-    candidate_role_areas = role_areas_from_rectangles(rectangles)
+    donor_role_areas = role_areas(atomic)
+    candidate_role_areas = role_areas(rectangles)
     if donor_role_areas != candidate_role_areas:
         raise ValueError("planar-role receiver changed per-role boundary area")
+
     total_area = q12(sum(triangle_area(vertices, triangle) for triangle in triangles))
     expected_area = q12(sum(donor_role_areas.values()))
     if abs(total_area - expected_area) > EPS:
@@ -374,6 +432,7 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
     if observed_bounds != donor_result["source"]["bounds"]:
         raise ValueError("planar-role receiver bounds differ from current source")
 
+    multi_owner_rectangles = sum(1 for row in rectangles if len(row["source_component_ids"]) > 1)
     return {
         "atomic_face_count": len(atomic),
         "rectangle_count": len(rectangles),
@@ -384,6 +443,8 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
         "bounds": observed_bounds,
         "role_areas_m2": candidate_role_areas,
         "role_count": len(candidate_role_areas),
+        "source_owner_count": len({row["source_component_id"] for row in atomic}),
+        "multi_owner_rectangle_count": multi_owner_rectangles,
         "atomic_coverage_complete": True,
         "atomic_overlap_count": 0,
         "cardinal_hard_normals_only": True,
@@ -393,8 +454,17 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
             "triangle_roles": candidate["triangle_roles"],
             "rectangles": [
                 {key: row[key] for key in (
-                    "solid_component", "role", "axis", "sign", "plane", "u0", "u1", "v0", "v1",
-                    "source_component_ids", "box_ids"
+                    "solid_component",
+                    "role",
+                    "axis",
+                    "sign",
+                    "plane",
+                    "u0",
+                    "u1",
+                    "v0",
+                    "v1",
+                    "source_component_ids",
+                    "box_ids",
                 )}
                 for row in rectangles
             ],
@@ -402,12 +472,12 @@ def validate_cover(candidate: dict, donor_result: dict) -> dict:
     }
 
 
-def negative_controls(candidate: dict, donor_result: dict) -> dict:
+def negative_controls(candidate: dict, donor_result: dict, role_map: dict[str, str]) -> dict:
     controls = {}
 
     dropped = {**candidate, "rectangles": [dict(row) for row in candidate["rectangles"][:-1]]}
     try:
-        validate_cover(dropped, donor_result)
+        validate_cover(dropped, donor_result, role_map)
         controls["drop_one_rectangle"] = "UNEXPECTED_PASS"
     except ValueError as exc:
         controls["drop_one_rectangle"] = "REJECTED: " + str(exc)
@@ -415,7 +485,7 @@ def negative_controls(candidate: dict, donor_result: dict) -> dict:
     role_drift = {**candidate, "rectangles": [dict(row) for row in candidate["rectangles"]]}
     role_drift["rectangles"][0]["role"] = "unsupported_role"
     try:
-        validate_cover(role_drift, donor_result)
+        validate_cover(role_drift, donor_result, role_map)
         controls["role_drift"] = "UNEXPECTED_PASS"
     except ValueError as exc:
         controls["role_drift"] = "REJECTED: " + str(exc)
@@ -423,7 +493,7 @@ def negative_controls(candidate: dict, donor_result: dict) -> dict:
     provenance_drift = {**candidate, "rectangles": [dict(row) for row in candidate["rectangles"]]}
     provenance_drift["rectangles"][0]["source_component_ids"] = []
     try:
-        validate_cover(provenance_drift, donor_result)
+        validate_cover(provenance_drift, donor_result, role_map)
         controls["missing_contributor_provenance"] = "UNEXPECTED_PASS"
     except ValueError as exc:
         controls["missing_contributor_provenance"] = "REJECTED: " + str(exc)
@@ -435,6 +505,7 @@ def negative_controls(candidate: dict, donor_result: dict) -> dict:
 
 def build_evidence(exact_head="LOCAL_UNBOUND"):
     policy = load_policy()
+    role_map = material_role_map(policy)
     donor = load_module(DONOR_TOOL, "service_pavilion_union_shell_for_planar_role_receiver")
     shell, donor_result = donor.build_evidence(exact_head)
     if donor_result.get("result") != "PASS_CURRENT_SOURCE_BOUNDARY_ONLY_UNION_SHELL_CANDIDATE":
@@ -446,9 +517,9 @@ def build_evidence(exact_head="LOCAL_UNBOUND"):
     if donor_result["source"]["triangle_count_if_boxes_stored_separately"] != policy["semantic_source"]["expected_triangle_count"]:
         raise ValueError("current-source triangle count drift")
 
-    candidate = derive_candidate(shell, donor)
-    metrics = validate_cover(candidate, donor_result)
-    controls = negative_controls(candidate, donor_result)
+    candidate = derive_candidate(shell, donor, role_map)
+    metrics = validate_cover(candidate, donor_result, role_map)
+    controls = negative_controls(candidate, donor_result, role_map)
 
     active_triangles = int(policy["semantic_source"]["expected_triangle_count"])
     compact_v2_triangles = 2052
@@ -458,7 +529,7 @@ def build_evidence(exact_head="LOCAL_UNBOUND"):
     elif candidate_triangles == active_triangles:
         cost_class = "TRIANGLE_COUNT_PARITY_WITH_ACTIVE_SEGMENTED_RECEIVER"
     else:
-        cost_class = "ABOVE_ACTIVE_SEGMENTED_RECEIVER__BELOW_COMPACT_V2_REQUIRED"
+        cost_class = "ABOVE_ACTIVE_SEGMENTED_RECEIVER__BELOW_COMPACT_V2"
     if candidate_triangles >= compact_v2_triangles:
         raise ValueError("planar-role receiver did not improve triangle count over compact-v2")
 
@@ -467,6 +538,7 @@ def build_evidence(exact_head="LOCAL_UNBOUND"):
     candidate_model_bytes = candidate_triangles * 3 * bytes_per_triangle_corner_position_normal
     compact_model_bytes = compact_v2_triangles * 3 * bytes_per_triangle_corner_position_normal
 
+    material = policy["material_role_binding"]
     result = {
         "result": "PASS_STRUCTURAL_PLANAR_ROLE_RECTANGLE_RENDER_RECEIVER_CANDIDATE",
         "schema": policy["schema"],
@@ -487,6 +559,17 @@ def build_evidence(exact_head="LOCAL_UNBOUND"):
             "surface_area_m2": donor_result["candidate"]["surface_area_m2"],
             "internal_face_count_by_construction": donor_result["candidate"]["internal_face_count_by_construction"],
         },
+        "consumed_material_partition": {
+            "authority": material["authority"],
+            "donor_repository": material["donor_repository"],
+            "donor_pr": material["donor_pr"],
+            "donor_head": material["donor_head"],
+            "profile_path": material["profile_path"],
+            "profile_git_blob_sha": material["profile_git_blob_sha"],
+            "source_owner_count": len(role_map),
+            "role_count": len(set(role_map.values())),
+            "scalar_material_values_copied_or_retuned": False,
+        },
         "candidate": metrics,
         "comparison": {
             "cost_class": cost_class,
@@ -500,18 +583,16 @@ def build_evidence(exact_head="LOCAL_UNBOUND"):
             "map_style_position_normal_model_bytes_compact_v2": compact_model_bytes,
             "model_byte_delta_vs_active": candidate_model_bytes - active_model_bytes,
             "model_byte_delta_vs_compact_v2": candidate_model_bytes - compact_model_bytes,
-            "model_scope": "Triangle-corner expansion with FLOAT32 position + explicit normal only; excludes material/engine allocator/index/texture/device costs and is not Runtime acceptance."
+            "model_scope": "Triangle-corner expansion with FLOAT32 position + explicit normal only; excludes material/engine allocator/index/texture/device costs and is not Runtime acceptance.",
         },
         "negative_controls": controls,
         "reusable_mechanical_pattern": (
-            "For axis/cardinal manufactured box assemblies used only as a render receiver, preserve the semantic assembly separately, derive the exact occupied-union boundary, "
-            "then merge coplanar boundary cells only within the same solid/material role/plane. Carry contributor source-component sets on each rectangle, keep hard cardinal normals, "
-            "and require explicit consumer rebind. This can target clean manufactured planar highlights without forcing the indexed structural shell to become the render payload."
+            "For axis/cardinal manufactured box assemblies used only as a render receiver, preserve the semantic assembly separately, derive the exact occupied-union boundary, then merge coplanar boundary cells only within the same face-connected solid and consumed material role/plane. Carry contributor source-component sets on every rectangle, keep hard cardinal normals, and require explicit consumer rebind. This targets clean manufactured planar highlights without forcing the indexed structural shell to become the render payload."
         ),
         "handoffs": {
             "environment_art_qa": "Rebuild this exact representation in the current world and compare directly against both the active segmented receiver and compact-v2. Structural surface equivalence is not visual acceptance.",
             "runtime": "Measure this exact rectangle receiver in the actual Map SurfaceTool/ArrayMesh path; the byte model here is only a bounded preflight.",
-            "materials": "Reuse the existing five scalar material roles exactly; no scalar retune is authorized by this candidate.",
+            "materials": "Confirm the pinned 19-owner role partition remains the intended current partition; keep existing five scalar material roles unchanged unless Materials independently authorizes a retune.",
             "geometry": "No indexed topology replacement is requested. Compact-v2 remains the stronger conforming structural/transport candidate; this lane is render-only.",
             "technical_art": "Do not relabel this render rectangle cover as a transport/collision mesh without a separate exact contract.",
         },
@@ -521,9 +602,10 @@ def build_evidence(exact_head="LOCAL_UNBOUND"):
             "Environment adoption or replacement of the active segmented receiver",
             "target-device CPU/GPU/FPS/VRAM/heap or renderer-memory improvement",
             "indexed manifoldness, collision, navigation, physics, transport or manufacturing validity",
+            "Hard-Surface ownership of Materials role semantics or scalar values",
             "semantic replacement of header-segmented-23 or compact-v2/reference Geometry identities",
             "Universal Creation or Profession Fabric promotion",
-            "CANON, production/game readiness or Hard-Surface mastery"
+            "CANON, production/game readiness or Hard-Surface mastery",
         ],
     }
     result["receipt_sha256"] = canonical_sha256({key: value for key, value in result.items() if key != "receipt_sha256"})
