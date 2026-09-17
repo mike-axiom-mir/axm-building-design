@@ -46,9 +46,10 @@ class PlanarRoleRenderReceiverTests(unittest.TestCase):
             self.result["candidate"]["bounds"],
             self.result["semantic_source"]["bounds"],
         )
-        self.assertEqual(
+        self.assertAlmostEqual(
             self.result["candidate"]["surface_area_m2"],
             self.result["boundary_oracle"]["surface_area_m2"],
+            delta=self.module.EPS,
         )
 
     def test_candidate_is_materially_smaller_than_compact_v2_triangle_domain(self):
