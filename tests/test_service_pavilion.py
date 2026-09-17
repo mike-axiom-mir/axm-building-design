@@ -38,7 +38,17 @@ class ServicePavilionTests(unittest.TestCase):
             self.assertEqual(result["mount_pattern_residual_m"], 0.0)
             self.assertGreaterEqual(result["footprint_margin_m"][0], 0.0)
             self.assertGreaterEqual(result["footprint_margin_m"][1], 0.0)
-            self.assertGreaterEqual(result["body_clearance_beyond_plate_m"], panel["required_body_clearance_beyond_plate_m"])
+            self.assertAlmostEqual(
+                result["body_clearance_beyond_plate_m"],
+                panel["required_body_clearance_beyond_plate_m"],
+                places=12,
+            )
+            self.assertAlmostEqual(result["body_center_surplus_beyond_plate_m"], 0.06, places=12)
+            self.assertNotAlmostEqual(
+                result["body_center_surplus_beyond_plate_m"],
+                result["body_clearance_beyond_plate_m"],
+                places=12,
+            )
 
     def test_reserved_map_slot_is_not_exceeded(self):
         pav,panel,fits,obj,mins,maxs,path_gap,negatives,topology = mod.build()
