@@ -1,0 +1,91 @@
+name: Procedural building planar-role hard-normal stress family
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify exact owner ancestry
+        run: |
+          git merge-base --is-ancestor cdf93ea6ad2757e14e5febc96d579d94f64a4d24 HEAD
+          git merge-base --is-ancestor 7b86b1a9da1ef8dc670ca01cf4918728e68ece92 HEAD
+          git merge-base --is-ancestor 7dfb1153dc5f80bcbf1b48803f044236d4ebb030 HEAD
+      - name: Compile bounded Procedural family
+        run: |
+          python -m py_compile \
+            tools/build_pavilion_planar_role_hard_normal_stress_family.py \
+            tests/test_pavilion_planar_role_hard_normal_stress_family.py
+      - name: Test bounded Procedural family
+        run: |
+          python -m unittest discover \
+            -s tests \
+            -p 'test_pavilion_planar_role_hard_normal_stress_family.py' \
+            -v
+      - name: Build retained exact-head evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          python tools/build_pavilion_planar_role_hard_normal_stress_family.py \
+            --exact-head "${{ github.event.pull_request.head.sha || github.sha }}" \
+            --output-dir evidence/service-pavilion-planar-role-hard-normal-stress-family-001
+      - name: Verify retained summary boundary
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("evidence/service-pavilion-planar-role-hard-normal-stress-family-001")
+          data = json.loads((root / "summary.json").read_text())
+          assert data["exact_head"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+          assert data["result"] == "PASS_BOUNDED_PLANAR_ROLE_HARD_NORMAL_STRESS_FAMILY"
+          assert data["decision"] == "PASS_DIAGNOSTIC_STRESS_COHORT_FAMILY_ONLY__NO_RECEIVER_OR_SOURCE_ADOPTION"
+          assert data["hard_surface_authority_head"] == "7b86b1a9da1ef8dc670ca01cf4918728e68ece92"
+          assert data["geometry_diagnostic_head"] == "7dfb1153dc5f80bcbf1b48803f044236d4ebb030"
+          assert data["geometry_quotient_sha256"] == "7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f"
+          assert data["source_authorized_render_identity_count"] == 604
+          assert data["diagnostic_quotient_group_count"] == 312
+          assert data["cohort_count"] == 3
+          assert data["distinct_cohort_digests"] == 3
+          assert data["cohorts_cover_all_312_quotient_groups_exactly_once"] is True
+          assert data["cohorts_cover_all_604_source_render_identities_exactly_once"] is True
+          assert data["outputs"]["single-normal-control"]["quotient_group_count"] == 124
+          assert data["outputs"]["single-normal-control"]["source_render_identity_count"] == 124
+          assert data["outputs"]["two-normal-boundary"]["quotient_group_count"] == 84
+          assert data["outputs"]["two-normal-boundary"]["source_render_identity_count"] == 168
+          assert data["outputs"]["three-normal-boundary"]["quotient_group_count"] == 104
+          assert data["outputs"]["three-normal-boundary"]["source_render_identity_count"] == 312
+          assert len(data["negative_controls"]) == 6
+          assert all(value.startswith("REJECTED:") for value in data["negative_controls"].values())
+          assert data["source_mesh_changed"] is False
+          assert data["source_equivalence_changed"] is False
+          assert data["product_mesh_emitted"] is False
+          assert data["normal_field_generated_or_repacked"] is False
+          assert data["receiver_adoption"] is False
+          assert data["uc_or_profession_fabric_changed"] is False
+          PY
+      - name: Upload exact retained evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-planar-role-hard-normal-stress-family-001-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/service-pavilion-planar-role-hard-normal-stress-family-001
+          if-no-files-found: error
+          retention-days: 30

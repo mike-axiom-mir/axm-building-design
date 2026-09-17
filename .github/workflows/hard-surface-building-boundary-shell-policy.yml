@@ -1,0 +1,101 @@
+name: Hard-surface Building boundary-shell policy evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-boundary-shell-policy-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      GEOMETRY_EVIDENCE_HEAD: b6d14d48c59859ae6ff2aaed7dea86b4e00a5402
+    steps:
+      - name: Checkout exact Hard-Surface head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bind exact Geometry donor and unchanged source representation
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$GEOMETRY_EVIDENCE_HEAD" HEAD
+          git diff --exit-code "$GEOMETRY_EVIDENCE_HEAD" HEAD -- \
+            assets/service_pavilion_001.json \
+            assets/utility_access_panel_001.json \
+            assets/service_pavilion_001_header_segmentation.json \
+            assets/service_pavilion_001_emission_variants.json \
+            assets/service_pavilion_001_current_emission_policy.json \
+            tools/build_service_pavilion.py \
+            tools/build_service_pavilion_header_segmentation.py \
+            tools/service_pavilion_emission_variants.py \
+            tools/service_pavilion_current_emission_policy.py \
+            tools/build_service_pavilion_union_shell_candidate.py
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Rebuild exact boundary-shell candidate
+        run: >-
+          python tools/build_service_pavilion_union_shell_candidate.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-001
+
+      - name: Build source-owned boundary-shell policy evidence
+        run: >-
+          python tools/service_pavilion_boundary_shell_policy.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-policy-001
+
+      - name: Truth-gate exact Hard-Surface policy result
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          exact = os.environ['EXACT_HEAD']
+          root = pathlib.Path('evidence/service-pavilion-boundary-shell-policy-001')
+          data = json.loads((root / 'receipt.json').read_text())
+          assert data['result'] == 'PASS_SOURCE_OWNED_BOUNDARY_SHELL_RECEIVING_POLICY'
+          assert data['exact_hard_surface_head'] == exact
+          assert data['geometry_evidence_head'] == os.environ['GEOMETRY_EVIDENCE_HEAD']
+          assert data['semantic_source']['variant_id'] == 'header-segmented-23'
+          assert data['semantic_source']['authority'] == 'SEMANTIC_SOURCE_OF_TRUTH'
+          assert data['derived_representation']['status'] == 'SOURCE_OWNED_DERIVED_REPRESENTATION_NOT_SEMANTIC_SOURCE'
+          assert data['selection_policy'] == 'SEMANTIC_BOXES_REMAIN_AUTHORITY__BOUNDARY_SHELL_REQUIRES_EXPLICIT_CONSUMER_REBIND'
+          assert data['fallback_policy'] == 'NO_IMPLICIT_REPRESENTATION_FALLBACK'
+          metrics = data['candidate_metrics']
+          assert metrics['semantic_box_count'] == 23
+          assert metrics['solid_component_count'] == 4
+          assert metrics['boundary_vertex_count'] == 1420
+          assert metrics['boundary_triangle_count'] == 2884
+          assert metrics['source_component_owner_count'] == 19
+          assert abs(metrics['occupied_union_volume_m3'] - 9.49832) <= 1e-9
+          assert abs(metrics['double_sided_hidden_area_removed_m2'] - 3.3168) <= 1e-9
+          assert all(value.startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          PY
+
+      - name: Retain exact Hard-Surface evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-boundary-shell-policy-001-${{ env.EXACT_HEAD }}
+          path: |
+            evidence/service-pavilion-boundary-shell-policy-001
+            evidence/service-pavilion-boundary-shell-001
+          if-no-files-found: error

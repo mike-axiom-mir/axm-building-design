@@ -1,0 +1,62 @@
+{
+  "schema": "axm.building-planar-role-hard-normal-authority-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "policy_id": "service-pavilion-planar-role-hard-normal-authority-001",
+  "owner": "Building Hard Surface",
+  "source_render_split_authority": {
+    "owner_pr": 11,
+    "owner_head": "0caa9ac9644f027350935240476bd0bf3bb66e18",
+    "policy_path": "assets/service_pavilion_001_planar_role_render_split_policy.json",
+    "policy_git_blob_sha": "5f2130d6286e2ee1b67395b1a753fbfc3eac22ea",
+    "equivalence_key": [
+      "MATERIAL_ROLE",
+      "EXACT_POSITION",
+      "EXACT_CARDINAL_HARD_NORMAL",
+      "EXPLICIT_PROTECTED_SPLIT_ID"
+    ],
+    "cross_hard_normal_sharing": "FORBIDDEN",
+    "selection_policy": "SOURCE_INTENT_ONLY__CONSUMERS_MUST_EXPLICITLY_REBIND_AND_RETEST"
+  },
+  "geometry_diagnostic_donor": {
+    "pr": 13,
+    "head": "7dfb1153dc5f80bcbf1b48803f044236d4ebb030",
+    "policy_path": "assets/service_pavilion_001_planar_role_normal_boundary_quotient_policy.json",
+    "policy_git_blob_sha": "82253e1491f1e21de4be733919762924fa6610f1",
+    "diagnostic_id": "source-intent-hard-normal-to-role-position-quotient-001",
+    "required_result": "PASS_HARD_NORMAL_IDENTITY_REMOVAL_YIELDS_EXACT_312_GROUP_STRUCTURAL_QUOTIENT",
+    "quotient_sha256": "7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f"
+  },
+  "observed_identity_boundary": {
+    "source_intent_render_vertex_count": 604,
+    "role_position_quotient_group_count": 312,
+    "source_render_vertex_identities_removed": 292,
+    "groups_crossing_source_hard_normal_boundaries": 188,
+    "single_hard_normal_groups": 124,
+    "two_hard_normal_groups": 84,
+    "three_hard_normal_groups": 104,
+    "maximum_source_hard_normal_classes_per_group": 3,
+    "dropped_attribute": "EXACT_CARDINAL_HARD_NORMAL",
+    "preserved_attributes": [
+      "MATERIAL_ROLE",
+      "EXACT_POSITION",
+      "EXPLICIT_PROTECTED_SPLIT_ID"
+    ],
+    "source_intent_partition_status": "SOURCE_AUTHORIZED_RENDER_EQUIVALENCE",
+    "role_position_quotient_status": "DERIVED_ATTRIBUTE_DROPPING_PARTITION_NOT_SOURCE_EQUIVALENT"
+  },
+  "consumer_policy": {
+    "equal_312_count_is_source_equivalence": false,
+    "exact_role_position_partition_match_is_source_normal_equivalence": false,
+    "consumer_may_claim_source_hard_normal_preservation_from_this_policy": false,
+    "consumer_must_declare_own_normal_storage_or_generation_identity": true,
+    "consumer_must_declare_dropped_source_attributes": true,
+    "consumer_must_retest_transport_runtime_and_visual_acceptance": true,
+    "source_owner_normal_field_rewrite": false,
+    "source_owner_312_mesh_emitted": false,
+    "automatic_receiver_adoption": false,
+    "implicit_fallback": false
+  },
+  "reusable_pattern": "ATTRIBUTE_QUOTIENT_MUST_DECLARE_DROPPED_SOURCE_BOUNDARY_BEFORE_RECEIVER_EQUIVALENCE",
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_MANUFACTURED_DOMAIN_REPRODUCES_THE_SAME_SOURCE_ATTRIBUTE_QUOTIENT_NEED",
+  "truth_boundary": "This policy source-owns only the distinction between the exact 604-class planar-role render equivalence and a 312-group partition produced by dropping exact cardinal hard-normal identity. The 312 quotient may be useful to explain a downstream consumer, but it is not source-equivalent solely because its count or role-position partition matches. Hard Surface does not emit a 312 mesh, generate replacement normals, choose a receiver, accept transport/runtime/visual output, define a normal tolerance, or authorize source smoothing, CANON, production readiness or arbitrary-mesh welding."
+}
