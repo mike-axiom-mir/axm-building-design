@@ -1,0 +1,34 @@
+{
+  "schema": "axm.building-boundary-shell-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "policy_revision": "service-pavilion-001/boundary-shell-policy-004",
+  "semantic_source": {
+    "schema": "axm.building-current-emission-policy/v0.1",
+    "variant_id": "header-segmented-23",
+    "source_revision": "service-pavilion-001/interpenetration-free-header-segmentation-003",
+    "emitted_box_count": 23,
+    "authority": "SEMANTIC_SOURCE_OF_TRUTH"
+  },
+  "derived_representation": {
+    "schema": "axm.building-current-source-boundary-shell/v0.1",
+    "representation_id": "boundary-only-union-shell-001",
+    "geometry_evidence_head": "b6d14d48c59859ae6ff2aaed7dea86b4e00a5402",
+    "status": "SOURCE_OWNED_DERIVED_REPRESENTATION_NOT_SEMANTIC_SOURCE",
+    "allowed_roles": [
+      "render_receiving_candidate",
+      "transport_receiving_candidate",
+      "material_surface_receiving_candidate"
+    ],
+    "forbidden_inference": [
+      "semantic_component_replacement",
+      "receiver_semantic_replacement",
+      "collision_acceptance",
+      "manufacturing_acceptance",
+      "runtime_performance_acceptance"
+    ]
+  },
+  "selection_policy": "SEMANTIC_BOXES_REMAIN_AUTHORITY__BOUNDARY_SHELL_REQUIRES_EXPLICIT_CONSUMER_REBIND",
+  "provenance_policy": "PRESERVE_SOURCE_COMPONENT_ID_ON_EVERY_BOUNDARY_TRIANGLE",
+  "fallback_policy": "NO_IMPLICIT_REPRESENTATION_FALLBACK",
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_DOMAIN_EVIDENCE"
+}

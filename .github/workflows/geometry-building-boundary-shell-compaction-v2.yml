@@ -1,0 +1,120 @@
+name: Geometry Building boundary-shell compaction v2 evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/geometry-building-boundary-shell-compaction-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      HARD_SURFACE_POLICY_HEAD: 4f223e95fa95a8eb2e07d24ab1a2f4d3db70df55
+      BOUNDARY_SHELL_GEOMETRY_HEAD: b6d14d48c59859ae6ff2aaed7dea86b4e00a5402
+    steps:
+      - name: Checkout exact Geometry compaction v2 head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bind exact lineage and unchanged source receiving policy
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$HARD_SURFACE_POLICY_HEAD" HEAD
+          git merge-base --is-ancestor "$BOUNDARY_SHELL_GEOMETRY_HEAD" HEAD
+          git diff --exit-code "$HARD_SURFACE_POLICY_HEAD" HEAD -- \
+            assets/service_pavilion_001.json \
+            assets/utility_access_panel_001.json \
+            assets/service_pavilion_001_header_segmentation.json \
+            assets/service_pavilion_001_emission_variants.json \
+            assets/service_pavilion_001_current_emission_policy.json \
+            assets/service_pavilion_001_boundary_shell_policy.json \
+            tools/build_service_pavilion.py \
+            tools/build_service_pavilion_header_segmentation.py \
+            tools/service_pavilion_emission_variants.py \
+            tools/service_pavilion_current_emission_policy.py \
+            tools/build_service_pavilion_union_shell_candidate.py \
+            tools/service_pavilion_boundary_shell_policy.py
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Rebuild source-owned receiving policy evidence
+        run: >-
+          python tools/service_pavilion_boundary_shell_policy.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-policy-001
+
+      - name: Build conservative compaction control
+        run: >-
+          python tools/build_service_pavilion_boundary_shell_compaction.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-compaction-v1-control
+
+      - name: Build collinear-chain preserving compaction evidence
+        run: >-
+          python tools/build_service_pavilion_boundary_shell_compaction_v2.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-compaction-v2-001
+
+      - name: Truth-gate exact Geometry v2 result
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          exact = os.environ['EXACT_HEAD']
+          root = pathlib.Path('evidence/service-pavilion-boundary-shell-compaction-v2-001')
+          data = json.loads((root / 'compaction-v2-evidence.json').read_text())
+          assert data['result'] == 'PASS_BOUNDARY_SHELL_CONFORMING_PLANAR_COMPACTION_COLLINEAR_CHAIN_V2'
+          assert data['schema'] == 'axm.building-boundary-shell-conforming-compaction/v0.2'
+          assert data['exact_geometry_head'] == exact
+          assert data['donor']['semantic_source_variant_id'] == 'header-segmented-23'
+          assert data['candidate']['vertex_count'] < data['historical_v1_control']['vertex_count']
+          assert data['candidate']['triangle_count'] < data['historical_v1_control']['triangle_count']
+          assert data['candidate']['vertex_count'] < data['donor']['vertex_count']
+          assert data['candidate']['triangle_count'] < data['donor']['triangle_count']
+          assert data['candidate']['additional_vertex_reduction_vs_v1'] > 0
+          assert data['candidate']['additional_triangle_reduction_vs_v1'] > 0
+          assert data['candidate']['compacted_patch_count'] > 0
+          assert data['candidate']['bounds'] == data['donor']['bounds']
+          assert abs(data['candidate']['signed_volume_m3'] - data['donor']['signed_volume_m3']) <= 1e-9
+          assert abs(data['candidate']['surface_area_m2'] - data['donor']['surface_area_m2']) <= 1e-9
+          assert data['candidate']['triangle_component_count'] == data['donor']['solid_component_count']
+          assert data['candidate']['source_component_owner_count'] == data['donor']['source_component_owner_count']
+          assert data['candidate']['maximum_source_component_area_residual_m2'] <= 1e-9
+          assert data['candidate']['max_patch_area_residual_m2'] <= 1e-9
+          for key in (
+              'boundary_edge_count', 'nonmanifold_edge_count', 'orientation_conflict_edge_count',
+              'degenerate_triangle_count', 'isolated_vertex_count', 'disconnected_vertex_fan_count',
+          ):
+              assert data['candidate'][key] == 0, (key, data['candidate'][key])
+          assert data['candidate']['max_vertex_fan_components'] == 1
+          assert all(value.startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          PY
+
+      - name: Retain exact Geometry v2 evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-boundary-shell-compaction-v2-001-${{ env.EXACT_HEAD }}
+          path: |
+            evidence/service-pavilion-boundary-shell-compaction-v2-001
+            evidence/service-pavilion-boundary-shell-compaction-v1-control
+            evidence/service-pavilion-boundary-shell-policy-001
+          if-no-files-found: error

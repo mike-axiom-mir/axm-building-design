@@ -1,0 +1,53 @@
+{
+  "schema": "axm.building-compact-boundary-shell-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "policy_revision": "service-pavilion-001/compact-boundary-shell-policy-005",
+  "semantic_source": {
+    "schema": "axm.building-current-emission-policy/v0.1",
+    "variant_id": "header-segmented-23",
+    "emitted_box_count": 23,
+    "authority": "SEMANTIC_SOURCE_OF_TRUTH"
+  },
+  "reference_representation": {
+    "schema": "axm.building-current-source-boundary-shell/v0.1",
+    "representation_id": "boundary-only-union-shell-001",
+    "geometry_evidence_head": "b6d14d48c59859ae6ff2aaed7dea86b4e00a5402",
+    "source_owner_policy_head": "4f223e95fa95a8eb2e07d24ab1a2f4d3db70df55",
+    "status": "SOURCE_OWNED_DERIVED_REFERENCE_RECEIVING_REPRESENTATION_NOT_SEMANTIC_SOURCE"
+  },
+  "compact_representation": {
+    "schema": "axm.building-boundary-shell-conforming-compaction/v0.2",
+    "representation_id": "boundary-only-union-shell-conforming-compact-v2-001",
+    "geometry_evidence_head": "16253e7dd2f8cd590667f9631e4b50fdfcc7280d",
+    "donor_representation_id": "boundary-only-union-shell-001",
+    "expected_payload_sha256": "d51d853ce95216ad66f6ce88cf5bca6aecfa19e22e5e8ce4045cf481b719936a",
+    "status": "SOURCE_OWNED_DERIVED_COMPACT_RECEIVING_OPTION_NOT_DEFAULT",
+    "allowed_roles": [
+      "render_receiving_candidate",
+      "transport_receiving_candidate",
+      "material_surface_receiving_candidate"
+    ],
+    "forbidden_inference": [
+      "semantic_component_replacement",
+      "automatic_reference_replacement",
+      "material_or_normal_equivalence",
+      "technical_art_transport_acceptance",
+      "environment_adoption",
+      "runtime_performance_acceptance",
+      "collision_acceptance",
+      "manufacturing_acceptance"
+    ]
+  },
+  "selection_policy": "EXPLICIT_RECEIVING_REPRESENTATION_ID_REQUIRED__NO_DEFAULT_OR_IMPLICIT_FALLBACK",
+  "semantic_authority_policy": "RECEIVING_REPRESENTATION_NEVER_REPLACES_HEADER_SEGMENTED_23_SEMANTIC_AUTHORITY",
+  "provenance_policy": "PRESERVE_SOURCE_COMPONENT_ID_AND_DONOR_VERTEX_PROVENANCE_ON_COMPACT_V2",
+  "evidence_transfer_policy": "NO_DOWNSTREAM_PASS_TRANSFER_ACROSS_REFERENCE_V1_OR_COMPACT_V2_IDENTITIES__EXACT_CONSUMER_REBIND_REQUIRED",
+  "current_downstream_state": {
+    "materials_reference_or_v1_evidence": "DOES_NOT_COVER_COMPACT_V2",
+    "environment_adoption": "NOT_CLAIMED",
+    "technical_art_transport": "NOT_CLAIMED",
+    "runtime_acceptance": "NOT_CLAIMED",
+    "visual_qa_art_acceptance": "NOT_CLAIMED"
+  },
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_DOMAIN_EVIDENCE"
+}

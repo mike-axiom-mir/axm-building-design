@@ -1,0 +1,36 @@
+{
+  "schema": "axm.building-utility-panel-mount-axis-receiver-capacity-family/v0.1",
+  "family_id": "axm.building-utility-panel-mount-axis-receiver-capacity-family/v0.1",
+  "hard_surface_capacity": {
+    "owner": "Building Hard Surface",
+    "pr": 5,
+    "head": "2a5df5fa720ec939bf0e935f2cb8bc3d94049d89",
+    "contract_path": "assets/utility_panel_mount_axis_clearance_capacity_001.json",
+    "contract_blob_sha": "e8efe188156f4a0e09706d7d2a45b0723b1d3920",
+    "panel_path": "assets/utility_access_panel_001.json",
+    "panel_blob_sha": "4da242e35a84b20a80f4acf28146be613624e734"
+  },
+  "receiver_surface_family": {
+    "owner": "Building Procedural Design",
+    "profile_path": "procedural/service_pavilion_utility_panel_service_surface_receivers_001.json",
+    "profile_blob_sha": "fdf9a1933e928959fe6477f83e2b017ea481249d",
+    "builder_path": "tools/build_pavilion_utility_panel_service_surface_receivers.py",
+    "builder_blob_sha": "7d196565d3c97368fbe5e701fd1c93d223a73cff",
+    "required_result": "PASS_SOURCE_OWNED_UTILITY_PANEL_SERVICE_SURFACE_RECEIVER_FAMILY"
+  },
+  "receiver_ids": [
+    "front-utility-bay",
+    "east-utility-bay"
+  ],
+  "axis_identity_policy": "SOURCE_MOUNT_POINT_ORDER_IS_IDENTITY__NO_RENUMBERING",
+  "world_transform_policy": "SOURCE_LOCAL_YZ_POINT_THROUGH_EXISTING_SERVICE_SURFACE_PRIMARY_SECONDARY_FRAME__AXIS_ALONG_WORLD_OUTWARD",
+  "canonical_output_order": "RECEIVER_ID_THEN_SOURCE_MOUNT_INDEX",
+  "reservation_radius_selected": false,
+  "selected_radius_m": null,
+  "fastener_geometry_selected": false,
+  "tooling_envelope_selected": false,
+  "automatic_receiver_adoption": false,
+  "authority": "DERIVE_ONLY_SOURCE_OWNED_MOUNT_AXIS_CAPACITY_IN_EXISTING_RECEIVER_FRAMES",
+  "failure_policy": "FAIL_CLOSED_NO_RADIUS_SELECTION_NO_FASTENER_OR_TOOLING_INFERENCE_NO_AXIS_RENUMBERING_NO_RECEIVER_INFERENCE_NO_ADOPTION",
+  "truth_boundary": "This family only transports the exact Hard-Surface-owned panel mount-axis coordinates and geometric closed common reservation capacity through the two already-proven Building Procedural receiver surface frames. It does not select a usable radius, bolt, screw, pin, hole, driver/tool envelope, retention method, tolerance, manufacturing rule, Map/runtime adoption, collision, visual acceptance, CANON or production readiness."
+}

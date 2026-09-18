@@ -1,0 +1,108 @@
+name: Geometry Building planar-role source-intent indexed-domain evidence
+
+on:
+  pull_request:
+    paths:
+      - "assets/service_pavilion_001_planar_role_indexed_geometry_policy.json"
+      - "tools/build_service_pavilion_planar_role_indexed_geometry.py"
+      - "tests/test_service_pavilion_planar_role_indexed_geometry.py"
+      - ".github/workflows/geometry-building-planar-role-indexed-domain.yml"
+      - "assets/service_pavilion_001_planar_role_render_split_policy.json"
+      - "tools/verify_service_pavilion_planar_role_render_split_policy.py"
+      - "assets/service_pavilion_001_planar_role_render_receiver_policy.json"
+      - "tools/build_service_pavilion_planar_role_render_receiver.py"
+      - "tools/build_service_pavilion_union_shell_candidate.py"
+      - "tools/service_pavilion_current_emission_policy.py"
+      - "tools/service_pavilion_emission_variants.py"
+      - "assets/service_pavilion_001_current_emission_policy.json"
+      - "assets/service_pavilion_001_emission_variants.json"
+      - "assets/service_pavilion_001_header_segmentation.json"
+      - "assets/service_pavilion_001.json"
+      - "assets/utility_access_panel_001.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile Geometry indexed-domain code
+        run: |
+          python -m py_compile tools/build_service_pavilion_planar_role_indexed_geometry.py
+
+      - name: Run complete Building test suite
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Build exact-head indexed-domain evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXACT_HEAD="${{ github.event.pull_request.head.sha || github.sha }}"
+          rm -rf evidence/service-pavilion-planar-role-indexed-geometry-001
+          python tools/build_service_pavilion_planar_role_indexed_geometry.py \
+            --exact-head "$EXACT_HEAD" \
+            --output-dir evidence/service-pavilion-planar-role-indexed-geometry-001 \
+            > evidence-planar-role-indexed-geometry-${{ matrix.python-version }}.json
+          test "$(cat evidence/service-pavilion-planar-role-indexed-geometry-001/exact-head.txt)" = "$EXACT_HEAD"
+
+      - name: Truth gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('evidence/service-pavilion-planar-role-indexed-geometry-001/indexed-render-domain-evidence.json')
+          data = json.loads(path.read_text())
+          metrics = data['metrics']
+          assert data['result'] == 'PASS_SOURCE_INTENT_INDEXED_RENDER_DOMAIN_EXACT_CORNER_RECONSTRUCTION'
+          assert data['candidate_id'] == 'boundary-only-planar-role-source-intent-indexed-001'
+          assert data['parent_hard_surface_head'] == '0caa9ac9644f027350935240476bd0bf3bb66e18'
+          assert metrics['source_triangle_corner_count'] == 1008
+          assert metrics['render_vertex_count'] == 604
+          assert metrics['index_count'] == 1008
+          assert metrics['triangle_count'] == 336
+          assert metrics['material_role_count'] == 5
+          assert metrics['storage_vertex_reduction_vs_unindexed_corners'] == 404
+          assert metrics['exact_corner_stream_reconstruction'] is True
+          assert metrics['position_mismatch_count'] == 0
+          assert metrics['normal_mismatch_count'] == 0
+          assert metrics['material_role_mismatch_count'] == 0
+          assert metrics['protected_split_mismatch_count'] == 0
+          assert metrics['render_vertices_sharing_geometric_position'] > 0
+          assert metrics['cross_rectangle_render_vertex_count'] > 0
+          assert all(str(value).startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert data['authority']['semantic_source'] == 'BUILDING_HARD_SURFACE'
+          assert data['authority']['render_domain_construction'] == 'BUILDING_GEOMETRY_TOPOLOGY'
+          assert all(data['authority'][key] == 'NOT_GEOMETRY_OWNED' for key in (
+              'environment_adoption', 'runtime_adoption', 'transport_acceptance', 'visual_acceptance'
+          ))
+          print(data['result'])
+          print(json.dumps(metrics, indent=2, sort_keys=True))
+          PY
+
+      - name: Retain exact Geometry evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-planar-role-indexed-geometry-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/service-pavilion-planar-role-indexed-geometry-001/
+            evidence-planar-role-indexed-geometry-${{ matrix.python-version }}.json
+          if-no-files-found: error

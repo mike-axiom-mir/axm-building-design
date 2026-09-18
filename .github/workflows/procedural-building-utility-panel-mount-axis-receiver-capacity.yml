@@ -1,0 +1,131 @@
+name: Procedural Building utility-panel mount-axis receiver capacity family evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PREVIOUS_PROCEDURAL_HEAD: 0b1521548e5c6a55def1af3490bc5e4724ff1219
+      HARD_SURFACE_CAPACITY_HEAD: 2a5df5fa720ec939bf0e935f2cb8bc3d94049d89
+      CAPACITY_CONTRACT_BLOB: e8efe188156f4a0e09706d7d2a45b0723b1d3920
+      PANEL_SOURCE_BLOB: 4da242e35a84b20a80f4acf28146be613624e734
+      SURFACE_PROFILE_BLOB: fdf9a1933e928959fe6477f83e2b017ea481249d
+      SURFACE_BUILDER_BLOB: 7d196565d3c97368fbe5e701fd1c93d223a73cff
+    steps:
+      - name: Checkout exact Procedural head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Checkout exact Sticker Fabric shared placement home
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-sticker-fabric
+          ref: 3aa93b0132eea9becefb20c716c6ec1a023ad28b
+          path: external/axm-sticker-fabric
+          fetch-depth: 1
+
+      - name: Bind exact Procedural and source-owner lineage
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$PREVIOUS_PROCEDURAL_HEAD" HEAD
+          git merge-base --is-ancestor "$HARD_SURFACE_CAPACITY_HEAD" HEAD
+          test "$(git rev-parse "$HARD_SURFACE_CAPACITY_HEAD":assets/utility_panel_mount_axis_clearance_capacity_001.json)" = "$CAPACITY_CONTRACT_BLOB"
+          test "$(git rev-parse "$HARD_SURFACE_CAPACITY_HEAD":assets/utility_access_panel_001.json)" = "$PANEL_SOURCE_BLOB"
+          test "$(git rev-parse HEAD:procedural/service_pavilion_utility_panel_service_surface_receivers_001.json)" = "$SURFACE_PROFILE_BLOB"
+          test "$(git rev-parse HEAD:tools/build_pavilion_utility_panel_service_surface_receivers.py)" = "$SURFACE_BUILDER_BLOB"
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact mount-axis receiver capacity family evidence
+        if: matrix.python-version == '3.11'
+        run: >-
+          python tools/build_pavilion_utility_panel_mount_axis_receiver_capacity.py
+          --sticker-root external/axm-sticker-fabric
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-utility-panel-mount-axis-receiver-capacity-001
+
+      - name: Truth-gate exact family result
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          root = Path('evidence/service-pavilion-utility-panel-mount-axis-receiver-capacity-001')
+          data = json.loads((root / 'summary.json').read_text())
+          assert data['result'] == 'PASS_BOUNDED_UTILITY_PANEL_MOUNT_AXIS_RECEIVER_CAPACITY_FAMILY'
+          assert data['decision'] == 'PASS_DERIVED_WORLD_MOUNT_AXIS_CAPACITY_FAMILY_ONLY__NO_RESERVATION_FASTENER_TOOLING_OR_ADOPTION'
+          assert data['hard_surface_capacity_head'] == os.environ['HARD_SURFACE_CAPACITY_HEAD']
+          assert data['capacity_contract_blob_sha'] == os.environ['CAPACITY_CONTRACT_BLOB']
+          assert data['panel_source_blob_sha'] == os.environ['PANEL_SOURCE_BLOB']
+          assert data['receiver_surface_family_result'] == 'PASS_SOURCE_OWNED_UTILITY_PANEL_SERVICE_SURFACE_RECEIVER_FAMILY'
+          assert data['receiver_ids'] == ['front-utility-bay', 'east-utility-bay']
+          assert data['receiver_count'] == 2
+          assert data['source_mount_axis_count'] == 4
+          assert data['world_axis_count'] == 8
+          assert data['distinct_receiver_axis_set_digests'] == 2
+          assert data['distinct_world_axis_origins'] == 8
+          assert abs(data['closed_common_reservation_tangency_cap_m'] - 0.05) <= 1e-12
+          assert abs(data['minimum_axis_to_footprint_boundary_m'] - 0.05) <= 1e-12
+          assert abs(data['minimum_axis_pair_distance_m'] - 1.0) <= 1e-12
+          assert data['limiting_constraint'] == 'FOOTPRINT_EDGE'
+          assert data['maximum_pair_distance_residual_m'] <= 1e-12
+          assert abs(data['receiver_outward_axis_dot']) <= 1e-12
+          assert data['all_receivers_preserve_180_degree_axis_set'] is True
+          assert data['canonical_order_invariant'] is True
+          assert data['family_digest'] == data['reverse_iteration_family_digest']
+          assert len(data['negative_controls']) == 8
+          assert all(value.startswith('HOLD:') for value in data['negative_controls'].values())
+          assert data['reservation_radius_selected'] is False
+          assert data['selected_radius_m'] is None
+          assert data['fastener_geometry_selected'] is False
+          assert data['tooling_envelope_selected'] is False
+          assert data['source_geometry_changed'] is False
+          assert data['receiver_geometry_changed'] is False
+          assert data['automatic_receiver_adoption'] is False
+
+          outputs = {item['receiver_id']: item for item in data['outputs']}
+          assert outputs['front-utility-bay']['world_outward_axis'] == [0.0, -1.0, 0.0]
+          assert outputs['east-utility-bay']['world_outward_axis'] == [1.0, 0.0, 0.0]
+          assert outputs['front-utility-bay']['axis_count'] == 4
+          assert outputs['east-utility-bay']['axis_count'] == 4
+
+          def close3(actual, expected, eps=1e-12):
+              return all(abs(float(a) - float(b)) <= eps for a, b in zip(actual, expected))
+
+          assert close3(outputs['front-utility-bay']['axes'][0]['world_axis_origin_on_outer_service_surface_m'], [-2.95, -1.12, 0.95])
+          assert close3(outputs['east-utility-bay']['axes'][0]['world_axis_origin_on_outer_service_surface_m'], [3.92, -0.4, 0.95])
+          assert (root / 'exact-head.txt').read_text().strip() == os.environ['EXACT_HEAD']
+          assert (root / 'hard-surface-head.txt').read_text().strip() == os.environ['HARD_SURFACE_CAPACITY_HEAD']
+          PY
+
+      - name: Retain exact Procedural evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-utility-panel-mount-axis-receiver-capacity-001-${{ env.EXACT_HEAD }}
+          path: evidence/service-pavilion-utility-panel-mount-axis-receiver-capacity-001
+          if-no-files-found: error

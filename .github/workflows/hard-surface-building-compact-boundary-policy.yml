@@ -1,0 +1,120 @@
+name: Hard-surface Building compact boundary-shell policy evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/hard-surface-boundary-shell-compaction-policy-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      REFERENCE_POLICY_HEAD: 4f223e95fa95a8eb2e07d24ab1a2f4d3db70df55
+      REFERENCE_GEOMETRY_HEAD: b6d14d48c59859ae6ff2aaed7dea86b4e00a5402
+      COMPACTION_GEOMETRY_HEAD: 16253e7dd2f8cd590667f9631e4b50fdfcc7280d
+    steps:
+      - name: Checkout exact Hard-Surface successor head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bind exact owner and Geometry lineage
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$REFERENCE_POLICY_HEAD" HEAD
+          git merge-base --is-ancestor "$REFERENCE_GEOMETRY_HEAD" HEAD
+          git merge-base --is-ancestor "$COMPACTION_GEOMETRY_HEAD" HEAD
+          git diff --exit-code "$REFERENCE_POLICY_HEAD" HEAD -- \
+            assets/service_pavilion_001_boundary_shell_policy.json \
+            tools/service_pavilion_boundary_shell_policy.py
+          git diff --exit-code "$COMPACTION_GEOMETRY_HEAD" HEAD -- \
+            assets/service_pavilion_001.json \
+            assets/utility_access_panel_001.json \
+            assets/service_pavilion_001_header_segmentation.json \
+            assets/service_pavilion_001_emission_variants.json \
+            assets/service_pavilion_001_current_emission_policy.json \
+            tools/build_service_pavilion.py \
+            tools/build_service_pavilion_header_segmentation.py \
+            tools/service_pavilion_emission_variants.py \
+            tools/service_pavilion_current_emission_policy.py \
+            tools/build_service_pavilion_union_shell_candidate.py \
+            tools/build_service_pavilion_boundary_shell_compaction.py \
+            tools/build_service_pavilion_boundary_shell_compaction_v2.py
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Rebuild exact Geometry compact v2 evidence
+        run: >-
+          python tools/build_service_pavilion_boundary_shell_compaction_v2.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-boundary-shell-compaction-v2-001
+
+      - name: Build Hard-Surface compact receiving-policy evidence
+        run: >-
+          python tools/service_pavilion_compact_boundary_shell_policy.py
+          --exact-head "$EXACT_HEAD"
+          --output-dir evidence/service-pavilion-compact-boundary-shell-policy-001
+
+      - name: Truth-gate exact Hard-Surface compact policy result
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          exact = os.environ['EXACT_HEAD']
+          root = pathlib.Path('evidence/service-pavilion-compact-boundary-shell-policy-001')
+          data = json.loads((root / 'receipt.json').read_text())
+          assert data['result'] == 'PASS_SOURCE_OWNED_COMPACT_BOUNDARY_SHELL_RECEIVING_OPTION'
+          assert data['exact_hard_surface_head'] == exact
+          assert data['reference_policy_head'] == os.environ['REFERENCE_POLICY_HEAD']
+          assert data['reference_geometry_head'] == os.environ['REFERENCE_GEOMETRY_HEAD']
+          assert data['compaction_geometry_head'] == os.environ['COMPACTION_GEOMETRY_HEAD']
+          assert data['semantic_source']['variant_id'] == 'header-segmented-23'
+          assert data['semantic_source']['authority'] == 'SEMANTIC_SOURCE_OF_TRUTH'
+          assert data['reference_representation']['representation_id'] == 'boundary-only-union-shell-001'
+          assert data['compact_representation']['representation_id'] == 'boundary-only-union-shell-conforming-compact-v2-001'
+          assert data['compact_representation']['status'] == 'SOURCE_OWNED_DERIVED_COMPACT_RECEIVING_OPTION_NOT_DEFAULT'
+          assert data['selection_policy'] == 'EXPLICIT_RECEIVING_REPRESENTATION_ID_REQUIRED__NO_DEFAULT_OR_IMPLICIT_FALLBACK'
+          assert data['evidence_transfer_policy'] == 'NO_DOWNSTREAM_PASS_TRANSFER_ACROSS_REFERENCE_V1_OR_COMPACT_V2_IDENTITIES__EXACT_CONSUMER_REBIND_REQUIRED'
+          assert data['current_downstream_state']['materials_reference_or_v1_evidence'] == 'DOES_NOT_COVER_COMPACT_V2'
+          metrics = data['metrics']
+          assert metrics['reference_vertex_count'] == 1420
+          assert metrics['reference_triangle_count'] == 2884
+          assert metrics['compact_vertex_count'] == 1004
+          assert metrics['compact_triangle_count'] == 2052
+          assert metrics['vertex_reduction'] == 416
+          assert metrics['triangle_reduction'] == 832
+          assert metrics['historical_v1_vertex_count'] == 1402
+          assert metrics['historical_v1_triangle_count'] == 2848
+          assert metrics['solid_component_count'] == 4
+          assert metrics['source_component_owner_count'] == 19
+          assert abs(metrics['signed_volume_m3'] - 9.49832) <= 1e-9
+          assert metrics['payload_sha256'] == 'd51d853ce95216ad66f6ce88cf5bca6aecfa19e22e5e8ce4045cf481b719936a'
+          assert all(value.startswith('REJECTED:') for value in data['negative_controls'].values())
+          assert (root / 'exact-head.txt').read_text().strip() == exact
+          PY
+
+      - name: Retain exact Hard-Surface compact policy evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-compact-boundary-shell-policy-001-${{ env.EXACT_HEAD }}
+          path: |
+            evidence/service-pavilion-compact-boundary-shell-policy-001
+            evidence/service-pavilion-boundary-shell-compaction-v2-001
+          if-no-files-found: error

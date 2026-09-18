@@ -1,0 +1,39 @@
+{
+  "schema": "axm.building-owner-seam-component-family/v0.1",
+  "family_id": "service-pavilion-owner-seam-component-family-001",
+  "asset_id": "service-pavilion-001",
+  "owner": "Procedural Design",
+  "source_authority": {
+    "repository": "mike-axiom-mir/axm-building-design",
+    "hard_surface_pr": 9,
+    "hard_surface_head": "04d9a06bf8e8097c62de348d11230145b1f27686",
+    "hard_surface_policy_path": "assets/service_pavilion_001_compact_boundary_owner_seam_policy.json",
+    "hard_surface_policy_git_blob_sha": "f40e34dfbd899fbf1ee023bacef6a915662463aa",
+    "hard_surface_verifier_path": "tools/verify_service_pavilion_compact_boundary_owner_seams.py",
+    "hard_surface_verifier_git_blob_sha": "38804e319daf75a196f8c990b25b033ab088c40c",
+    "hard_surface_result": "PASS_SOURCE_OWNED_COMPACT_BOUNDARY_OWNER_SEAM_GRAPH_PRESERVED",
+    "owner_seam_identity_sha256": "75b865c2b6f0559410549c03ac1c3b44fd00a71b186289d8a2ccb1e06df2c322"
+  },
+  "family_contract": {
+    "input": "EXACT_HARD_SURFACE_OWNER_SEAM_RECORDS",
+    "operation": "GROUP_BY_EXACT_OWNER_PAIR_THEN_CONNECTED_COMPONENT_BY_DONOR_SOURCE_VERTEX_ID",
+    "component_identity": "OWNER_PAIR_PLUS_SORTED_SOURCE_EDGES",
+    "ordering": "LEXICOGRAPHIC_OWNER_PAIR_THEN_MIN_SOURCE_VERTEX_THEN_COMPONENT_DIGEST",
+    "geometry_mutation": false,
+    "source_rewrite": false,
+    "physical_seam_inference": false,
+    "automatic_receiver_adoption": false,
+    "implicit_fallback": false
+  },
+  "exact_bounds": {
+    "expected_owner_seam_edge_count": 268,
+    "expected_owner_pair_count": 30,
+    "expected_total_owner_seam_length_m": 34.72,
+    "expected_edge_count_classes": [4, 6, 8, 10, 12, 14],
+    "expected_length_classes_m": [0.72, 0.8, 1.44, 5.2],
+    "length_class_round_digits": 2
+  },
+  "failure_policy": "FAIL_CLOSED_NO_OWNER_GUESSING_NO_EDGE_SYNTHESIS_NO_PHYSICAL_SEAM_PROMOTION_NO_RECEIVER_ADOPTION",
+  "decision": "PASS_DERIVED_OWNER_SEAM_COMPONENT_PARAMETERIZATION_ONLY__NO_PHYSICAL_SEAM_OR_RECEIVER_ADOPTION",
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_MANUFACTURED_DOMAIN_REPRODUCES_THE_SAME_COMPONENT_PARAMETERIZATION_NEED"
+}

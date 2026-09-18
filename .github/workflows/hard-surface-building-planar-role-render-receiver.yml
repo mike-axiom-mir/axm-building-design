@@ -1,0 +1,93 @@
+name: Hard-surface Building planar-role render receiver evidence
+
+on:
+  pull_request:
+    paths:
+      - "assets/service_pavilion_001_planar_role_render_receiver_policy.json"
+      - "tools/build_service_pavilion_planar_role_render_receiver.py"
+      - "tests/test_service_pavilion_planar_role_render_receiver.py"
+      - ".github/workflows/hard-surface-building-planar-role-render-receiver.yml"
+      - "tools/build_service_pavilion_union_shell_candidate.py"
+      - "tools/service_pavilion_current_emission_policy.py"
+      - "tools/service_pavilion_emission_variants.py"
+      - "assets/service_pavilion_001_current_emission_policy.json"
+      - "assets/service_pavilion_001_emission_variants.json"
+      - "assets/service_pavilion_001_header_segmentation.json"
+      - "assets/service_pavilion_001.json"
+      - "assets/utility_access_panel_001.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile Hard-Surface receiver code
+        run: |
+          python -m py_compile tools/build_service_pavilion_planar_role_render_receiver.py
+
+      - name: Run complete Building test suite
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Build exact-head planar-role receiver evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXACT_HEAD="${{ github.event.pull_request.head.sha || github.sha }}"
+          rm -rf evidence/service-pavilion-planar-role-render-receiver-001
+          python tools/build_service_pavilion_planar_role_render_receiver.py \
+            --exact-head "$EXACT_HEAD" \
+            --output-dir evidence/service-pavilion-planar-role-render-receiver-001 \
+            > evidence-planar-role-receiver-${{ matrix.python-version }}.json
+          test "$(cat evidence/service-pavilion-planar-role-render-receiver-001/exact-head.txt)" = "$EXACT_HEAD"
+
+      - name: Truth gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('evidence/service-pavilion-planar-role-render-receiver-001/planar-role-render-receiver-evidence.json')
+          data = json.loads(path.read_text())
+          assert data['result'] == 'PASS_STRUCTURAL_PLANAR_ROLE_RECTANGLE_RENDER_RECEIVER_CANDIDATE'
+          assert data['semantic_source']['variant_id'] == 'header-segmented-23'
+          assert data['semantic_source']['emitted_box_count'] == 23
+          assert data['semantic_source']['triangle_count'] == 276
+          assert data['candidate']['atomic_coverage_complete'] is True
+          assert data['candidate']['atomic_overlap_count'] == 0
+          assert data['candidate']['cardinal_hard_normals_only'] is True
+          assert data['candidate']['role_count'] == 5
+          assert data['candidate']['triangle_count'] < 2052
+          assert data['candidate']['signed_volume_m3'] == data['semantic_source']['occupied_union_volume_m3']
+          assert data['candidate']['bounds'] == data['semantic_source']['bounds']
+          assert all(str(value).startswith('REJECTED:') for value in data['negative_controls'].values())
+          print(data['result'])
+          print(json.dumps(data['comparison'], indent=2, sort_keys=True))
+          PY
+
+      - name: Retain exact receiver evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-planar-role-render-receiver-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/service-pavilion-planar-role-render-receiver-001/
+            evidence-planar-role-receiver-${{ matrix.python-version }}.json
+          if-no-files-found: error

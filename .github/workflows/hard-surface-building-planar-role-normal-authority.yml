@@ -1,0 +1,127 @@
+name: Hard-surface Building planar-role hard-normal authority evidence
+
+on:
+  pull_request:
+    paths:
+      - "assets/service_pavilion_001_planar_role_hard_normal_authority_policy.json"
+      - "tools/verify_service_pavilion_planar_role_hard_normal_authority.py"
+      - "tests/test_service_pavilion_planar_role_hard_normal_authority.py"
+      - ".github/workflows/hard-surface-building-planar-role-normal-authority.yml"
+      - "assets/service_pavilion_001_planar_role_normal_boundary_quotient_policy.json"
+      - "tools/analyze_service_pavilion_planar_role_normal_boundary_quotient.py"
+      - "assets/service_pavilion_001_planar_role_indexed_geometry_policy.json"
+      - "tools/build_service_pavilion_planar_role_indexed_geometry.py"
+      - "assets/service_pavilion_001_planar_role_render_split_policy.json"
+      - "tools/verify_service_pavilion_planar_role_render_split_policy.py"
+      - "assets/service_pavilion_001_planar_role_render_receiver_policy.json"
+      - "tools/build_service_pavilion_planar_role_render_receiver.py"
+      - "tools/build_service_pavilion_union_shell_candidate.py"
+      - "tools/service_pavilion_current_emission_policy.py"
+      - "tools/service_pavilion_emission_variants.py"
+      - "assets/service_pavilion_001_current_emission_policy.json"
+      - "assets/service_pavilion_001_emission_variants.json"
+      - "assets/service_pavilion_001_header_segmentation.json"
+      - "assets/service_pavilion_001.json"
+      - "assets/utility_access_panel_001.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Verify Geometry donor is retained in ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 7dfb1153dc5f80bcbf1b48803f044236d4ebb030 HEAD
+
+      - name: Compile Hard-Surface authority verifier
+        run: |
+          python -m py_compile tools/verify_service_pavilion_planar_role_hard_normal_authority.py
+
+      - name: Run complete Building test suite
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Build exact-head Hard-Surface evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXACT_HEAD="${{ github.event.pull_request.head.sha || github.sha }}"
+          rm -rf evidence/service-pavilion-planar-role-hard-normal-authority-001
+          python tools/verify_service_pavilion_planar_role_hard_normal_authority.py \
+            --exact-head "$EXACT_HEAD" \
+            --output-dir evidence/service-pavilion-planar-role-hard-normal-authority-001 \
+            > evidence-planar-role-hard-normal-authority-${{ matrix.python-version }}.json
+          test "$(cat evidence/service-pavilion-planar-role-hard-normal-authority-001/exact-head.txt)" = "$EXACT_HEAD"
+
+      - name: Truth gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('evidence/service-pavilion-planar-role-hard-normal-authority-001/hard-normal-authority-evidence.json')
+          data = json.loads(path.read_text())
+          metrics = data['metrics']
+          classification = data['classification']
+          authority = data['authority']
+          assert data['result'] == 'PASS_SOURCE_OWNED_PLANAR_ROLE_HARD_NORMAL_AUTHORITY_BOUNDARY'
+          assert data['geometry_diagnostic_head'] == '7dfb1153dc5f80bcbf1b48803f044236d4ebb030'
+          assert data['geometry_quotient_sha256'] == '7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f'
+          assert data['source_render_split_policy_git_blob_sha'] == '5f2130d6286e2ee1b67395b1a753fbfc3eac22ea'
+          assert data['geometry_diagnostic_policy_git_blob_sha'] == '82253e1491f1e21de4be733919762924fa6610f1'
+          assert metrics == {
+              'source_intent_render_vertices': 604,
+              'role_position_quotient_groups': 312,
+              'source_render_vertex_identities_removed': 292,
+              'hard_normal_crossing_groups': 188,
+              'single_hard_normal_groups': 124,
+              'two_hard_normal_groups': 84,
+              'three_hard_normal_groups': 104,
+              'maximum_source_hard_normal_classes_per_group': 3,
+          }
+          assert classification['source_604'] == 'SOURCE_AUTHORIZED_RENDER_EQUIVALENCE'
+          assert classification['quotient_312'] == 'DERIVED_ATTRIBUTE_DROPPING_PARTITION_NOT_SOURCE_EQUIVALENT'
+          assert classification['dropped_source_attribute'] == 'EXACT_CARDINAL_HARD_NORMAL'
+          assert authority['source_representation_and_hard_normal_intent'] == 'BUILDING_HARD_SURFACE'
+          assert authority['structural_quotient_diagnostic'] == 'BUILDING_GEOMETRY_TOPOLOGY_PR_13'
+          for key in ('receiver_identity_or_adoption', 'normal_generation_or_repacking', 'transport_acceptance', 'runtime_acceptance', 'visual_acceptance'):
+              assert authority[key] == 'NOT_HARD_SURFACE_OWNED'
+          assert data['source_mesh_changed'] is False
+          assert data['source_normal_field_changed'] is False
+          assert data['product_312_mesh_emitted'] is False
+          assert data['consumer_adoption'] is False
+          assert data['uc_or_profession_fabric_changed'] is False
+          assert all(str(value).startswith('REJECTED:') for value in data['negative_controls'].values())
+          print(data['result'])
+          print(json.dumps(metrics, indent=2, sort_keys=True))
+          PY
+
+      - name: Retain exact Hard-Surface evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-planar-role-hard-normal-authority-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/service-pavilion-planar-role-hard-normal-authority-001/
+            evidence-planar-role-hard-normal-authority-${{ matrix.python-version }}.json
+          if-no-files-found: error

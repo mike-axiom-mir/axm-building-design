@@ -1,0 +1,256 @@
+name: Procedural building symmetric-row evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Checkout exact predecessor UC rigid-frame donor
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-universal-creation
+          ref: bd51542bc68534a6e6f3a11d421dc70216b2abf9
+          path: external/axm-universal-creation
+          fetch-depth: 1
+      - name: Checkout exact Sticker Fabric shared home
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-sticker-fabric
+          ref: 3aa93b0132eea9becefb20c716c6ec1a023ad28b
+          path: external/axm-sticker-fabric
+          fetch-depth: 1
+      - name: Verify exact source and named-contract ancestry
+        if: matrix.python-version == '3.11'
+        run: |
+          git merge-base --is-ancestor 57f66b1245812f0c3d402232a046b86c0b5c72d8 HEAD
+          git merge-base --is-ancestor 595217be3cb9de25d3dc48b19447654533a20599 HEAD
+          git merge-base --is-ancestor 34124101e616c423c5a3ed5e122ddf09b98a1650 HEAD
+          git merge-base --is-ancestor 547bd21073332c8f856f07017cf9d279aa157bfa HEAD
+          git merge-base --is-ancestor a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3 HEAD
+      - name: Compile
+        run: python -m compileall tools tests
+      - name: Test
+        run: python -m unittest discover -s tests -v
+      - name: Build exact procedural evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          python tools/build_pavilion_symmetric_rows.py --output-dir evidence/service-pavilion-symmetric-rows-001
+          python tools/build_pavilion_header_segment_expansion.py --output-dir evidence/service-pavilion-header-segment-expansion-001
+          python tools/verify_pavilion_header_emission_variant_rebind.py --output-dir evidence/service-pavilion-header-emission-variant-rebind-001
+          python tools/build_pavilion_utility_panel_receivers.py --output-dir evidence/service-pavilion-utility-panel-receivers-001
+          python tools/verify_pavilion_receiver_shared_frame_equivalence.py \
+            --uc-root external/axm-universal-creation \
+            --output-dir evidence/service-pavilion-shared-frame-equivalence-001
+          python tools/verify_pavilion_receiver_sticker_fabric_rebind.py \
+            --sticker-root external/axm-sticker-fabric \
+            --output-dir evidence/service-pavilion-sticker-fabric-rebind-001
+          for evidence_dir in \
+            service-pavilion-symmetric-rows-001 \
+            service-pavilion-header-segment-expansion-001 \
+            service-pavilion-header-emission-variant-rebind-001 \
+            service-pavilion-utility-panel-receivers-001 \
+            service-pavilion-shared-frame-equivalence-001 \
+            service-pavilion-sticker-fabric-rebind-001; do
+            echo "${{ github.event.pull_request.head.sha || github.sha }}" > "evidence/${evidence_dir}/exact-head.txt"
+          done
+          echo "57f66b1245812f0c3d402232a046b86c0b5c72d8" > evidence/service-pavilion-symmetric-rows-001/source-hard-surface-head.txt
+          echo "595217be3cb9de25d3dc48b19447654533a20599" > evidence/service-pavilion-symmetric-rows-001/build-result-contract-hard-surface-head.txt
+          echo "a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3" > evidence/service-pavilion-header-segment-expansion-001/source-hard-surface-head.txt
+          echo "a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3" > evidence/service-pavilion-header-emission-variant-rebind-001/source-hard-surface-head.txt
+          echo "34124101e616c423c5a3ed5e122ddf09b98a1650" > evidence/service-pavilion-utility-panel-receivers-001/source-hard-surface-head.txt
+          echo "bd51542bc68534a6e6f3a11d421dc70216b2abf9" > evidence/service-pavilion-shared-frame-equivalence-001/shared-donor-head.txt
+          echo "3aa93b0132eea9becefb20c716c6ec1a023ad28b" > evidence/service-pavilion-sticker-fabric-rebind-001/shared-home-head.txt
+      - name: Verify exact evidence summary
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          def read(name):
+              return json.loads((Path('evidence') / name / 'summary.json').read_text())
+
+          data = read('service-pavilion-symmetric-rows-001')
+          assert data['result'] == 'PASS_SOURCE_EXACT_SYMMETRIC_COMPONENT_ROW_GENERATOR'
+          assert data['source_rebind_result'] == 'PASS_EXACT_SOURCE_REBIND_TO_CLOSED_OUTWARD_BOX_SHELLS_002'
+          assert data['build_result_rebind_result'] == 'PASS_PROCEDURAL_CONSUMER_USES_VERSIONED_NAMED_BUILD_RESULT'
+          assert data['source_schema'] == 'axm.building-hard-surface/v0.2'
+          assert data['source_revision'] == 'service-pavilion-001/closed-outward-box-shells-002'
+          assert data['source_hard_surface_head'] == '57f66b1245812f0c3d402232a046b86c0b5c72d8'
+          assert data['build_result_contract_hard_surface_head'] == '595217be3cb9de25d3dc48b19447654533a20599'
+          assert data['build_result_contract_schema'] == 'axm.building-build-result/v0.1'
+          assert data['build_result_legacy_output_count_observed'] == 9
+          assert data['build_result_future_extension_control'] == 'PASS_EXISTING_PROCEDURAL_INPUTS_UNCHANGED'
+          assert data['source_sha256'] == '5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a'
+          assert data['row_count'] == 5
+          assert data['generated_component_count'] == 15
+          assert data['generated_source_coverage'] == '15/17'
+          assert data['distinct_row_digests'] == 5
+          assert data['distinct_component_sizes'] >= 4
+          assert data['distinct_station_counts'] == [2, 3, 4]
+          assert data['manual_component_ids_outside_family'] == ['slab', 'roof']
+          assert data['generated_subset_digest'] == '659a5ecc192502b75e8c9f01fa1607b48b7ea8667b5447ee7da7cd5b76902b0e'
+          inherited = data['inherited_hard_surface_gate']
+          assert inherited['topology_result'] == 'PASS_SOURCE_OWNED_CLOSED_OUTWARD_BOX_SHELLS_19_REAL_OUTPUTS'
+          assert inherited['box_shell_topology'] == 'closed-outward-12-triangle-v1'
+          assert inherited['topology_summary']['object_count'] == 19
+          assert inherited['topology_summary']['triangle_count'] == 228
+          assert inherited['topology_summary']['boundary_edge_count'] == 0
+          assert inherited['topology_summary']['nonmanifold_edge_count'] == 0
+          assert inherited['topology_summary']['orientation_conflict_edge_count'] == 0
+          assert inherited['topology_summary']['outward_triangle_count'] == 228
+          assert inherited['topology_summary']['inward_triangle_count'] == 0
+          assert len(data['negative_controls']) == 9
+          assert all(v.startswith('HOLD:') for v in data['negative_controls'].values())
+
+          expansion = read('service-pavilion-header-segment-expansion-001')
+          assert expansion['result'] == 'PASS_SOURCE_EXACT_HEADER_SEGMENT_EXPANSION_FAMILY'
+          assert expansion['source_hard_surface_head'] == 'a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3'
+          assert expansion['successor_contract_schema'] == 'axm.building-header-segmentation/v0.1'
+          assert expansion['successor_revision'] == 'service-pavilion-001/interpenetration-free-header-segmentation-003'
+          assert expansion['successor_contract_sha256'] == '84075473c7320bde6d40d7c7aa6501f88b1e172d05dd5877ab4dc20e1b7a084f'
+          assert expansion['logical_row_count_preserved'] == 5
+          assert expansion['logical_generated_component_count_preserved'] == 15
+          assert expansion['logical_generated_subset_digest_preserved'] == '659a5ecc192502b75e8c9f01fa1607b48b7ea8667b5447ee7da7cd5b76902b0e'
+          assert expansion['expanded_logical_header_count'] == 2
+          assert expansion['expanded_segment_count'] == 6
+          assert expansion['expanded_emitted_generated_component_count'] == 19
+          assert expansion['expanded_emitted_pavilion_coverage'] == '19/21'
+          assert expansion['distinct_expansion_digests'] == 2
+          assert expansion['distinct_total_output_digests'] == 7
+          assert len(expansion['negative_controls']) == 7
+          assert all(v.startswith('HOLD:') for v in expansion['negative_controls'].values())
+
+          variant_rebind = read('service-pavilion-header-emission-variant-rebind-001')
+          assert variant_rebind['result'] == 'PASS_PROCEDURAL_HEADER_FAMILY_REBOUND_TO_CURRENT_SOURCE_POLICY'
+          assert variant_rebind['decision'] == 'PASS_EXPLICIT_CURRENT_SOURCE_REBIND__SEGMENTED_23_CURRENT__LEGACY_19_COMPATIBILITY_HELD'
+          assert variant_rebind['family_schema'] == 'axm.building-header-segment-expansion-family/v0.3'
+          assert variant_rebind['source_hard_surface_head'] == 'a976af429b0ea90e0f0cc72d4a8bd4eb8fef22d3'
+          assert variant_rebind['current_source_policy_schema'] == 'axm.building-current-emission-policy/v0.1'
+          assert variant_rebind['current_source_policy_sha256'] == 'c26f25c789404919bdb8e40f35d517c444e35f0a7aaf9358ad399296a7afe47a'
+          assert variant_rebind['current_source_policy_result'] == 'PASS_SEGMENTED_BUILDING_PROMOTED_TO_CURRENT_SOURCE_POLICY_WITH_LEGACY_COMPATIBILITY'
+          assert variant_rebind['current_source_selection_policy'] == 'CURRENT_SOURCE_IS_NAMED__CONSUMER_REBIND_REQUIRED__NO_SILENT_DEFAULT_REWRITE'
+          assert variant_rebind['historical_build_result_policy'] == 'KEEP_AXM_BUILDING_BUILD_RESULT_V0_1_AT_19_BOXES_FOR_COMPATIBILITY'
+          assert variant_rebind['emission_variant_contract_schema'] == 'axm.building-emission-variants/v0.1'
+          assert variant_rebind['emission_variant_contract_sha256'] == '5d453757c4eac2609fe4661b66e260185b3e4e57377c4dc834d3c221a23c8049'
+          assert variant_rebind['emission_variant_selection_policy'] == 'EXPLICIT_VARIANT_ID_NO_FALLBACK'
+          assert variant_rebind['historical_emission_default_variant_id'] == 'base-closed-outward-19'
+          assert variant_rebind['current_source_variant_id'] == 'header-segmented-23'
+          assert variant_rebind['legacy_compatibility_variant_id'] == 'base-closed-outward-19'
+          assert variant_rebind['current_source_emitted_box_count'] == 23
+          assert variant_rebind['legacy_compatibility_emitted_box_count'] == 19
+          assert variant_rebind['current_source_positive_volume_intersection_count'] == 0
+          assert variant_rebind['legacy_compatibility_positive_volume_intersection_count'] == 4
+          assert variant_rebind['occupied_union_volume_residual_m3'] == 0.0
+          assert variant_rebind['bounds_equal'] is True
+          assert variant_rebind['receiver_ids_equal'] is True
+          assert variant_rebind['current_source_header_output_count'] == 6
+          assert variant_rebind['legacy_compatibility_header_output_count'] == 2
+          assert variant_rebind['distinct_current_legacy_header_output_digests'] == 2
+          assert variant_rebind['header_expansion_distinct_front_rear_digests'] == 2
+          assert len(variant_rebind['negative_controls']) == 9
+          assert all(v.startswith('HOLD:') for v in variant_rebind['negative_controls'].values())
+
+          panel = read('service-pavilion-utility-panel-receivers-001')
+          assert panel['result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
+          assert panel['source_asset_id'] == 'service-pavilion-001'
+          assert panel['source_revision'] == 'service-pavilion-001/closed-outward-box-shells-002'
+          assert panel['source_pavilion_sha256'] == '5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a'
+          assert panel['panel_asset_id'] == 'utility-access-panel-001'
+          assert panel['panel_sha256'] == 'df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253'
+          assert panel['receiver_count'] == 2
+          assert panel['receiver_ids'] == ['front-utility-bay', 'east-utility-bay']
+          assert panel['distinct_placement_digests'] == 2
+          assert panel['distinct_mesh_digests'] == 2
+          assert panel['distinct_frame_digests'] == 2
+          assert abs(panel['receiver_normal_dot']) <= 1e-12
+          assert panel['placements'][0]['center_m'] == [-2.45, -1.08, 1.65]
+          assert panel['placements'][1]['center_m'] == [3.88, 0.1, 1.65]
+          assert panel['base_builder_procedural_coverage_with_rows'] == '17/19'
+          assert panel['successor_composition_procedural_coverage_with_header_expansion'] == '21/23'
+          assert panel['manual_boxes_outside_procedural_families'] == ['slab', 'roof']
+          assert panel['hard_surface_prerequisite']['result'] == 'PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF'
+          assert len(panel['negative_controls']) == 7
+          assert all(v.startswith('HOLD:') for v in panel['negative_controls'].values())
+
+          shared = read('service-pavilion-shared-frame-equivalence-001')
+          assert shared['result'] == 'PASS_EXACT_SHARED_RIGID_FRAME_EQUIVALENCE_BUILDING_RECEIVERS'
+          assert shared['authority'] == 'RECEIVING_DOMAIN_EQUIVALENCE_PROBE_ONLY'
+          assert shared['building_family_result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
+          assert shared['shared_donor_repo'] == 'mike-axiom-mir/axm-universal-creation'
+          assert shared['shared_donor_head'] == 'bd51542bc68534a6e6f3a11d421dc70216b2abf9'
+          assert shared['shared_donor_module'] == 'src/axm_stickers/placement.py'
+          assert shared['exact_receiver_equivalence_count'] == 2
+          assert shared['distinct_target_frame_digests'] == 2
+          assert shared['distinct_shared_mesh_digests'] == 2
+          assert shared['maximum_position_residual_m'] == 0.0
+          assert len(shared['negative_controls']) == 3
+          assert all(v.startswith('HOLD:') for v in shared['negative_controls'].values())
+
+          rebind = read('service-pavilion-sticker-fabric-rebind-001')
+          assert rebind['result'] == 'PASS_EXACT_STICKER_FABRIC_REBIND_BUILDING_RECEIVERS'
+          assert rebind['authority'] == 'RECEIVING_DOMAIN_SUCCESSOR_REBIND_ONLY'
+          assert rebind['migration_decision'] == 'PASS_FIRST_CONSUMER_REBIND__LOCAL_HELPER_REMOVAL_HELD'
+          assert rebind['building_family_result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
+          assert rebind['building_receiver_count'] == 2
+          assert rebind['building_receiver_ids'] == ['front-utility-bay', 'east-utility-bay']
+          assert rebind['shared_home_repo'] == 'mike-axiom-mir/axm-sticker-fabric'
+          assert rebind['shared_home_head'] == '3aa93b0132eea9becefb20c716c6ec1a023ad28b'
+          assert rebind['shared_home_module'] == 'src/axm_stickers/placement.py'
+          assert rebind['shared_home_module_sha256'] == '1344884f14cbe2fa25617664521291b96c4bde067ba0cba31e043045ca3f1436'
+          assert rebind['shared_home_upstream_policy'] == 'Explicit reviewed adoption only. UC retains its own standalone implementation.'
+          assert rebind['shared_home_upstream_placement_sha256'] == '1344884f14cbe2fa25617664521291b96c4bde067ba0cba31e043045ca3f1436'
+          assert rebind['predecessor_equivalence_donor_repo'] == 'mike-axiom-mir/axm-universal-creation'
+          assert rebind['predecessor_equivalence_donor_head'] == 'bd51542bc68534a6e6f3a11d421dc70216b2abf9'
+          assert rebind['predecessor_equivalence_module_sha256'] == '1344884f14cbe2fa25617664521291b96c4bde067ba0cba31e043045ca3f1436'
+          assert rebind['source_anchor'] == 'identity'
+          assert rebind['local_offset'] == 'identity'
+          assert rebind['scale'] == 1.0
+          assert rebind['exact_receiver_equivalence_count'] == 2
+          assert rebind['distinct_target_frame_digests'] == 2
+          assert rebind['distinct_sticker_fabric_mesh_digests'] == 2
+          assert rebind['maximum_position_residual_m'] == 0.0
+          assert len(rebind['negative_controls']) == 4
+          assert all(v.startswith('HOLD:') for v in rebind['negative_controls'].values())
+          assert all(row['exact_vertex_list_match'] for row in rebind['receivers'])
+          assert all(row['exact_mesh_digest_match'] for row in rebind['receivers'])
+          assert all(row['maximum_position_residual_m'] == 0.0 for row in rebind['receivers'])
+          expected_meshes = {
+              'front-utility-bay': 'dcadb6a7e938557c866259ed4a3ca7febb32b593b68b22073adc2617d63ef5c0',
+              'east-utility-bay': '95bbe7d3feebcaeebdaa285ea2f69ee24989d16f140ef59abf08f4725d77a904',
+          }
+          assert {row['receiver_id']: row['sticker_fabric_mesh_digest'] for row in rebind['receivers']} == expected_meshes
+          PY
+      - name: Retain evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-procedural-001-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/service-pavilion-symmetric-rows-001
+            evidence/service-pavilion-header-segment-expansion-001
+            evidence/service-pavilion-header-emission-variant-rebind-001
+            evidence/service-pavilion-utility-panel-receivers-001
+            evidence/service-pavilion-shared-frame-equivalence-001
+            evidence/service-pavilion-sticker-fabric-rebind-001
+          if-no-files-found: error
