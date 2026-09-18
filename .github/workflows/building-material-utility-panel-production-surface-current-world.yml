@@ -68,6 +68,8 @@ jobs:
           test "$(git -C .map-current rev-parse HEAD:tools/environment_building_utility_panel_material_current_world_ab.py)" = "b9287424061f5542d0821b84f60603c1bd176426"
 
       - name: Download exact retained current-world inputs and historical three-way controls
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           root=evidence/building_utility_panel_production_surface_001
@@ -77,7 +79,7 @@ jobs:
 
           download_public_artifact () {
             repo="$1"; artifact="$2"; sha="$3"; out="$4"
-            curl --fail --location --retry 3 -H "Accept: application/vnd.github+json" \
+            curl --fail --location --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/mike-axiom-mir/$repo/actions/artifacts/$artifact/zip" -o "$out"
             echo "$sha  $out" | sha256sum --check --strict
           }
