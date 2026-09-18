@@ -4,7 +4,7 @@
   "source_authority": {
     "owner": "Building Hard Surface",
     "pr": 17,
-    "head": "32bbdd54f00aaac87ba8139bf932d8aff6109a66",
+    "head": "fbfa3b47048755b45dac91451171d5511c8d4f47",
     "panel_path": "assets/utility_access_panel_001.json",
     "panel_blob_sha": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
     "clearance_policy_path": "assets/utility_access_panel_001_receiver_clearance_envelope.json",
