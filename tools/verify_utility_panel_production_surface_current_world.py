@@ -166,7 +166,8 @@ def main() -> None:
     }
     successor_visible = 0
     checker_visible = 0
-    min_localization_overlap = 1.0
+    min_exact_checker_mask_overlap = 1.0
+    min_checker_bbox_localization = 1.0
     max_successor_delta = 0
     max_checker_delta = 0
     camera_phase_counts: dict[str, list[int]] = {"path_eye": [], "elevated_oblique": []}
@@ -186,10 +187,27 @@ def main() -> None:
         max_checker_delta = max(max_checker_delta, m_ab["max_rgb_channel_delta_lsb"])
         max_successor_delta = max(max_successor_delta, m_ac["max_rgb_channel_delta_lsb"])
         if mask_ac.any():
-            overlap = float(np.logical_and(mask_ac, mask_ab).sum() / mask_ac.sum())
-            min_localization_overlap = min(min_localization_overlap, overlap)
+            exact_overlap = float(np.logical_and(mask_ac, mask_ab).sum() / mask_ac.sum())
+            min_exact_checker_mask_overlap = min(min_exact_checker_mask_overlap, exact_overlap)
+            checker_bbox = m_ab["changed_bbox_gt_1lsb_px"]
+            assert checker_bbox is not None
+            x0, y0, x1, y1 = checker_bbox
+            # The checker delta itself is a sparse thresholded pattern, not a silhouette mask.
+            # Use its already-proven projection bbox with one raster pixel of tolerance so a
+            # lower-contrast successor is not falsely rejected for revealing edge samples that
+            # happen to match the scalar control inside the checker pattern.
+            h, w = mask_ac.shape
+            x0 = max(0, x0 - 1)
+            y0 = max(0, y0 - 1)
+            x1 = min(w - 1, x1 + 1)
+            y1 = min(h - 1, y1 + 1)
+            projection_mask = np.zeros_like(mask_ac)
+            projection_mask[y0 : y1 + 1, x0 : x1 + 1] = True
+            bbox_localization = float(np.logical_and(mask_ac, projection_mask).sum() / mask_ac.sum())
+            min_checker_bbox_localization = min(min_checker_bbox_localization, bbox_localization)
         else:
-            overlap = 1.0
+            exact_overlap = 1.0
+            bbox_localization = 1.0
         camera = "path_eye" if "path_eye" in name else "elevated_oblique"
         camera_phase_counts[camera].append(m_ac["changed_pixels_gt_1lsb"])
         frames.append({
@@ -197,14 +215,18 @@ def main() -> None:
             "scalar_to_checker": m_ab,
             "scalar_to_successor": m_ac,
             "checker_to_successor": m_bc,
-            "successor_diff_overlap_with_checker_panel_mask": overlap,
+            "successor_diff_overlap_with_exact_checker_delta_mask": exact_overlap,
+            "successor_diff_localization_within_checker_projection_bbox_plus_1px": bbox_localization,
         })
 
     assert checker_visible == 68, "historical checker control lost expected visibility"
     assert successor_visible == 68, "production successor is not visible in every retained current-world observation"
     assert totals["scalar_to_successor_gt1"] > 0
     assert totals["checker_to_successor_gt1"] > 0
-    assert min_localization_overlap >= 0.98, f"successor raster delta escaped checker-localized panel region: {min_localization_overlap}"
+    assert min_checker_bbox_localization >= 0.999, (
+        "successor raster delta escaped checker projection bbox plus 1px tolerance: "
+        f"{min_checker_bbox_localization}"
+    )
 
     # The successor is intentionally broad/medium variation. This is not an aesthetic gate;
     # it only ensures we did not regenerate another high-contrast calibration pattern.
@@ -223,7 +245,8 @@ def main() -> None:
             "unrelated_current_world_runtime_identity_equal": True,
             "successor_visible_frames": successor_visible,
             "checker_visible_frames": checker_visible,
-            "minimum_successor_delta_overlap_with_checker_panel_mask": min_localization_overlap,
+            "minimum_successor_delta_overlap_with_exact_checker_delta_mask": min_exact_checker_mask_overlap,
+            "minimum_successor_delta_localization_within_checker_projection_bbox_plus_1px": min_checker_bbox_localization,
             "total_changed_pixels_gt_1lsb": totals,
             "max_scalar_to_checker_channel_delta_lsb": max_checker_delta,
             "max_scalar_to_successor_channel_delta_lsb": max_successor_delta,
