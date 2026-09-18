@@ -325,7 +325,7 @@ func compare_images(a: Image, b: Image) -> Dictionary:
         for x in range(a.get_width()):
             var pa := a.get_pixel(x, y)
             var pb := b.get_pixel(x, y)
-            var delta := max(absf(pa.r - pb.r), max(absf(pa.g - pb.g), absf(pa.b - pb.b)))
+            var delta: float = maxf(absf(pa.r - pb.r), maxf(absf(pa.g - pb.g), absf(pa.b - pb.b)))
             if delta > 0.0:
                 raw_changed += 1
             if delta > threshold:
