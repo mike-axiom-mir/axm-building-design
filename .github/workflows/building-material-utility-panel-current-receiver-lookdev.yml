@@ -1,0 +1,283 @@
+name: Building material utility-panel current-receiver lookdev evidence
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+    paths:
+      - "lookdev/building_utility_panel_current_receiver_material_lookdev_001.json"
+      - "lookdev-utility-panel-uv-proof/current_receiver_material_observe.gd"
+      - ".github/workflows/building-material-utility-panel-current-receiver-lookdev.yml"
+  pull_request:
+    paths:
+      - "lookdev/building_utility_panel_current_receiver_material_lookdev_001.json"
+      - "lookdev-utility-panel-uv-proof/current_receiver_material_observe.gd"
+      - ".github/workflows/building-material-utility-panel-current-receiver-lookdev.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - name: Checkout exact Materials head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile and run Building regressions
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          python -m compileall -q tools tests
+          python -m unittest discover -s tests -v
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('lookdev/building_utility_panel_current_receiver_material_lookdev_001.json').read_text())
+          assert c['schema']=='axm.building-utility-panel-current-receiver-material-lookdev/v0.1',c
+          assert c['materials_predecessor']['head']=='38260f31a49766ec27746b785934248176796d59',c
+          assert c['environment_owner']['head']=='787ad51687da2df52c9f6191d1778a7f66cbd3db',c
+          assert c['hard_surface_owner']['head']=='fbfa3b47048755b45dac91451171d5511c8d4f47',c
+          assert c['geometry_owner']['head']=='02944a9f10528a051603df3a6fd7b3183730773f',c
+          assert c['technical_art_owner']['head']=='1434bc4a64faa04db10f47723c37ab7925aaa163',c
+          assert c['technical_art_owner']['positive_glb_sha256']=='2d7990c5e699af23e03afeffbebdfc36bc5516b33886702c3b1d7fa3df4a26ef',c
+          assert c['ownership_boundary']['technical_art_glb_edited_by_materials'] is False,c
+          assert c['ownership_boundary']['full_environment_receiver_mutated'] is False,c
+          assert c['truth_boundary']['environment_adoption'] is False,c
+          assert c['truth_boundary']['production_uv_adopted'] is False,c
+          assert c['truth_boundary']['production_texture_adopted'] is False,c
+          PY
+
+  target-host-lookdev:
+    needs: contract-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MATERIALS_PREDECESSOR: 38260f31a49766ec27746b785934248176796d59
+      MATERIALS_CONTRACT_PATH: lookdev/building_utility_panel_serialized_review_texture_001.json
+      MATERIALS_CONTRACT_BLOB: 620bc298256d21ee008b6fe870135f09212f8db9
+      MATERIALS_PROFILE_PATH: lookdev/building_material_profile_001.json
+      MATERIALS_PROFILE_BLOB: f7945f4c17b7720f176c1b0ac4e1baa298691b25
+      MATERIALS_PNG_SHA256: e932cdd94d370184c7361862d5064149cc193e3a8fd80b269cab6543c0919198
+      ENVIRONMENT_HEAD: 787ad51687da2df52c9f6191d1778a7f66cbd3db
+      ENVIRONMENT_CONTRACT_PATH: contracts/environment_building_utility_panel_clearance_current_world.json
+      ENVIRONMENT_CONTRACT_BLOB: 6835a1f2cbe73eb44da721f0ab45e621fb758da6
+      HARD_SURFACE_HEAD: fbfa3b47048755b45dac91451171d5511c8d4f47
+      PAVILION_PATH: assets/service_pavilion_001.json
+      PAVILION_BLOB: 5a5ec3ce6ee4e9b111db086ba93038a75c482a2e
+      PANEL_PATH: assets/utility_access_panel_001.json
+      PANEL_BLOB: 51b7fa61dd87934a89e033a2fdf5cc3b99992454
+      SURFACE_DOMAIN_PATH: assets/utility_access_panel_001_service_surface_domain.json
+      SURFACE_DOMAIN_BLOB: 8b4484d4ccbd500e58910a2835d8780112489919
+      GEOMETRY_HEAD: 02944a9f10528a051603df3a6fd7b3183730773f
+      GEOMETRY_CHART_PATH: geometry/utility_access_panel_service_surface_chart_001.json
+      GEOMETRY_CHART_BLOB: 08431f75edff5ae7d8b8c32468190e7a1b81d526
+      TA_HEAD: 1434bc4a64faa04db10f47723c37ab7925aaa163
+      TA_BINDING_PATH: contracts/technical_art_building_utility_panel_current_receiver_uv_image_binding.json
+      TA_BINDING_BLOB: d638adfc0d8ea83ae184d38dfcfb965cd7517f06
+      TA_TOOL_PATH: tools/technical_art_building_utility_panel_current_receiver_uv_image_binding.py
+      TA_TOOL_BLOB: ccfa826eb00513548b0fbda8318f0c397a719b4e
+      TA_GLB_HELPER_PATH: tools/technical_art_building_utility_panel_material_glb_bridge.py
+      TA_GLB_HELPER_BLOB: 2834dafd2fdfe0bb151139a370c9d0f3e0e40da3
+      TA_PNG_REBUILDER_PATH: tools/technical_art_rebuild_materials_review_png.py
+      TA_PNG_REBUILDER_BLOB: 763825aea12bf5dd8bf7349bb4e1bed3242b47f2
+      TA_PROVENANCE_PATH: evidence-fixtures/building_utility_panel_materials_retained_image_provenance_001.json
+      TA_PROVENANCE_BLOB: 35277aa20665c3191fcd995e6328f9e6aa14d7a0
+      POSITIVE_GLB_SHA256: 2d7990c5e699af23e03afeffbebdfc36bc5516b33886702c3b1d7fa3df4a26ef
+      UC_HEAD: bb3885c38cf1661971f8a5a4bb99e88a54e0f5d7
+      UC_MODULE_BLOB: bc7aa2ffc2c598d75a78739c70fd349138f511e2
+      GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+      GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+    steps:
+      - name: Checkout exact Materials head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Checkout exact Materials predecessor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.MATERIALS_PREDECESSOR }}
+          path: .owner-materials
+          fetch-depth: 1
+      - name: Checkout exact Environment receiver
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-map-design
+          ref: ${{ env.ENVIRONMENT_HEAD }}
+          path: .owner-environment
+          fetch-depth: 1
+      - name: Checkout exact Hard-Surface owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.HARD_SURFACE_HEAD }}
+          path: .owner-hard-surface
+          fetch-depth: 1
+      - name: Checkout exact Geometry owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.GEOMETRY_HEAD }}
+          path: .owner-geometry
+          fetch-depth: 1
+      - name: Checkout exact Technical Art owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-map-design
+          ref: ${{ env.TA_HEAD }}
+          path: .owner-technical-art
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail-close exact owner and bridge identities
+        run: |
+          set -euo pipefail
+          test "$(git -C .owner-materials rev-parse HEAD)" = "$MATERIALS_PREDECESSOR"
+          test "$(git -C .owner-materials rev-parse "HEAD:$MATERIALS_CONTRACT_PATH")" = "$MATERIALS_CONTRACT_BLOB"
+          test "$(git -C .owner-materials rev-parse "HEAD:$MATERIALS_PROFILE_PATH")" = "$MATERIALS_PROFILE_BLOB"
+          test "$(git -C .owner-environment rev-parse HEAD)" = "$ENVIRONMENT_HEAD"
+          test "$(git -C .owner-environment rev-parse "HEAD:$ENVIRONMENT_CONTRACT_PATH")" = "$ENVIRONMENT_CONTRACT_BLOB"
+          test "$(git -C .owner-hard-surface rev-parse HEAD)" = "$HARD_SURFACE_HEAD"
+          test "$(git -C .owner-hard-surface rev-parse "HEAD:$PAVILION_PATH")" = "$PAVILION_BLOB"
+          test "$(git -C .owner-hard-surface rev-parse "HEAD:$PANEL_PATH")" = "$PANEL_BLOB"
+          test "$(git -C .owner-hard-surface rev-parse "HEAD:$SURFACE_DOMAIN_PATH")" = "$SURFACE_DOMAIN_BLOB"
+          test "$(git -C .owner-geometry rev-parse HEAD)" = "$GEOMETRY_HEAD"
+          test "$(git -C .owner-geometry rev-parse "HEAD:$GEOMETRY_CHART_PATH")" = "$GEOMETRY_CHART_BLOB"
+          test "$(git -C .owner-technical-art rev-parse HEAD)" = "$TA_HEAD"
+          test "$(git -C .owner-technical-art rev-parse "HEAD:$TA_BINDING_PATH")" = "$TA_BINDING_BLOB"
+          test "$(git -C .owner-technical-art rev-parse "HEAD:$TA_TOOL_PATH")" = "$TA_TOOL_BLOB"
+          test "$(git -C .owner-technical-art rev-parse "HEAD:$TA_GLB_HELPER_PATH")" = "$TA_GLB_HELPER_BLOB"
+          test "$(git -C .owner-technical-art rev-parse "HEAD:$TA_PNG_REBUILDER_PATH")" = "$TA_PNG_REBUILDER_BLOB"
+          test "$(git -C .owner-technical-art rev-parse "HEAD:$TA_PROVENANCE_PATH")" = "$TA_PROVENANCE_BLOB"
+          printf '%s\n' "$(git rev-parse HEAD)" > exact-head.txt
+      - name: Rebuild exact retained Materials PNG
+        run: |
+          set -euo pipefail
+          mkdir -p lookdev-utility-panel-uv-proof/generated
+          python ".owner-technical-art/$TA_PNG_REBUILDER_PATH" \
+            --provenance ".owner-technical-art/$TA_PROVENANCE_PATH" \
+            --output lookdev-utility-panel-uv-proof/utility-panel-review-checker-512.png
+          echo "$MATERIALS_PNG_SHA256  lookdev-utility-panel-uv-proof/utility-panel-review-checker-512.png" | sha256sum --check --strict
+      - name: Re-execute exact Technical Art current-receiver bridge
+        run: |
+          set -euo pipefail
+          python ".owner-technical-art/$TA_TOOL_PATH" \
+            --binding-contract ".owner-technical-art/$TA_BINDING_PATH" \
+            --environment-contract ".owner-environment/$ENVIRONMENT_CONTRACT_PATH" \
+            --pavilion-source ".owner-hard-surface/$PAVILION_PATH" \
+            --panel-source ".owner-hard-surface/$PANEL_PATH" \
+            --surface-domain ".owner-hard-surface/$SURFACE_DOMAIN_PATH" \
+            --geometry-chart ".owner-geometry/$GEOMETRY_CHART_PATH" \
+            --materials-contract ".owner-materials/$MATERIALS_CONTRACT_PATH" \
+            --materials-profile ".owner-materials/$MATERIALS_PROFILE_PATH" \
+            --materials-provenance ".owner-technical-art/$TA_PROVENANCE_PATH" \
+            --materials-png lookdev-utility-panel-uv-proof/utility-panel-review-checker-512.png \
+            --glb-helper ".owner-technical-art/$TA_GLB_HELPER_PATH" \
+            --output-dir lookdev-utility-panel-uv-proof/generated \
+            --technical-art-head "$TA_HEAD" \
+            --environment-head "$ENVIRONMENT_HEAD" \
+            --hard-surface-head "$HARD_SURFACE_HEAD" \
+            --geometry-head "$GEOMETRY_HEAD" \
+            --materials-head "$MATERIALS_PREDECESSOR" \
+            --uc-head "$UC_HEAD" \
+            --uc-module-blob "$UC_MODULE_BLOB"
+          echo "$POSITIVE_GLB_SHA256  lookdev-utility-panel-uv-proof/generated/current-receiver-utility-panel-service-faces.glb" | sha256sum --check --strict
+          cp lookdev/building_utility_panel_current_receiver_material_lookdev_001.json \
+             lookdev-utility-panel-uv-proof/generated/current_receiver_material_contract.json
+      - name: Truth-gate exact Technical Art result without ownership transfer
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('lookdev/building_utility_panel_current_receiver_material_lookdev_001.json').read_text())
+          r=json.loads(Path('lookdev-utility-panel-uv-proof/generated/current-receiver-utility-panel-uv-image-binding-receipt.json').read_text())
+          assert r['result']=='PASS_CURRENT_184V_BUILDING_RECEIVER_UTILITY_PANEL_SERVICE_FACE_UV_IMAGE_BINDING__HOLD_ENVIRONMENT_VISUAL_RUNTIME_ADOPTION',r
+          assert r['technical_art_head']==c['technical_art_owner']['head'],r
+          assert r['owner_bindings']['environment']['head']==c['environment_owner']['head'],r
+          assert r['owner_bindings']['materials']['head']==c['materials_predecessor']['head'],r
+          assert r['proof_carrier']['sha256']==c['technical_art_owner']['positive_glb_sha256'],r
+          assert r['checks']['two_exact_current_receiver_panel_groups_bound'] is True,r
+          assert r['checks']['uc_product_code_modified'] is False,r
+          PY
+      - name: Download pinned Godot 4.7.2
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+      - name: Install virtual display when needed
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+      - name: Render exact dual current-receiver service-face material comparisons
+        run: |
+          set -euo pipefail
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-current-receiver-*.png
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-current-receiver-material-lookdev-receipt.json
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path lookdev-utility-panel-uv-proof \
+            --script current_receiver_material_observe.gd
+      - name: Validate current-receiver visual continuity and UV-density sensitivity
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-utility-panel-uv-proof')
+          r=json.loads((root/'utility-panel-current-receiver-material-lookdev-receipt.json').read_text())
+          assert r['state']=='PASS_TARGET_HOST_BUILDING_CURRENT_RECEIVER_DUAL_PANEL_MATERIAL_LOOKDEV_CONTINUITY',r
+          assert r['decision']=='PASS_EXACT_TA_CURRENT_RECEIVER_SERVICE_FACES_PRESERVE_OWNER_COVERAGE_AND_PHYSICAL_DENSITY_DISTINCTION__HOLD_ENV_RUNTIME_ART_QA_ADOPTION',r
+          assert r['positive_import']['glb_sha256']=='2d7990c5e699af23e03afeffbebdfc36bc5516b33886702c3b1d7fa3df4a26ef',r
+          assert r['positive_import']['image_rgba8_sha256']=='02f8f464eabc734a3be687a7706edf8b8f62ece834fa981c8c993fbb8227bb4b',r
+          assert set(r['contexts'])=={'front_receiver','east_receiver','dual_oblique'},r
+          total=0
+          for context,row in r['contexts'].items():
+              same=row['native_vs_imported_positive_unshaded']
+              neg=row['native_positive_lit_vs_aspect_blind_negative_lit']
+              light=row['native_positive_unshaded_vs_lit']
+              assert same['raw_changed_pixels']==0,(context,same)
+              assert same['changed_pixels_gt_1lsb']==0,(context,same)
+              assert neg['changed_pixels_gt_1lsb']>=100,(context,neg)
+              assert neg['max_rgb_channel_delta']>=0.01,(context,neg)
+              assert light['changed_pixels_gt_1lsb']>=100,(context,light)
+              total += neg['changed_pixels_gt_1lsb']
+          assert total==r['total_changed_pixels_gt_1lsb_positive_vs_aspect_blind_negative'],(total,r)
+          assert r['total_changed_pixels_gt_1lsb_positive_vs_aspect_blind_negative']>=300,r
+          print(json.dumps(r,indent=2))
+          PY
+      - name: Retain exact-head evidence packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-current-receiver-material-lookdev-${{ github.event.pull_request.head.sha || github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            exact-head.txt
+            lookdev/building_utility_panel_current_receiver_material_lookdev_001.json
+            lookdev-utility-panel-uv-proof/current_receiver_material_observe.gd
+            lookdev-utility-panel-uv-proof/utility-panel-review-checker-512.png
+            lookdev-utility-panel-uv-proof/generated/current-receiver-utility-panel-service-faces.glb
+            lookdev-utility-panel-uv-proof/generated/current-receiver-utility-panel-uv-image-binding-receipt.json
+            lookdev-utility-panel-uv-proof/utility-panel-current-receiver-material-lookdev-receipt.json
+            lookdev-utility-panel-uv-proof/utility-panel-current-receiver-*.png
