@@ -19,9 +19,10 @@ jobs:
         python-version: ["3.11", "3.13"]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Procedural branch
+      - name: Checkout exact Procedural head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Checkout exact Hard Surface clearance successor
@@ -62,10 +63,16 @@ jobs:
           git -C "$AXM_CLEARANCE_DONOR_ROOT" show HEAD:assets/utility_access_panel_001_service_surface_domain.json > evidence/utility-panel-clearance-rebind/hard_surface_service_surface_domain.json
           git -C "$AXM_CLEARANCE_DONOR_ROOT" show HEAD:assets/utility_access_panel_001.json > evidence/utility-panel-clearance-rebind/hard_surface_successor_panel.json
 
+      - name: Prove retained Procedural head is the event head
+        if: matrix.python-version == '3.11'
+        env:
+          EXPECTED_PROCEDURAL_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(cat evidence/utility-panel-clearance-rebind/procedural_head.txt)" = "$EXPECTED_PROCEDURAL_HEAD"
+
       - name: Upload retained evidence
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
-          name: service-pavilion-utility-panel-clearance-rebind-${{ github.sha }}
+          name: service-pavilion-utility-panel-clearance-rebind-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/utility-panel-clearance-rebind
           if-no-files-found: error
