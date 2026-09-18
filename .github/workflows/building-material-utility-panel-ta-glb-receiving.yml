@@ -192,7 +192,7 @@ jobs:
           assert r['result']=='PASS_BUILDING_UTILITY_PANEL_EXACT_OWNER_UV_MATERIAL_IMAGE_PACKAGED_FOR_UC_OBSERVATION__HOLD_TARGET_IMPORT_VISUAL_RUNTIME',r
           assert r['technical_art_head']==c['technical_art_owner']['head'],r
           assert r['artifact']['sha256']==c['technical_art_owner']['positive_glb_sha256'],r
-          assert r['negative_control']['sha256']==c['technical_art_owner']['aspect_blind_negative_glb_sha256'],r
+          assert r['negative_artifact']['sha256']==c['technical_art_owner']['aspect_blind_negative_glb_sha256'],r
           assert c['ownership_boundary']['technical_art_owns_glb_packaging_and_transport'] is True,c
           assert c['truth_boundary']['technical_art_glb_edited_by_materials'] is False,c
           PY
