@@ -1,0 +1,106 @@
+{
+  "schema": "axm.building-utility-panel-ta-glb-material-receiving/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "material_role": "utility_panel_ochre",
+  "materials_predecessor": {
+    "repository": "mike-axiom-mir/axm-building-design",
+    "pull_request": 3,
+    "head": "5f096369eee2ef44275ea8f1c7dc1b6e564e71c8",
+    "serialized_contract_path": "lookdev/building_utility_panel_serialized_review_texture_001.json",
+    "serialized_contract_blob_sha": "620bc298256d21ee008b6fe870135f09212f8db9",
+    "material_profile_path": "lookdev/building_material_profile_001.json",
+    "material_profile_blob_sha": "f7945f4c17b7720f176c1b0ac4e1baa298691b25",
+    "serialized_png_sha256": "e932cdd94d370184c7361862d5064149cc193e3a8fd80b269cab6543c0919198",
+    "serialized_rgba8_sha256": "02f8f464eabc734a3be687a7706edf8b8f62ece834fa981c8c993fbb8227bb4b"
+  },
+  "hard_surface_owner": {
+    "pull_request": 17,
+    "head": "fbfa3b47048755b45dac91451171d5511c8d4f47",
+    "service_domain_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "service_domain_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919"
+  },
+  "geometry_owner": {
+    "pull_request": 18,
+    "head": "02944a9f10528a051603df3a6fd7b3183730773f",
+    "chart_path": "geometry/utility_access_panel_service_surface_chart_001.json",
+    "chart_blob_sha": "08431f75edff5ae7d8b8c32468190e7a1b81d526",
+    "sampling_path": "geometry/utility_access_panel_review_atlas_directional_sampling_001.json",
+    "sampling_blob_sha": "498fdc5251a7393bc38aa14910678c3650ad5ddb"
+  },
+  "technical_art_owner": {
+    "repository": "mike-axiom-mir/axm-map-design",
+    "pull_request": 40,
+    "head": "457c086d27f3a9c010b365fe75d54b8f812b01ef",
+    "bridge_tool_path": "tools/technical_art_building_utility_panel_material_glb_bridge.py",
+    "bridge_tool_blob_sha": "2834dafd2fdfe0bb151139a370c9d0f3e0e40da3",
+    "png_rebuilder_path": "tools/technical_art_rebuild_materials_review_png.py",
+    "png_rebuilder_blob_sha": "763825aea12bf5dd8bf7349bb4e1bed3242b47f2",
+    "retained_image_provenance_path": "evidence-fixtures/building_utility_panel_materials_retained_image_provenance_001.json",
+    "retained_image_provenance_blob_sha": "35277aa20665c3191fcd995e6328f9e6aa14d7a0",
+    "workflow_run": 35292755078,
+    "artifact_id": 10527162239,
+    "artifact_sha256": "d760a61cd95f756de7e0143096bb7923a0dfbaff0d480ccff9a17dfd19f0c70c",
+    "positive_glb_sha256": "dc65fec67aa6aba4e4a14895b38122ae89b6eafba7f256b07c1a7c9e344bbd68",
+    "aspect_blind_negative_glb_sha256": "31bd3f48440f0889d1f54cf23dbf26184b574f07da6ce7ae683381bc402763ef"
+  },
+  "expected_imported_surface": {
+    "positions": [
+      [0.04, -0.55, -0.75],
+      [0.04, 0.55, -0.75],
+      [0.04, 0.55, 0.75],
+      [0.04, -0.55, 0.75]
+    ],
+    "uvs": [
+      [0.15625, 0.03125],
+      [0.84375, 0.03125],
+      [0.84375, 0.96875],
+      [0.15625, 0.96875]
+    ],
+    "indices": [0, 2, 1, 0, 3, 2],
+    "image_size_px": [512, 512],
+    "image_rgba8_sha256": "02f8f464eabc734a3be687a7706edf8b8f62ece834fa981c8c993fbb8227bb4b",
+    "metallic": 0.18,
+    "roughness": 0.62,
+    "double_sided": true,
+    "directional_texels_per_m_by_chart_axis": [320.0, 320.0],
+    "anisotropy_ratio": 1.0
+  },
+  "comparison": {
+    "contexts": ["front", "oblique", "grazing"],
+    "unshaded_owner_reference_vs_imported_positive": "PIXEL_IDENTICAL_EXPECTED",
+    "lit_positive_vs_aspect_blind_negative": "VISIBLE_DIFFERENCE_REQUIRED",
+    "minimum_negative_changed_pixels_gt_1lsb_per_context": 100,
+    "minimum_negative_max_rgb_channel_delta": 0.01,
+    "minimum_lighting_response_changed_pixels_gt_1lsb_per_context": 100
+  },
+  "ownership_boundary": {
+    "materials_owns_visual_receiving_comparison": true,
+    "technical_art_owns_glb_packaging_and_transport": true,
+    "hard_surface_owns_source_surface_geometry": true,
+    "geometry_owns_chart_and_directional_sampling": true,
+    "automatic_environment_adoption": false,
+    "automatic_runtime_adoption": false,
+    "automatic_canon": false
+  },
+  "provenance": {
+    "external_textures": [],
+    "external_material_assets": [],
+    "source_method": "Re-execute the exact Technical-Art-owned bridge at its pinned head from exact owner inputs, then replay those exact GLB bytes through a Materials-owned Godot lookdev receiver. The owner reference uses the same Materials-owned serialized checker and exact owner UV/geometry contract."
+  },
+  "truth_boundary": {
+    "source_geometry_changed": false,
+    "uv_chart_changed": false,
+    "review_texel_density_changed": false,
+    "material_scalars_changed": false,
+    "technical_art_glb_edited_by_materials": false,
+    "production_uv_adopted": false,
+    "production_texture_adopted": false,
+    "environment_adoption": false,
+    "runtime_target_device_acceptance": false,
+    "art_direction_acceptance": false,
+    "visual_qa_acceptance": false,
+    "canon": false,
+    "production_ready": false
+  }
+}

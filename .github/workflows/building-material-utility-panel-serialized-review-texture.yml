@@ -1,0 +1,285 @@
+name: Building material utility-panel serialized review texture evidence
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+    paths:
+      - "lookdev/building_utility_panel_serialized_review_texture_001.json"
+      - "lookdev-utility-panel-uv-proof/serialized_texture_observe.gd"
+      - ".github/workflows/building-material-utility-panel-serialized-review-texture.yml"
+      - "lookdev/building_utility_panel_uv_density_001.json"
+      - "lookdev/building_utility_panel_uv_density_clearance_successor_001.json"
+      - "lookdev-utility-panel-uv-proof/observe.gd"
+      - "tools/build_building_utility_panel_uv_density_evidence.py"
+      - "tools/build_building_utility_panel_uv_density_clearance_successor_evidence.py"
+  pull_request:
+    paths:
+      - "lookdev/building_utility_panel_serialized_review_texture_001.json"
+      - "lookdev-utility-panel-uv-proof/serialized_texture_observe.gd"
+      - ".github/workflows/building-material-utility-panel-serialized-review-texture.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  serialized-review-texture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    env:
+      MATERIALS_PREDECESSOR: fe4fdfb2033b0c3c2705a532b9e6b610a3d119c1
+      GEOMETRY_SAMPLING_HEAD: 02944a9f10528a051603df3a6fd7b3183730773f
+      GEOMETRY_SAMPLING_BLOB: 498fdc5251a7393bc38aa14910678c3650ad5ddb
+      UC_MERGE: aa53ee8aa803c19524b7edbef6250bf6ed9336c0
+      CURRENT_SOURCE_HEAD: 57f66b1245812f0c3d402232a046b86c0b5c72d8
+      HISTORICAL_GEOMETRY_HEAD: 79e09f68a05770eb6dabbbbbb3b008fc8e050aa0
+      PREDECESSOR_SURFACE_HEAD: 97120eb78a72b0a07aff1c65b9b92229d0a42aff
+      PROCEDURAL_HEAD: 0d019e64a9788c05e259e8dde50498e9392469d1
+      HARD_SURFACE_SUCCESSOR_HEAD: 6585c62d9e21cd56244d35817ec40f1f92889c6f
+    steps:
+      - name: Checkout exact Materials head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Checkout exact Materials predecessor for Geometry interface
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.MATERIALS_PREDECESSOR }}
+          path: materials-predecessor
+          fetch-depth: 1
+
+      - name: Checkout exact current Geometry sampling interface
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.GEOMETRY_SAMPLING_HEAD }}
+          path: geometry-sampling
+          fetch-depth: 1
+
+      - name: Checkout exact merged UC observer
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-universal-creation
+          ref: ${{ env.UC_MERGE }}
+          path: uc-donor
+          fetch-depth: 1
+
+      - name: Checkout exact historical Building scalar-material donor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.CURRENT_SOURCE_HEAD }}
+          path: current-source-donor
+          fetch-depth: 1
+
+      - name: Checkout exact historical Geometry chart owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.HISTORICAL_GEOMETRY_HEAD }}
+          path: geometry-donor
+          fetch-depth: 1
+
+      - name: Checkout exact historical Hard-Surface service-domain owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.PREDECESSOR_SURFACE_HEAD }}
+          path: predecessor-surface-donor
+          fetch-depth: 1
+
+      - name: Checkout exact Procedural successor-rebind owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.PROCEDURAL_HEAD }}
+          path: procedural-donor
+          fetch-depth: 1
+
+      - name: Checkout exact Hard-Surface clearance successor owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.HARD_SURFACE_SUCCESSOR_HEAD }}
+          path: hard-surface-successor
+          fetch-depth: 1
+
+      - name: Verify exact donor identities
+        run: |
+          set -euo pipefail
+          test "$(git -C materials-predecessor rev-parse HEAD)" = "$MATERIALS_PREDECESSOR"
+          test "$(git -C geometry-sampling rev-parse HEAD)" = "$GEOMETRY_SAMPLING_HEAD"
+          test "$(git -C geometry-sampling rev-parse HEAD:geometry/utility_access_panel_review_atlas_directional_sampling_001.json)" = "$GEOMETRY_SAMPLING_BLOB"
+          test "$(git -C uc-donor rev-parse HEAD)" = "$UC_MERGE"
+          test "$(git -C current-source-donor rev-parse HEAD)" = "$CURRENT_SOURCE_HEAD"
+          test "$(git -C geometry-donor rev-parse HEAD)" = "$HISTORICAL_GEOMETRY_HEAD"
+          test "$(git -C predecessor-surface-donor rev-parse HEAD)" = "$PREDECESSOR_SURFACE_HEAD"
+          test "$(git -C procedural-donor rev-parse HEAD)" = "$PROCEDURAL_HEAD"
+          test "$(git -C hard-surface-successor rev-parse HEAD)" = "$HARD_SURFACE_SUCCESSOR_HEAD"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile and run complete Building suite
+        run: |
+          python -m compileall -q tools tests
+          python -m unittest discover -s tests -v
+
+      - name: Re-execute current Geometry review-sampling interface
+        run: |
+          mkdir -p lookdev-utility-panel-uv-proof/generated
+          python geometry-sampling/tools/verify_utility_panel_review_atlas_directional_sampling.py \
+            --exact-head "$GEOMETRY_SAMPLING_HEAD" \
+            --materials-root materials-predecessor \
+            --uc-root uc-donor \
+            --output lookdev-utility-panel-uv-proof/generated/geometry_directional_sampling_receipt.json
+
+      - name: Re-execute exact Procedural successor rebind
+        env:
+          AXM_CLEARANCE_DONOR_ROOT: ${{ github.workspace }}/hard-surface-successor
+        run: |
+          python procedural-donor/tools/build_pavilion_utility_panel_clearance_rebind_family.py \
+            --donor-root "$AXM_CLEARANCE_DONOR_ROOT" \
+            --output lookdev-utility-panel-uv-proof/generated/procedural_rebind_summary.json
+
+      - name: Rebuild exact Materials successor review payload
+        run: |
+          python tools/build_building_material_lookdev_evidence.py \
+            --source-root current-source-donor \
+            --source-head "$CURRENT_SOURCE_HEAD" \
+            --out lookdev-utility-panel-uv-proof/generated/base
+          python tools/build_building_utility_panel_uv_density_evidence.py \
+            --geometry-chart geometry-donor/geometry/utility_access_panel_service_surface_chart_001.json \
+            --surface-domain predecessor-surface-donor/assets/utility_access_panel_001_service_surface_domain.json \
+            --base-payload lookdev-utility-panel-uv-proof/generated/base/building_material_payload.json \
+            --out lookdev-utility-panel-uv-proof/generated/historical
+          python tools/build_building_utility_panel_uv_density_clearance_successor_evidence.py \
+            --historical-payload lookdev-utility-panel-uv-proof/generated/historical/utility_panel_uv_density_payload.json \
+            --procedural-summary lookdev-utility-panel-uv-proof/generated/procedural_rebind_summary.json \
+            --successor-domain hard-surface-successor/assets/utility_access_panel_001_service_surface_domain.json \
+            --procedural-head "$PROCEDURAL_HEAD" \
+            --out lookdev-utility-panel-uv-proof/generated/successor
+          cp lookdev-utility-panel-uv-proof/generated/successor/utility_panel_uv_density_clearance_successor_payload.json \
+             lookdev-utility-panel-uv-proof/generated/utility_panel_uv_density_payload.json
+          cp lookdev/building_utility_panel_serialized_review_texture_001.json \
+             lookdev-utility-panel-uv-proof/generated/serialized_review_texture_contract.json
+
+      - name: Truth-gate material ownership and GLB handoff boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('lookdev/building_utility_panel_serialized_review_texture_001.json').read_text())
+          g=json.loads(Path('lookdev-utility-panel-uv-proof/generated/geometry_directional_sampling_receipt.json').read_text())
+          p=json.loads(Path('lookdev-utility-panel-uv-proof/generated/utility_panel_uv_density_payload.json').read_text())
+          assert c['schema']=='axm.building-utility-panel-serialized-review-texture/v0.1',c
+          assert c['geometry_directional_sampling']['head']=='02944a9f10528a051603df3a6fd7b3183730773f',c
+          assert g['result']=='PASS_BUILDING_REVIEW_ATLAS_DIRECTIONAL_SAMPLING_INTERFACE__HOLD_EMBEDDED_GLB_OBSERVER',g
+          assert g['pattern']==c['geometry_directional_sampling']['required_pattern'],g
+          assert g['directional_texels_per_m_by_chart_axis']==[320.0,320.0],g
+          assert p['review_atlas']['size_px']==[512,512],p
+          assert p['review_atlas']['active_region_origin_px']==[80,16],p
+          assert p['review_atlas']['active_region_px']==[352,480],p
+          assert p['review_atlas']['texel_density_px_per_m']==[320.0,320.0],p
+          h=c['handoff_boundary']
+          assert h['materials_owns_serialized_review_texture'] is True,h
+          assert h['technical_art_owns_material_bearing_glb_packaging'] is True,h
+          assert h['uc_glb_observer_consumed_here'] is False,h
+          assert h['material_bearing_glb_bound_here'] is False,h
+          assert h['embedded_glb_directional_density_measured_here'] is False,h
+          assert c['truth_boundary']['production_texture_authored'] is False,c
+          PY
+
+      - name: Download pinned Godot 4.7.2
+        if: matrix.python-version == '3.11'
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        if: matrix.python-version == '3.11'
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+      - name: Render in-memory versus serialized review texture
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-review-checker-512.png
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-serialized-*.png
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-serialized-texture-runtime-receipt.json
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path lookdev-utility-panel-uv-proof \
+            --script serialized_texture_observe.gd
+
+      - name: Validate portable texture and real-render continuity
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-utility-panel-uv-proof')
+          r=json.loads((root/'utility-panel-serialized-texture-runtime-receipt.json').read_text())
+          assert r['state']=='PASS_TARGET_HOST_BUILDING_UTILITY_PANEL_SERIALIZED_REVIEW_TEXTURE_CONTINUITY',r
+          assert r['decision']=='PASS_PORTABLE_REVIEW_TEXTURE_BASE_LEVEL_AND_RENDER_CONTINUITY__NO_GLTF_PACKAGING_OR_PRODUCTION_ADOPTION',r
+          t=r['texture']
+          assert t['format']=='RGBA8',t
+          assert [t['width'],t['height']]==[512,512],t
+          assert t['base_rgba8_bytes']==512*512*4,t
+          assert t['base_rgba8_sha256']==t['reloaded_rgba8_sha256'],t
+          assert t['base_level_pixel_identity'] is True,t
+          assert (root/'utility-panel-review-checker-512.png').stat().st_size==t['serialized_png_bytes'],t
+          assert set(r['contexts'])=={'front_service','east_service','three_quarter'},r
+          for context,row in r['contexts'].items():
+              same=row['in_memory_vs_serialized']
+              negative=row['serialized_vs_aspect_blind_negative']
+              assert same['raw_changed_pixels']==0,(context,same)
+              assert same['changed_pixels_gt_1lsb']==0,(context,same)
+              assert negative['changed_pixels_gt_1lsb']>200,(context,negative)
+              assert negative['max_rgb_channel_delta']>0.01,(context,negative)
+          assert r['total_changed_pixels_gt_1lsb_serialized_vs_aspect_blind_negative']>1500,r
+          h=r['handoff_boundary']
+          assert h['technical_art_owns_material_bearing_glb_packaging'] is True,h
+          assert h['uc_glb_observer_consumed_here'] is False,h
+          assert h['material_bearing_glb_bound_here'] is False,h
+          print(json.dumps(r,indent=2))
+          PY
+
+      - name: Retain exact serialized Materials evidence
+        if: matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-serialized-review-texture-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            lookdev/building_utility_panel_serialized_review_texture_001.json
+            lookdev-utility-panel-uv-proof/serialized_texture_observe.gd
+            lookdev-utility-panel-uv-proof/generated/geometry_directional_sampling_receipt.json
+            lookdev-utility-panel-uv-proof/generated/utility_panel_uv_density_payload.json
+            lookdev-utility-panel-uv-proof/generated/serialized_review_texture_contract.json
+            lookdev-utility-panel-uv-proof/utility-panel-review-checker-512.png
+            lookdev-utility-panel-uv-proof/utility-panel-serialized-texture-runtime-receipt.json
+            lookdev-utility-panel-uv-proof/utility-panel-serialized-*.png
+          if-no-files-found: warn
+          retention-days: 30

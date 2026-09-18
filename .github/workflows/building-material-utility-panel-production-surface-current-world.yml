@@ -1,0 +1,242 @@
+name: Building material utility-panel production surface current-world three-way
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+    paths:
+      - "lookdev/utility_panel_production_surface_001.json"
+      - "tools/build_utility_panel_production_surface_001.py"
+      - "tools/verify_utility_panel_production_surface_current_world.py"
+      - "docs/BUILDING_UTILITY_PANEL_PRODUCTION_SURFACE_001.md"
+      - ".github/workflows/building-material-utility-panel-production-surface-current-world.yml"
+  pull_request:
+    paths:
+      - "lookdev/utility_panel_production_surface_001.json"
+      - "tools/build_utility_panel_production_surface_001.py"
+      - "tools/verify_utility_panel_production_surface_current_world.py"
+      - "docs/BUILDING_UTILITY_PANEL_PRODUCTION_SURFACE_001.md"
+      - ".github/workflows/building-material-utility-panel-production-surface-current-world.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  production-surface-current-world-three-way:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact Building Materials head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate recipe and generate exact production-surface successor
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > exact-head.txt
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git merge-base --is-ancestor 0ae911792929eaa38b2c2f32239ebfdce8967251 HEAD
+          python -m py_compile tools/build_utility_panel_production_surface_001.py tools/verify_utility_panel_production_surface_current_world.py
+          python -m json.tool lookdev/utility_panel_production_surface_001.json >/dev/null
+          mkdir -p evidence/building_utility_panel_production_surface_001/generated
+          python tools/build_utility_panel_production_surface_001.py generate \
+            --recipe lookdev/utility_panel_production_surface_001.json \
+            --output evidence/building_utility_panel_production_surface_001/generated/utility-panel-production-surface-001.png \
+            --report evidence/building_utility_panel_production_surface_001/generation-report.json
+          echo "fdf56d0c0b2e65a181a23cb5db4067555f188cce28ef2479fd5a71c8e11d220c  evidence/building_utility_panel_production_surface_001/generated/utility-panel-production-surface-001.png" | sha256sum --check --strict
+
+      - name: Checkout exact current-world Environment owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-map-design
+          ref: 595df99daf866b5e3dcaa4be87eeb650af637919
+          path: .map-current
+          fetch-depth: 1
+
+      - name: Validate exact Environment observer donor
+        run: |
+          set -euo pipefail
+          test "$(git -C .map-current rev-parse HEAD)" = "595df99daf866b5e3dcaa4be87eeb650af637919"
+          test "$(git -C .map-current rev-parse HEAD:environment-proof/atmosphere_current_world_building_utility_panel_material_bound_observe.gd)" = "5e5eda75ff9e9f8bb84cd677e3971f89003dddf0"
+          test "$(git -C .map-current rev-parse HEAD:tools/environment_building_utility_panel_material_current_world_ab.py)" = "b9287424061f5542d0821b84f60603c1bd176426"
+
+      - name: Download exact retained current-world inputs and historical three-way controls
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          root=evidence/building_utility_panel_production_surface_001
+          inputs="$root/inputs"
+          controls="$root/current-world-controls"
+          mkdir -p "$inputs/spatial" "$inputs/world" "$inputs/roughness" "$inputs/technical-art" "$controls" .map-current/environment-proof/generated
+
+          download_public_artifact () {
+            repo="$1"; artifact="$2"; sha="$3"; out="$4"
+            curl --fail --location --retry 3 -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/mike-axiom-mir/$repo/actions/artifacts/$artifact/zip" -o "$out"
+            echo "$sha  $out" | sha256sum --check --strict
+          }
+
+          download_public_artifact axm-map-design 10523556615 937e7382b59fef5360eb4fbe6409a2f887b67293c7333f2c1f0d6c3f30bdc930 "$inputs/spatial.zip"
+          unzip -q "$inputs/spatial.zip" -d "$inputs/spatial"
+          download_public_artifact axm-map-design 10509037278 8f2f8aa4bb11e2f868a6ce36dd381933ba1ea6c59be7b82ed00d1dfe5402ee97 "$inputs/world.zip"
+          unzip -q "$inputs/world.zip" -d "$inputs/world"
+          download_public_artifact axm-map-design 10502588586 60c1e589e3e1c3a7dab5430b55ef59542dd7ca35dad8b13653d165c79eee3a1e "$inputs/roughness.zip"
+          unzip -q "$inputs/roughness.zip" -d "$inputs/roughness"
+          download_public_artifact axm-map-design 10527699865 5c19c82f8e216a1e5032784751819447215b21ab2ef6e4f52e03a9da2a855c06 "$inputs/technical-art.zip"
+          unzip -q "$inputs/technical-art.zip" -d "$inputs/technical-art"
+          test "$(cat "$inputs/technical-art/exact-head.txt")" = "1434bc4a64faa04db10f47723c37ab7925aaa163"
+
+          download_public_artifact axm-map-design 10529154954 3e102488b5e85766ddae4b6b83e44a6347171cbd8d8f6961486c8c3774a608c7 "$controls/environment-current-world.zip"
+          unzip -q "$controls/environment-current-world.zip" -d "$controls/exact"
+          test "$(cat "$controls/exact/exact-head.txt")" = "595df99daf866b5e3dcaa4be87eeb650af637919"
+
+          cp "$inputs/spatial/evidence/environment_object_articulated_service_clearance/ta/object-rigid-component-map.json" .map-current/environment-proof/generated/object-rigid-component-map.json
+          cp "$inputs/spatial/evidence/environment_object_articulated_service_clearance/ta/object-motion-receiver-plan.json" .map-current/environment-proof/generated/object-motion-receiver-plan.json
+          cp "$inputs/world/combined_current_world.json" .map-current/environment-proof/generated/current_world_nature_winding_migration.json
+          cp "$inputs/roughness/donor-receipts/service-dark-selected-roughness-two-surface.surface.json" .map-current/environment-proof/generated/object-selected-roughness-ta-surface.json
+          cp "$inputs/roughness/donor-receipts/service-dark-roughness-selected-field.png" .map-current/environment-proof/generated/object-selected-roughness.png
+          cp .map-current/contracts/environment_object_articulated_service_clearance.json .map-current/environment-proof/generated/environment-object-articulated-service-clearance.json
+          cp "$inputs/technical-art/evidence/technical_art_building_current_receiver_uv_image/final/current-receiver-utility-panel-uv-image-binding-receipt.json" .map-current/environment-proof/generated/current-receiver-utility-panel-uv-image-binding-receipt.json
+          cp "$inputs/technical-art/evidence/technical_art_building_current_receiver_uv_image/owner/utility-panel-review-checker-512.png" .map-current/environment-proof/generated/utility-panel-review-checker-512.png
+          echo "e932cdd94d370184c7361862d5064149cc193e3a8fd80b269cab6543c0919198  .map-current/environment-proof/generated/utility-panel-review-checker-512.png" | sha256sum --check --strict
+          cp "$root/generated/utility-panel-production-surface-001.png" .map-current/environment-proof/generated/utility-panel-production-surface-001.png
+
+      - name: Compose exact current-world successor observer from pinned Environment donor
+        run: |
+          set -euo pipefail
+          head="$(git rev-parse HEAD)"
+          python tools/build_utility_panel_production_surface_001.py compose-observer \
+            --recipe lookdev/utility_panel_production_surface_001.json \
+            --donor-observer .map-current/environment-proof/atmosphere_current_world_building_utility_panel_material_bound_observe.gd \
+            --output-observer .map-current/environment-proof/materials_current_world_building_utility_panel_production_surface_observe.gd \
+            --output-contract .map-current/environment-proof/generated/environment-building-utility-panel-material-current-world-ab.json \
+            --materials-head "$head"
+          grep -F "$head" .map-current/environment-proof/materials_current_world_building_utility_panel_production_surface_observe.gd
+          grep -F "fdf56d0c0b2e65a181a23cb5db4067555f188cce28ef2479fd5a71c8e11d220c" .map-current/environment-proof/materials_current_world_building_utility_panel_production_surface_observe.gd
+
+      - name: Checkout exact retained current-world observer dependencies
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-map-design
+          ref: 29ef2d4cc4398b3f26290e4e1f1f10398ca9898c
+          path: .vfx-map
+          fetch-depth: 1
+
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-map-design
+          ref: 15a03b7c3ba3aaa7c0475ca1a3091c15581f559b
+          path: .weather-width
+          fetch-depth: 1
+
+      - name: Compose inherited current-world observer dependencies
+        run: |
+          set -euo pipefail
+          cp .weather-width/environment-proof/atmosphere_current_world_weather_width_observe.gd .map-current/environment-proof/atmosphere_current_world_weather_width_observe.gd
+          python .map-current/tools/environment_selected_roughness_compact_east_composition.py compose-observer \
+            --donor .vfx-map/environment-proof/atmosphere_current_world_compact_east_visual_response_observe.gd \
+            --output .map-current/environment-proof/atmosphere_current_world_selected_roughness_compact_east_observe.gd \
+            --receipt evidence/building_utility_panel_production_surface_001/observer-composition.json
+
+      - name: Download pinned Godot 4.7.2
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" -o .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          if ! command -v xvfb-run >/dev/null 2>&1; then sudo apt-get update && sudo apt-get install -y xvfb; fi
+
+      - name: Render production-surface successor in exact current world
+        env:
+          AXM_OBJECT_FOOTPRINT_REVIEW_MODE: CANDIDATE_VISIBLE
+          AXM_OBJECT_MOTION_SAMPLE_INDEX: "40"
+        run: |
+          set -euo pipefail
+          root=evidence/building_utility_panel_production_surface_001/successor
+          mkdir -p "$root/rendered"
+          rm -f .map-current/environment-proof/atmosphere-width-*.png .map-current/environment-proof/atmosphere-current-world-weather-width-runtime.json
+          xvfb-run --auto-servernum --server-args="-screen 0 1200x800x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --display-driver x11 --rendering-method gl_compatibility \
+            --path .map-current/environment-proof --script materials_current_world_building_utility_panel_production_surface_observe.gd \
+            2>&1 | tee "$root/godot.log"
+          cp .map-current/environment-proof/atmosphere-current-world-weather-width-runtime.json "$root/runtime.json"
+          cp .map-current/environment-proof/atmosphere-width-*.png "$root/rendered/"
+          test "$(find "$root/rendered" -maxdepth 1 -name 'atmosphere-width-*.png' -type f | wc -l | tr -d ' ')" = 68
+
+      - name: Verify exact same-world scalar checker production three-way
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-input pillow numpy
+          root=evidence/building_utility_panel_production_surface_001
+          controls="$root/current-world-controls/exact/evidence/environment_building_utility_panel_material_current_world_ab_001"
+          python tools/verify_utility_panel_production_surface_current_world.py \
+            --recipe lookdev/utility_panel_production_surface_001.json \
+            --successor-texture "$root/generated/utility-panel-production-surface-001.png" \
+            --scalar-runtime "$controls/control/runtime.json" \
+            --checker-runtime "$controls/candidate/runtime.json" \
+            --successor-runtime "$root/successor/runtime.json" \
+            --scalar-rendered "$controls/control/rendered" \
+            --checker-rendered "$controls/candidate/rendered" \
+            --successor-rendered "$root/successor/rendered" \
+            --materials-head "$(git rev-parse HEAD)" \
+            --output "$root/current-world-three-way-report.json" | tee "$root/verify.log"
+
+      - name: Negative control rejects mutated successor texture identity
+        env:
+          AXM_OBJECT_FOOTPRINT_REVIEW_MODE: CANDIDATE_VISIBLE
+          AXM_OBJECT_MOTION_SAMPLE_INDEX: "40"
+        run: |
+          set -euo pipefail
+          root=evidence/building_utility_panel_production_surface_001
+          cp .map-current/environment-proof/generated/utility-panel-production-surface-001.png "$root/successor-image-backup.png"
+          printf '\0' >> .map-current/environment-proof/generated/utility-panel-production-surface-001.png
+          set +e
+          xvfb-run --auto-servernum --server-args="-screen 0 1200x800x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --display-driver x11 --rendering-method gl_compatibility \
+            --path .map-current/environment-proof --script materials_current_world_building_utility_panel_production_surface_observe.gd \
+            > "$root/negative.log" 2>&1
+          code=$?
+          set -e
+          mv "$root/successor-image-backup.png" .map-current/environment-proof/generated/utility-panel-production-surface-001.png
+          test "$code" -ne 0
+          grep -F "serialized PNG identity drift" "$root/negative.log"
+          echo PASS_REJECTED_MUTATED_PRODUCTION_SURFACE_IDENTITY
+
+      - name: Retain exact production-surface current-world three-way evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-production-surface-current-world-${{ github.sha }}
+          path: |
+            exact-head.txt
+            lookdev/utility_panel_production_surface_001.json
+            docs/BUILDING_UTILITY_PANEL_PRODUCTION_SURFACE_001.md
+            tools/build_utility_panel_production_surface_001.py
+            tools/verify_utility_panel_production_surface_current_world.py
+            evidence/building_utility_panel_production_surface_001/generation-report.json
+            evidence/building_utility_panel_production_surface_001/generated/utility-panel-production-surface-001.png
+            evidence/building_utility_panel_production_surface_001/current-world-three-way-report.json
+            evidence/building_utility_panel_production_surface_001/verify.log
+            evidence/building_utility_panel_production_surface_001/negative.log
+            evidence/building_utility_panel_production_surface_001/observer-composition.json
+            evidence/building_utility_panel_production_surface_001/successor/runtime.json
+            evidence/building_utility_panel_production_surface_001/successor/godot.log
+            evidence/building_utility_panel_production_surface_001/successor/rendered/*.png
+            evidence/building_utility_panel_production_surface_001/current-world-controls/exact/evidence/environment_building_utility_panel_material_current_world_ab_001/control/runtime.json
+            evidence/building_utility_panel_production_surface_001/current-world-controls/exact/evidence/environment_building_utility_panel_material_current_world_ab_001/control/rendered/*.png
+            evidence/building_utility_panel_production_surface_001/current-world-controls/exact/evidence/environment_building_utility_panel_material_current_world_ab_001/candidate/runtime.json
+            evidence/building_utility_panel_production_surface_001/current-world-controls/exact/evidence/environment_building_utility_panel_material_current_world_ab_001/candidate/rendered/*.png
+          if-no-files-found: warn

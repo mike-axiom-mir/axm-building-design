@@ -1,0 +1,59 @@
+{
+  "schema": "axm.building-utility-panel-uv-density-review/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "material_role": "utility_panel_ochre",
+  "geometry_chart": {
+    "owner": "Geometry / Topology",
+    "pr": 16,
+    "head": "79e09f68a05770eb6dabbbbbb3b008fc8e050aa0",
+    "path": "geometry/utility_access_panel_service_surface_chart_001.json",
+    "git_blob_sha": "56f1964b3360e371ac8c39d547cb300cd14fb997"
+  },
+  "source_surface": {
+    "owner": "Building Hard Surface",
+    "pr": 15,
+    "head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+    "path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "git_blob_sha": "14037a0fb939104ea319c9ac96fbe9fdaa949a18"
+  },
+  "review_candidate": {
+    "atlas_size_px": [512, 512],
+    "texel_density_px_per_m": 320,
+    "active_region_px": [352, 480],
+    "active_region_origin_px": [80, 16],
+    "diagnostic_checker_period_px": 16,
+    "diagnostic_checker_period_m": 0.05,
+    "placement": "CENTERED_INTEGER_TEXEL_REGION",
+    "reason": "The exact 1.10 m x 1.50 m source surface maps to 352 x 480 integer texels at 320 px/m. A 16 px diagnostic cell is exactly 0.05 m in both source metric axes, yielding 22 x 30 physical cells while remaining inside one 512 x 512 review atlas. This is a bounded review density, not production adoption."
+  },
+  "negative_control": {
+    "id": "FULL_SQUARE_NORMALIZED_CHART_IGNORES_SOURCE_METRIC_ASPECT",
+    "description": "Map the same unit-square structural chart across all 512 x 512 texels. This creates unequal physical texel density on the 1.10 m x 1.50 m source surface and is retained only as a visible fail-control.",
+    "expected_effective_density_px_per_m": [465.45454545454544, 341.3333333333333],
+    "expected_density_ratio_max_over_min": 1.3636363636363638,
+    "expected_checker_cells": [32, 32]
+  },
+  "provenance": {
+    "authoring": "AXM self-authored deterministic Materials review contract",
+    "external_textures": [],
+    "external_material_assets": [],
+    "cross_domain_learning": "Object Materials previously showed the value of physical-density review, but this Building candidate is derived independently from Building's exact source metric domain and Geometry chart. No Object density value or material ontology is copied."
+  },
+  "truth_boundary": {
+    "source_geometry_changed": false,
+    "geometry_chart_changed": false,
+    "production_uv_adopted": false,
+    "production_texel_density_adopted": false,
+    "atlas_padding_selected": false,
+    "production_texture_authored": false,
+    "normal_map_authored": false,
+    "weathering_authored": false,
+    "runtime_storage_selected": false,
+    "environment_adoption": false,
+    "art_direction_acceptance": false,
+    "visual_qa_acceptance": false,
+    "canon": false,
+    "production_ready": false
+  }
+}

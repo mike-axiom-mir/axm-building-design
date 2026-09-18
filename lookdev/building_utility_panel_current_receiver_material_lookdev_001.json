@@ -1,0 +1,154 @@
+{
+  "schema": "axm.building-utility-panel-current-receiver-material-lookdev/v0.1",
+  "study_id": "building-utility-panel-current-receiver-material-lookdev-001",
+  "material_role": "utility_panel_ochre",
+  "materials_predecessor": {
+    "repository": "mike-axiom-mir/axm-building-design",
+    "pull_request": 3,
+    "head": "38260f31a49766ec27746b785934248176796d59",
+    "serialized_contract_path": "lookdev/building_utility_panel_serialized_review_texture_001.json",
+    "serialized_contract_blob_sha": "620bc298256d21ee008b6fe870135f09212f8db9",
+    "material_profile_path": "lookdev/building_material_profile_001.json",
+    "material_profile_blob_sha": "f7945f4c17b7720f176c1b0ac4e1baa298691b25",
+    "retained_png_sha256": "e932cdd94d370184c7361862d5064149cc193e3a8fd80b269cab6543c0919198",
+    "retained_rgba8_sha256": "02f8f464eabc734a3be687a7706edf8b8f62ece834fa981c8c993fbb8227bb4b",
+    "review_density_texels_per_m": [320.0, 320.0],
+    "metallic": 0.18,
+    "roughness": 0.62
+  },
+  "environment_owner": {
+    "repository": "mike-axiom-mir/axm-map-design",
+    "pull_request": 51,
+    "head": "787ad51687da2df52c9f6191d1778a7f66cbd3db",
+    "contract_path": "contracts/environment_building_utility_panel_clearance_current_world.json",
+    "contract_blob_sha": "6835a1f2cbe73eb44da721f0ab45e621fb758da6",
+    "environment_adoption": false
+  },
+  "hard_surface_owner": {
+    "repository": "mike-axiom-mir/axm-building-design",
+    "pull_request": 17,
+    "head": "fbfa3b47048755b45dac91451171d5511c8d4f47",
+    "pavilion_path": "assets/service_pavilion_001.json",
+    "pavilion_blob_sha": "5a5ec3ce6ee4e9b111db086ba93038a75c482a2e",
+    "panel_path": "assets/utility_access_panel_001.json",
+    "panel_blob_sha": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
+    "surface_domain_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "surface_domain_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919"
+  },
+  "geometry_owner": {
+    "repository": "mike-axiom-mir/axm-building-design",
+    "pull_request": 18,
+    "head": "02944a9f10528a051603df3a6fd7b3183730773f",
+    "chart_path": "geometry/utility_access_panel_service_surface_chart_001.json",
+    "chart_blob_sha": "08431f75edff5ae7d8b8c32468190e7a1b81d526"
+  },
+  "technical_art_owner": {
+    "repository": "mike-axiom-mir/axm-map-design",
+    "pull_request": 40,
+    "head": "1434bc4a64faa04db10f47723c37ab7925aaa163",
+    "binding_contract_path": "contracts/technical_art_building_utility_panel_current_receiver_uv_image_binding.json",
+    "binding_contract_blob_sha": "d638adfc0d8ea83ae184d38dfcfb965cd7517f06",
+    "binding_tool_path": "tools/technical_art_building_utility_panel_current_receiver_uv_image_binding.py",
+    "binding_tool_blob_sha": "ccfa826eb00513548b0fbda8318f0c397a719b4e",
+    "glb_helper_path": "tools/technical_art_building_utility_panel_material_glb_bridge.py",
+    "glb_helper_blob_sha": "2834dafd2fdfe0bb151139a370c9d0f3e0e40da3",
+    "png_rebuilder_path": "tools/technical_art_rebuild_materials_review_png.py",
+    "png_rebuilder_blob_sha": "763825aea12bf5dd8bf7349bb4e1bed3242b47f2",
+    "retained_image_provenance_path": "evidence-fixtures/building_utility_panel_materials_retained_image_provenance_001.json",
+    "retained_image_provenance_blob_sha": "35277aa20665c3191fcd995e6328f9e6aa14d7a0",
+    "workflow_run": 35296960441,
+    "artifact_id": 10527699865,
+    "artifact_sha256": "5c19c82f8e216a1e5032784751819447215b21ab2ef6e4f52e03a9da2a855c06",
+    "positive_glb_sha256": "2d7990c5e699af23e03afeffbebdfc36bc5516b33886702c3b1d7fa3df4a26ef"
+  },
+  "expected_current_receiver_service_faces": {
+    "positions": [
+      [-3.0, 6.06, 0.9],
+      [-1.9, 6.06, 0.9],
+      [-1.9, 6.06, 2.4],
+      [-3.0, 6.06, 2.4],
+      [3.94, 6.75, 0.9],
+      [3.94, 7.85, 0.9],
+      [3.94, 7.85, 2.4],
+      [3.94, 6.75, 2.4]
+    ],
+    "source_outward_normals": [
+      [0.0, -1.0, 0.0],
+      [0.0, -1.0, 0.0],
+      [0.0, -1.0, 0.0],
+      [0.0, -1.0, 0.0],
+      [1.0, 0.0, 0.0],
+      [1.0, 0.0, 0.0],
+      [1.0, 0.0, 0.0],
+      [1.0, 0.0, 0.0]
+    ],
+    "owner_uvs": [
+      [0.15625, 0.03125],
+      [0.84375, 0.03125],
+      [0.84375, 0.96875],
+      [0.15625, 0.96875],
+      [0.15625, 0.03125],
+      [0.84375, 0.03125],
+      [0.84375, 0.96875],
+      [0.15625, 0.96875]
+    ],
+    "aspect_blind_negative_uvs": [
+      [0.0, 0.0],
+      [1.0, 0.0],
+      [1.0, 1.0],
+      [0.0, 1.0],
+      [0.0, 0.0],
+      [1.0, 0.0],
+      [1.0, 1.0],
+      [0.0, 1.0]
+    ],
+    "indices": [0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6],
+    "panel_scopes": {
+      "front": [0, 1, 2, 3],
+      "east": [4, 5, 6, 7]
+    }
+  },
+  "comparison": {
+    "contexts": ["front_receiver", "east_receiver", "dual_oblique"],
+    "imported_positive_vs_native_positive_unshaded": "PIXEL_IDENTICAL_EXPECTED",
+    "native_positive_lit_vs_native_aspect_blind_negative_lit": "VISIBLE_DIFFERENCE_REQUIRED",
+    "minimum_negative_changed_pixels_gt_1lsb_per_context": 100,
+    "minimum_negative_max_rgb_channel_delta": 0.01,
+    "minimum_lighting_response_changed_pixels_gt_1lsb_per_context": 100
+  },
+  "ownership_boundary": {
+    "materials_owns_visual_receiving_comparison": true,
+    "technical_art_owns_current_receiver_uv_image_transport": true,
+    "environment_owns_full_current_world_adoption": true,
+    "hard_surface_owns_service_face_geometry_and_frame": true,
+    "geometry_owns_chart_identity": true,
+    "native_aspect_blind_negative_is_materials_receiving_only": true,
+    "technical_art_glb_edited_by_materials": false,
+    "full_environment_receiver_mutated": false,
+    "automatic_environment_adoption": false,
+    "automatic_runtime_adoption": false,
+    "automatic_art_qa_acceptance": false,
+    "automatic_canon": false
+  },
+  "provenance": {
+    "external_textures": [],
+    "external_material_assets": [],
+    "source_method": "Re-execute the exact Technical-Art-owned current-receiver bridge from pinned owner inputs. Materials renders the untouched positive carrier for unshaded transport continuity, then isolates the UV-density distinction on an exact native receiving copy whose only candidate/negative change is owner atlas UVs versus full-square aspect-blind UVs."
+  },
+  "truth_boundary": {
+    "source_geometry_changed": false,
+    "environment_scene_changed": false,
+    "current_receiver_identity_changed": false,
+    "owner_uv_chart_changed": false,
+    "review_texel_density_changed": false,
+    "material_scalars_changed": false,
+    "production_uv_adopted": false,
+    "production_texture_adopted": false,
+    "environment_adoption": false,
+    "runtime_target_device_acceptance": false,
+    "art_direction_acceptance": false,
+    "visual_qa_acceptance": false,
+    "canon": false,
+    "production_ready": false
+  }
+}
