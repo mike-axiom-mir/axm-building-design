@@ -1,0 +1,107 @@
+name: Procedural Building owner-seam component family evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PREVIOUS_PROCEDURAL_HEAD: 7551ea504a543d1b8ffed3803e459463bd293e2d
+      HARD_SURFACE_HEAD: 04d9a06bf8e8097c62de348d11230145b1f27686
+      HARD_SURFACE_POLICY_BLOB: f40e34dfbd899fbf1ee023bacef6a915662463aa
+      HARD_SURFACE_VERIFIER_BLOB: 38804e319daf75a196f8c990b25b033ab088c40c
+    steps:
+      - name: Checkout exact Procedural head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Checkout exact Hard-Surface owner-seam authority
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.HARD_SURFACE_HEAD }}
+          path: external/hard-surface-owner-seam
+          fetch-depth: 1
+
+      - name: Bind exact Procedural and Hard-Surface lineage
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$PREVIOUS_PROCEDURAL_HEAD" HEAD
+          git merge-base --is-ancestor "$HARD_SURFACE_HEAD" HEAD
+          test "$(git -C external/hard-surface-owner-seam rev-parse HEAD)" = "$HARD_SURFACE_HEAD"
+          test "$(git -C external/hard-surface-owner-seam rev-parse HEAD:assets/service_pavilion_001_compact_boundary_owner_seam_policy.json)" = "$HARD_SURFACE_POLICY_BLOB"
+          test "$(git -C external/hard-surface-owner-seam rev-parse HEAD:tools/verify_service_pavilion_compact_boundary_owner_seams.py)" = "$HARD_SURFACE_VERIFIER_BLOB"
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact owner-seam component family evidence
+        if: matrix.python-version == '3.11'
+        run: >-
+          python tools/build_pavilion_owner_seam_component_family.py
+          --hard-surface-root external/hard-surface-owner-seam
+          --hard-surface-head "$HARD_SURFACE_HEAD"
+          --output-dir evidence/service-pavilion-owner-seam-component-family-001
+
+      - name: Truth-gate exact family result
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('evidence/service-pavilion-owner-seam-component-family-001')
+          data = json.loads((root / 'summary.json').read_text())
+          assert data['result'] == 'PASS_BOUNDED_OWNER_SEAM_COMPONENT_FAMILY'
+          assert data['decision'] == 'PASS_DERIVED_OWNER_SEAM_COMPONENT_PARAMETERIZATION_ONLY__NO_PHYSICAL_SEAM_OR_RECEIVER_ADOPTION'
+          assert data['source_hard_surface_head'] == os.environ['HARD_SURFACE_HEAD']
+          assert data['source_hard_surface_result'] == 'PASS_SOURCE_OWNED_COMPACT_BOUNDARY_OWNER_SEAM_GRAPH_PRESERVED'
+          assert data['source_owner_seam_identity_sha256'] == '75b865c2b6f0559410549c03ac1c3b44fd00a71b186289d8a2ccb1e06df2c322'
+          assert data['owner_seam_edge_count'] == 268
+          assert data['owner_pair_count'] == 30
+          assert abs(data['total_owner_seam_length_m'] - 34.72) <= 1e-9
+          assert data['edge_count_classes'] == [4, 6, 8, 10, 12, 14]
+          assert data['length_classes_m'] == [0.72, 0.8, 1.44, 5.2]
+          assert data['distinct_pair_output_digests'] == 30
+          assert data['canonical_order_invariant'] is True
+          assert data['family_digest'] == data['reverse_iteration_family_digest']
+          assert len(data['outputs']) == 30
+          assert len(data['negative_controls']) == 7
+          assert all(value.startswith('HOLD:') for value in data['negative_controls'].values())
+          assert data['source_geometry_changed'] is False
+          assert data['physical_seam_semantics_inferred'] is False
+          assert data['receiver_adoption_authorized'] is False
+          assert data['material_or_uv_authority_transferred'] is False
+          assert data['universal_promotion_authorized'] is False
+          assert len(list(root.glob('pair-*.json'))) == 30
+          (root / 'exact-head.txt').write_text(os.environ['EXACT_HEAD'] + '\n')
+          (root / 'source-hard-surface-head.txt').write_text(os.environ['HARD_SURFACE_HEAD'] + '\n')
+          (root / 'previous-procedural-head.txt').write_text(os.environ['PREVIOUS_PROCEDURAL_HEAD'] + '\n')
+          PY
+
+      - name: Retain exact Procedural evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-owner-seam-component-family-001-${{ env.EXACT_HEAD }}
+          path: evidence/service-pavilion-owner-seam-component-family-001
+          if-no-files-found: error

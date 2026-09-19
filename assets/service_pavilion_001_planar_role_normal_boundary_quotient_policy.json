@@ -1,0 +1,52 @@
+{
+  "schema": "axm.building-planar-role-normal-boundary-quotient-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "diagnostic_id": "source-intent-hard-normal-to-role-position-quotient-001",
+  "owner": "Building Geometry / Topology",
+  "parent_geometry": {
+    "pr": 12,
+    "head": "b9b4ab63e23b9756ab79597e86ecc41ea75ea8b7",
+    "candidate_id": "boundary-only-planar-role-source-intent-indexed-001",
+    "candidate_sha256": "f6a831058de66901fd42704b1d8c1cf187b13a0919ae3719c03c4369f107e6c0",
+    "policy_path": "assets/service_pavilion_001_planar_role_indexed_geometry_policy.json",
+    "policy_git_blob_sha": "ec1c7d39baa606ba02ebcfbd21cf3b3b5b7ed11c"
+  },
+  "construction": {
+    "purpose": "DIAGNOSE_EXACT_VERTEX_IDENTITY_LOSS_IF_HARD_NORMAL_IS_REMOVED_FROM_THE_SOURCE_EQUIVALENCE_KEY",
+    "parent_equivalence_key": [
+      "MATERIAL_ROLE",
+      "EXACT_POSITION",
+      "EXACT_CARDINAL_HARD_NORMAL",
+      "EXPLICIT_PROTECTED_SPLIT_ID"
+    ],
+    "diagnostic_quotient_key": [
+      "MATERIAL_ROLE",
+      "EXACT_POSITION",
+      "EXPLICIT_PROTECTED_SPLIT_ID"
+    ],
+    "preserve_material_role": true,
+    "preserve_exact_position": true,
+    "preserve_protected_split_id": true,
+    "drop_only_hard_normal_from_identity": true,
+    "emit_product_mesh": false,
+    "mutate_source_or_parent_candidate": false
+  },
+  "acceptance": {
+    "expected_parent_render_vertices": 604,
+    "expected_diagnostic_quotient_groups": 312,
+    "expected_corner_indices": 1008,
+    "expected_triangles": 336,
+    "expected_material_roles": 5,
+    "expected_single_source_groups": 124,
+    "expected_two_hard_normal_groups": 84,
+    "expected_three_hard_normal_groups": 104,
+    "expected_hard_normal_crossing_groups": 188,
+    "expected_removed_source_vertex_identities": 292,
+    "require_every_parent_vertex_maps_to_exactly_one_quotient_group": true,
+    "require_no_cross_material_merge": true,
+    "require_no_cross_position_merge": true,
+    "require_no_cross_protected_split_merge": true
+  },
+  "selection_policy": "STRUCTURAL_DIAGNOSTIC_ONLY__NO_RENDER_CANDIDATE_NO_SOURCE_REWRITE_NO_RECEIVER_ADOPTION",
+  "truth_boundary": "This policy measures the exact partition change produced by removing only source hard-normal identity from the current 604-vertex Geometry equivalence key. It does not authorize that collapse, generate replacement normals, claim equality with any downstream receiver, replace the 604 source-intent identity, or establish visual/runtime/transport acceptance. Any comparison with a real downstream 312-vertex receiver requires separate exact cross-repo evidence."
+}

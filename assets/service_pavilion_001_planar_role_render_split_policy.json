@@ -1,0 +1,39 @@
+{
+  "schema": "axm.building-planar-role-render-split-policy/v0.1",
+  "asset_id": "service-pavilion-001",
+  "policy_revision": "service-pavilion-001/planar-role-render-split-policy-001",
+  "owner": "Building Hard Surface",
+  "parent_representation": {
+    "representation_id": "boundary-only-planar-role-rectangle-render-001",
+    "owner_pr": 11,
+    "owner_head": "93f22e4eeb9bb32516d4b11f8d8bcf47d9792910",
+    "policy_path": "assets/service_pavilion_001_planar_role_render_receiver_policy.json",
+    "policy_git_blob_sha": "6be97c6141b230636d6b95e446c101281d6c9450"
+  },
+  "intent": {
+    "purpose": "Declare the source-owner render-vertex split boundary for the exact planar-role receiving representation without implementing indexing, choosing a runtime representation, or taking Materials, Technical Art, Runtime, Environment, Art or QA authority.",
+    "equivalence_scope": "SAME_CONSUMED_MATERIAL_ROLE_ONLY",
+    "equivalence_attributes": [
+      "EXACT_POSITION",
+      "EXACT_CARDINAL_HARD_NORMAL"
+    ],
+    "protected_split_policy": "EXPLICIT_NULL_FOR_CURRENT_RECEIVER_UNLESS_A_FUTURE_SOURCE_OWNER_CONTRACT_DECLARES_A_NON_ATTRIBUTE_SPLIT",
+    "cross_rectangle_sharing": "ALLOWED_WHEN_SCOPE_ATTRIBUTES_AND_PROTECTED_SPLIT_ID_MATCH_EXACTLY",
+    "cross_material_role_sharing": "FORBIDDEN",
+    "cross_hard_normal_sharing": "FORBIDDEN",
+    "source_component_boundary_policy": "NO_EXTRA_SPLIT_WHEN_THE_EXISTING_PLANAR_ROLE_POLICY_ALREADY_COLLAPSES_SAME_ROLE_COPLANAR_SOURCE_COMPONENT_BOUNDARIES",
+    "indexing_implementation_owned_by_hard_surface": false,
+    "runtime_adoption_owned_by_hard_surface": false,
+    "transport_acceptance_owned_by_hard_surface": false,
+    "visual_acceptance_owned_by_hard_surface": false
+  },
+  "consumer_contract": {
+    "caller_must_declare_protected_split_id_for_every_triangle_corner": true,
+    "current_declared_protected_split_id": null,
+    "no_implicit_missing_split_declaration": true,
+    "no_pass_transfer_from_structural_equivalence_to_runtime_transport_or_visual_acceptance": true
+  },
+  "selection_policy": "SOURCE_INTENT_ONLY__CONSUMERS_MUST_EXPLICITLY_REBIND_AND_RETEST",
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_DOMAIN_EVIDENCE",
+  "truth_boundary": "This policy states only which exact planar-role triangle corners Hard Surface permits a downstream receiver to consider equivalent for render-vertex storage. It does not emit an indexed mesh, require a particular index numbering/order, alter the 336-triangle five-role surface cover, authorize default Environment adoption, prove post-index normal byte identity, accept target-device cost, or establish arbitrary-mesh safety, UV/tangent/custom-channel safety, CANON or production readiness."
+}

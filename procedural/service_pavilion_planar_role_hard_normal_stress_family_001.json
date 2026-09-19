@@ -1,0 +1,60 @@
+{
+  "asset_id": "service-pavilion-001",
+  "cohorts": [
+    {
+      "classification": "CONTROL_NO_HARD_NORMAL_BOUNDARY_CROSS",
+      "cohort_id": "single-normal-control",
+      "distinct_source_normal_count": 1,
+      "expected_quotient_group_count": 124,
+      "expected_source_render_identity_count": 124
+    },
+    {
+      "classification": "TWO_WAY_HARD_NORMAL_BOUNDARY_STRESS",
+      "cohort_id": "two-normal-boundary",
+      "distinct_source_normal_count": 2,
+      "expected_quotient_group_count": 84,
+      "expected_source_render_identity_count": 168
+    },
+    {
+      "classification": "THREE_WAY_HARD_NORMAL_BOUNDARY_STRESS",
+      "cohort_id": "three-normal-boundary",
+      "distinct_source_normal_count": 3,
+      "expected_quotient_group_count": 104,
+      "expected_source_render_identity_count": 312
+    }
+  ],
+  "failure_policy": "FAIL_CLOSED_NO_INFERRED_NORMAL_CLASS_NO_MISSING_OR_DUPLICATE_GROUP_NO_RECEIVER_ADOPTION_NO_SOURCE_REWRITE",
+  "family_id": "service-pavilion-planar-role-hard-normal-stress-family-001",
+  "family_invariants": {
+    "automatic_receiver_adoption": false,
+    "cohorts_must_be_disjoint": true,
+    "cohorts_must_cover_all_quotient_groups": true,
+    "emit_product_mesh": false,
+    "expected_total_quotient_groups": 312,
+    "expected_total_source_render_identities": 604,
+    "implicit_fallback": false,
+    "normal_generation_or_repacking": false,
+    "preserve_exact_position": true,
+    "preserve_material_role": true,
+    "preserve_protected_split_id": true,
+    "source_render_identities_must_be_covered_exactly_once": true,
+    "source_rewrite": false
+  },
+  "owner": "Procedural Design",
+  "schema": "axm.building-planar-role-hard-normal-stress-family/v0.1",
+  "source_authority": {
+    "geometry_head": "7dfb1153dc5f80bcbf1b48803f044236d4ebb030",
+    "geometry_policy_git_blob_sha": "82253e1491f1e21de4be733919762924fa6610f1",
+    "geometry_policy_path": "assets/service_pavilion_001_planar_role_normal_boundary_quotient_policy.json",
+    "geometry_pr": 13,
+    "geometry_quotient_sha256": "7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f",
+    "geometry_tool_git_blob_sha": "922d3baf55de2fb55b224d3bddbb18272bf4e174",
+    "geometry_tool_path": "tools/analyze_service_pavilion_planar_role_normal_boundary_quotient.py",
+    "hard_surface_head": "7b86b1a9da1ef8dc670ca01cf4918728e68ece92",
+    "hard_surface_policy_git_blob_sha": "826cc61a2e9fc172db5025f5b3ace6f566d5125a",
+    "hard_surface_policy_path": "assets/service_pavilion_001_planar_role_hard_normal_authority_policy.json",
+    "hard_surface_pr": 14
+  },
+  "truth_boundary": "This Procedural family only partitions the exact Geometry-owned 312-group hard-normal quotient into three deterministic review cohorts by the already-measured count of source hard-normal identities. It does not change the source-owned 604 render equivalence classes, emit or optimize a mesh, generate or smooth normals, choose a receiver representation, authorize attribute dropping, accept transport/runtime/visual output, promote a universal capability, establish CANON, or claim production readiness.",
+  "universal_promotion": "HELD_UNTIL_MATERIALLY_DIFFERENT_DOMAIN_REPRODUCES_THE_SAME_STRESS_COHORT_NEED"
+}

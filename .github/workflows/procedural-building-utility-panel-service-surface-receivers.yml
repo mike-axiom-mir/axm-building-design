@@ -1,0 +1,116 @@
+name: Procedural Building utility-panel service-surface receiver family evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/procedural-pavilion-symmetric-rows-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      PREVIOUS_PROCEDURAL_HEAD: 7b8919dac11b62afebb3c4a1f055b6f6d7796de3
+      SOURCE_SURFACE_HEAD: 97120eb78a72b0a07aff1c65b9b92229d0a42aff
+      SOURCE_SURFACE_BLOB: 14037a0fb939104ea319c9ac96fbe9fdaa949a18
+      PLACEMENT_PROFILE_BLOB: 1554fbd63f2896ec213142e7374f56d6a57070ea
+    steps:
+      - name: Checkout exact Procedural head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Checkout exact Sticker Fabric shared placement home
+        if: matrix.python-version == '3.11'
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-sticker-fabric
+          ref: 3aa93b0132eea9becefb20c716c6ec1a023ad28b
+          path: external/axm-sticker-fabric
+          fetch-depth: 1
+
+      - name: Bind exact Procedural and Hard-Surface lineage
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$PREVIOUS_PROCEDURAL_HEAD" HEAD
+          git merge-base --is-ancestor "$SOURCE_SURFACE_HEAD" HEAD
+          test "$(git rev-parse HEAD:assets/utility_access_panel_001_service_surface_domain.json)" = "$SOURCE_SURFACE_BLOB"
+          test "$(git rev-parse HEAD:procedural/service_pavilion_utility_panel_receivers_001.json)" = "$PLACEMENT_PROFILE_BLOB"
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Test complete receiving repository
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact service-surface receiver family evidence
+        if: matrix.python-version == '3.11'
+        run: >-
+          python tools/build_pavilion_utility_panel_service_surface_receivers.py
+          --sticker-root external/axm-sticker-fabric
+          --output-dir evidence/service-pavilion-utility-panel-service-surface-receivers-001
+
+      - name: Truth-gate exact family result
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('evidence/service-pavilion-utility-panel-service-surface-receivers-001')
+          data = json.loads((root / 'summary.json').read_text())
+          assert data['result'] == 'PASS_SOURCE_OWNED_UTILITY_PANEL_SERVICE_SURFACE_RECEIVER_FAMILY'
+          assert data['decision'] == 'PASS_DERIVED_SPATIAL_SURFACE_PARAMETERIZATION_FAMILY_ONLY__NO_UV_MATERIAL_ENVIRONMENT_OR_RUNTIME_ADOPTION'
+          assert data['source_surface_head'] == os.environ['SOURCE_SURFACE_HEAD']
+          assert data['source_surface_contract_blob_sha'] == os.environ['SOURCE_SURFACE_BLOB']
+          assert data['source_surface_result'] == 'PASS_SOURCE_OWNED_BUILDING_UTILITY_PANEL_OUTER_SERVICE_SURFACE_METRIC_DOMAIN'
+          assert data['source_surface_id'] == 'utility_panel_outer_service_surface'
+          assert data['placement_family_result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
+          assert data['receiver_count'] == 2
+          assert data['receiver_ids'] == ['front-utility-bay', 'east-utility-bay']
+          assert data['distinct_world_surface_digests'] == 2
+          assert data['distinct_world_outward_axes'] == 2
+          assert abs(data['receiver_outward_axis_dot']) <= 1e-12
+          assert data['canonical_order_invariant'] is True
+          assert data['family_digest'] == data['reverse_iteration_family_digest']
+          assert len(data['negative_controls']) == 8
+          assert all(value.startswith('HOLD:') for value in data['negative_controls'].values())
+          outputs = {item['receiver_id']: item for item in data['outputs']}
+          assert outputs['front-utility-bay']['world_origin_m'] == [-2.45, -1.12, 1.65]
+          assert outputs['front-utility-bay']['world_outward_axis'] == [0.0, -1.0, 0.0]
+          assert outputs['east-utility-bay']['world_origin_m'] == [3.92, 0.1, 1.65]
+          assert outputs['east-utility-bay']['world_outward_axis'] == [1.0, 0.0, 0.0]
+          for item in data['outputs']:
+              assert item['primary_extent_m'] == 1.1
+              assert item['secondary_extent_m'] == 1.5
+              assert item['area_m2'] == 1.65
+              assert len(item['corners_m']) == 4
+              assert item['triangles'] == [[0, 1, 2], [0, 2, 3]]
+          assert data['source_geometry_changed'] is False
+          assert data['uv_authored_or_selected'] is False
+          assert data['material_authored_or_selected'] is False
+          assert data['environment_adoption_authorized'] is False
+          assert data['runtime_acceptance_authorized'] is False
+          (root / 'exact-head.txt').write_text(os.environ['EXACT_HEAD'] + '\n')
+          (root / 'source-surface-head.txt').write_text(os.environ['SOURCE_SURFACE_HEAD'] + '\n')
+          (root / 'previous-procedural-head.txt').write_text(os.environ['PREVIOUS_PROCEDURAL_HEAD'] + '\n')
+          PY
+
+      - name: Retain exact Procedural evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-pavilion-utility-panel-service-surface-receivers-001-${{ env.EXACT_HEAD }}
+          path: evidence/service-pavilion-utility-panel-service-surface-receivers-001
+          if-no-files-found: error

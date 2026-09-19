@@ -1,0 +1,29 @@
+{
+  "schema": "axm.building-utility-panel-service-surface-receiver-family/v0.1",
+  "family_id": "axm.building-utility-panel-service-surface-receiver-family/v0.1",
+  "source_surface": {
+    "owner": "Building Hard Surface",
+    "pr": 15,
+    "head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+    "contract_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "contract_blob_sha": "14037a0fb939104ea319c9ac96fbe9fdaa949a18",
+    "required_schema": "axm.building-utility-panel-service-surface-domain/v0.1",
+    "required_surface_id": "utility_panel_outer_service_surface"
+  },
+  "placement_family": {
+    "owner": "Building Procedural Design",
+    "profile_path": "procedural/service_pavilion_utility_panel_receivers_001.json",
+    "profile_blob_sha": "1554fbd63f2896ec213142e7374f56d6a57070ea",
+    "required_schema": "axm.building-utility-panel-receiver-placement-family/v0.1",
+    "required_result": "PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY"
+  },
+  "receiver_ids": [
+    "front-utility-bay",
+    "east-utility-bay"
+  ],
+  "transform_policy": "EXACT_SOURCE_SURFACE_FRAME_THROUGH_EXACT_RECEIVER_PLACEMENT_NO_SCALE_NO_EXTRA_ROTATION",
+  "canonical_output_order": "RECEIVER_ID_LEXICOGRAPHIC",
+  "authority": "DERIVE_ONLY_SOURCE_OWNED_SERVICE_SURFACE_IN_EXISTING_RECEIVER_FRAMES",
+  "failure_policy": "FAIL_CLOSED_NO_SURFACE_INFERENCE_NO_FRAME_INFERENCE_NO_EXTENT_REDISCOVERY_NO_UV_NO_MATERIAL_NO_ADOPTION",
+  "truth_boundary": "This family only carries the exact Hard-Surface-owned utility-panel outer service-surface identity, frame and metric domain through the two already-proven Procedural receiver placements. It does not discover surfaces, infer dimensions, author UVs or materials, change panel or pavilion source geometry, choose Environment adoption, prove runtime attachment, or define a universal spatial-parameterization system."
+}
