@@ -1,0 +1,285 @@
+name: Building material utility-panel UV density clearance-successor evidence
+
+on:
+  push:
+    branches: [studio/materials-pavilion-surface-001]
+    paths:
+      - "lookdev/building_utility_panel_uv_density_clearance_successor_001.json"
+      - "tools/build_building_utility_panel_uv_density_clearance_successor_evidence.py"
+      - "tests/test_building_utility_panel_uv_density_clearance_successor.py"
+      - ".github/workflows/building-material-utility-panel-uv-density-clearance-successor.yml"
+  pull_request:
+    paths:
+      - "lookdev/building_utility_panel_uv_density_clearance_successor_001.json"
+      - "tools/build_building_utility_panel_uv_density_clearance_successor_evidence.py"
+      - "tests/test_building_utility_panel_uv_density_clearance_successor.py"
+      - ".github/workflows/building-material-utility-panel-uv-density-clearance-successor.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-building-utility-panel-uv-density-clearance-successor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - name: Checkout Building Materials lane
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Checkout exact historical Building scalar-material donor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 57f66b1245812f0c3d402232a046b86c0b5c72d8
+          path: current-source-donor
+          fetch-depth: 1
+
+      - name: Checkout exact historical Geometry chart owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 79e09f68a05770eb6dabbbbbb3b008fc8e050aa0
+          path: geometry-donor
+          fetch-depth: 1
+
+      - name: Checkout exact historical Hard-Surface service-domain owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 97120eb78a72b0a07aff1c65b9b92229d0a42aff
+          path: predecessor-surface-donor
+          fetch-depth: 1
+
+      - name: Checkout exact Procedural successor-rebind owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 0d019e64a9788c05e259e8dde50498e9392469d1
+          path: procedural-donor
+          fetch-depth: 1
+
+      - name: Checkout exact Hard-Surface clearance successor evidence head
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: 6585c62d9e21cd56244d35817ec40f1f92889c6f
+          path: hard-surface-successor
+          fetch-depth: 1
+
+      - name: Verify exact owner identities
+        run: |
+          set -euo pipefail
+          test "$(git -C current-source-donor rev-parse HEAD)" = 57f66b1245812f0c3d402232a046b86c0b5c72d8
+          test "$(git -C geometry-donor rev-parse HEAD)" = 79e09f68a05770eb6dabbbbbb3b008fc8e050aa0
+          test "$(git -C geometry-donor rev-parse HEAD:geometry/utility_access_panel_service_surface_chart_001.json)" = 56f1964b3360e371ac8c39d547cb300cd14fb997
+          test "$(git -C predecessor-surface-donor rev-parse HEAD)" = 97120eb78a72b0a07aff1c65b9b92229d0a42aff
+          test "$(git -C predecessor-surface-donor rev-parse HEAD:assets/utility_access_panel_001_service_surface_domain.json)" = 14037a0fb939104ea319c9ac96fbe9fdaa949a18
+          test "$(git -C procedural-donor rev-parse HEAD)" = 0d019e64a9788c05e259e8dde50498e9392469d1
+          test "$(git -C hard-surface-successor rev-parse HEAD)" = 6585c62d9e21cd56244d35817ec40f1f92889c6f
+          test "$(git -C hard-surface-successor rev-parse HEAD:assets/utility_access_panel_001.json)" = 51b7fa61dd87934a89e033a2fdf5cc3b99992454
+          test "$(git -C hard-surface-successor rev-parse HEAD:assets/utility_access_panel_001_service_surface_domain.json)" = 8b4484d4ccbd500e58910a2835d8780112489919
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile and run complete Building tests
+        run: |
+          python -m compileall -q tools tests
+          python -m unittest discover -s tests -v
+
+      - name: Re-execute exact Procedural successor rebind
+        env:
+          AXM_CLEARANCE_DONOR_ROOT: ${{ github.workspace }}/hard-surface-successor
+        run: |
+          mkdir -p lookdev-utility-panel-uv-proof/generated/successor
+          python procedural-donor/tools/build_pavilion_utility_panel_clearance_rebind_family.py \
+            --donor-root "$AXM_CLEARANCE_DONOR_ROOT" \
+            --output lookdev-utility-panel-uv-proof/generated/successor/procedural_rebind_summary.json
+
+      - name: Build exact historical scalar material payload
+        run: |
+          python tools/build_building_material_lookdev_evidence.py \
+            --source-root current-source-donor \
+            --source-head 57f66b1245812f0c3d402232a046b86c0b5c72d8 \
+            --out lookdev-utility-panel-uv-proof/generated/base
+
+      - name: Rebuild historical physical-density comparator without rebinding it
+        run: |
+          python tools/build_building_utility_panel_uv_density_evidence.py \
+            --geometry-chart geometry-donor/geometry/utility_access_panel_service_surface_chart_001.json \
+            --surface-domain predecessor-surface-donor/assets/utility_access_panel_001_service_surface_domain.json \
+            --base-payload lookdev-utility-panel-uv-proof/generated/base/building_material_payload.json \
+            --out lookdev-utility-panel-uv-proof/generated/historical
+
+      - name: Build Materials clearance-successor receiving payload
+        run: |
+          python tools/build_building_utility_panel_uv_density_clearance_successor_evidence.py \
+            --historical-payload lookdev-utility-panel-uv-proof/generated/historical/utility_panel_uv_density_payload.json \
+            --procedural-summary lookdev-utility-panel-uv-proof/generated/successor/procedural_rebind_summary.json \
+            --successor-domain hard-surface-successor/assets/utility_access_panel_001_service_surface_domain.json \
+            --procedural-head 0d019e64a9788c05e259e8dde50498e9392469d1 \
+            --out lookdev-utility-panel-uv-proof/generated/successor
+
+      - name: Validate successor receiving receipt
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-utility-panel-uv-proof/generated/successor')
+          r=json.loads((root/'build_receipt.json').read_text())
+          p=json.loads((root/'utility_panel_uv_density_clearance_successor_payload.json').read_text())
+          assert r['result']=='PASS_BUILDING_UTILITY_PANEL_UV_DENSITY_CLEARANCE_SUCCESSOR_PAYLOAD',r
+          assert r['procedural_head']=='0d019e64a9788c05e259e8dde50498e9392469d1',r
+          assert r['hard_surface_successor_head']=='6585c62d9e21cd56244d35817ec40f1f92889c6f',r
+          assert r['historical_materials_uv_head']=='c12766ecdc3e47a6d422a5af67b4cd28ec68c1ac',r
+          assert r['historical_geometry_chart_rebound'] is False,r
+          assert r['review_texel_density_px_per_m']==[320.0,320.0],r
+          assert r['review_active_region_px']==[352,480],r
+          assert abs(r['review_checker_period_m']-0.05)<1e-12,r
+          assert len(r['receiver_rebinds'])==2,r
+          by_id={row['id']:row for row in p['base_components']}
+          assert by_id['panel-front-utility-bay']['center_m']==[-2.45,-1.10,1.65],p
+          assert by_id['panel-east-utility-bay']['center_m']==[3.90,0.10,1.65],p
+          assert p['successor_continuity']['historical_geometry_chart_rebound'] is False,p
+          assert p['successor_continuity']['automatic_receiver_adoption'] is False,p
+          assert p['truth_boundary']['production_uv_adopted'] is False,p
+          print(json.dumps(r,indent=2))
+          PY
+
+      - name: Prove successor-center drift fails closed
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          src=Path('lookdev-utility-panel-uv-proof/generated/successor/procedural_rebind_summary.json')
+          dst=Path('lookdev-utility-panel-uv-proof/generated/successor/mutated_procedural_rebind_summary.json')
+          data=json.loads(src.read_text())
+          row=next(r for r in data['outputs'] if r['receiver_id']=='front-utility-bay')
+          row['successor_panel_center_m'][0] += 0.001
+          row['panel_center_displacement_m'][0] += 0.001
+          row['panel_center_displacement_magnitude_m'] = (sum(float(v)*float(v) for v in row['panel_center_displacement_m'])) ** 0.5
+          dst.write_text(json.dumps(data,indent=2)+'\n')
+          PY
+          if python tools/build_building_utility_panel_uv_density_clearance_successor_evidence.py \
+            --historical-payload lookdev-utility-panel-uv-proof/generated/historical/utility_panel_uv_density_payload.json \
+            --procedural-summary lookdev-utility-panel-uv-proof/generated/successor/mutated_procedural_rebind_summary.json \
+            --successor-domain hard-surface-successor/assets/utility_access_panel_001_service_surface_domain.json \
+            --procedural-head 0d019e64a9788c05e259e8dde50498e9392469d1 \
+            --out lookdev-utility-panel-uv-proof/generated/mutated-successor; then
+            echo "mutated successor center unexpectedly passed" >&2
+            exit 1
+          fi
+
+      - name: Download pinned Godot 4.7.2
+        if: matrix.python-version == '3.11'
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        if: matrix.python-version == '3.11'
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+      - name: Render successor-bound physical density and negative across three contexts
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          cp lookdev-utility-panel-uv-proof/generated/successor/utility_panel_uv_density_clearance_successor_payload.json \
+             lookdev-utility-panel-uv-proof/generated/utility_panel_uv_density_payload.json
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-uv-density-runtime-receipt.json
+          rm -f lookdev-utility-panel-uv-proof/utility-panel-uv-*.png
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x900x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path lookdev-utility-panel-uv-proof \
+            --script observe.gd
+
+      - name: Validate and wrap target-host successor evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-utility-panel-uv-proof')
+          build=json.loads((root/'generated/successor/build_receipt.json').read_text())
+          runtime=json.loads((root/'utility-panel-uv-density-runtime-receipt.json').read_text())
+          assert runtime['state']=='PASS_TARGET_HOST_BUILDING_UTILITY_PANEL_PHYSICAL_UV_DENSITY_REVIEW',runtime
+          assert set(runtime['contexts'])=={'front_service','east_service','three_quarter'},runtime
+          assert runtime['candidate']['texel_density_px_per_m']==[320.0,320.0],runtime
+          assert runtime['candidate']['checker_cells']==[22,30],runtime
+          assert runtime['negative_control']['density_ratio_max_over_min']>1.3,runtime
+          total=0
+          for context,row in runtime['contexts'].items():
+            diff=row['pixel_difference']
+            assert diff['changed_pixels_gt_1lsb']>200,(context,diff)
+            assert diff['max_rgb_channel_delta']>0.01,(context,diff)
+            total += diff['changed_pixels_gt_1lsb']
+            for variant in ('physical_density','normalized_full_square_negative'):
+              path=root/f'utility-panel-uv-{context}-{variant}.png'
+              assert path.stat().st_size>2000,path
+          assert total>1500,total
+          result={
+            'schema':'axm.building-utility-panel-uv-density-clearance-successor-target-host/v0.1',
+            'state':'PASS_TARGET_HOST_BUILDING_UTILITY_PANEL_UV_DENSITY_CLEARANCE_SUCCESSOR_REVIEW',
+            'materials_build_result':build['result'],
+            'procedural_head':build['procedural_head'],
+            'hard_surface_successor_head':build['hard_surface_successor_head'],
+            'historical_geometry_chart_rebound':False,
+            'renderer':'Godot 4.7.2 GL Compatibility / X11 / Mesa llvmpipe on GitHub Actions proof host',
+            'contexts':runtime['contexts'],
+            'candidate':runtime['candidate'],
+            'negative_control':runtime['negative_control'],
+            'total_changed_pixels_gt_1lsb_candidate_vs_negative':total,
+            'truth_boundary':build['truth_boundary'],
+          }
+          (root/'utility-panel-uv-density-clearance-successor-runtime-receipt.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(result,indent=2,sort_keys=True))
+          PY
+
+      - name: Retain exact clearance-successor Materials evidence
+        if: matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-uv-density-clearance-successor-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            lookdev/building_utility_panel_uv_density_001.json
+            lookdev/building_utility_panel_uv_density_clearance_successor_001.json
+            geometry-donor/geometry/utility_access_panel_service_surface_chart_001.json
+            predecessor-surface-donor/assets/utility_access_panel_001_service_surface_domain.json
+            hard-surface-successor/assets/utility_access_panel_001.json
+            hard-surface-successor/assets/utility_access_panel_001_receiver_clearance_envelope.json
+            hard-surface-successor/assets/utility_access_panel_001_service_surface_domain.json
+            procedural-donor/procedural/service_pavilion_utility_panel_clearance_rebind_family_001.json
+            lookdev-utility-panel-uv-proof/generated/historical/utility_panel_uv_density_payload.json
+            lookdev-utility-panel-uv-proof/generated/historical/build_receipt.json
+            lookdev-utility-panel-uv-proof/generated/successor/procedural_rebind_summary.json
+            lookdev-utility-panel-uv-proof/generated/successor/utility_panel_uv_density_clearance_successor_payload.json
+            lookdev-utility-panel-uv-proof/generated/successor/build_receipt.json
+            lookdev-utility-panel-uv-proof/utility-panel-uv-density-clearance-successor-runtime-receipt.json
+            lookdev-utility-panel-uv-proof/utility-panel-uv-*.png
+          if-no-files-found: warn
+          retention-days: 30

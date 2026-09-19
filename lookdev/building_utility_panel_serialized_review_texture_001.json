@@ -1,0 +1,76 @@
+{
+  "schema": "axm.building-utility-panel-serialized-review-texture/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "material_role": "utility_panel_ochre",
+  "materials_predecessor": {
+    "pull_request": 3,
+    "head": "fe4fdfb2033b0c3c2705a532b9e6b610a3d119c1",
+    "successor_contract_path": "lookdev/building_utility_panel_uv_density_clearance_successor_001.json",
+    "successor_contract_blob_sha": "61ba08fcef44fd685c60c833d39ec28171e78859",
+    "observer_path": "lookdev-utility-panel-uv-proof/observe.gd",
+    "observer_blob_sha": "7edaaa1550a21f482b27436a00d417ada4e90b35"
+  },
+  "geometry_directional_sampling": {
+    "owner": "Geometry / Topology",
+    "pull_request": 18,
+    "head": "02944a9f10528a051603df3a6fd7b3183730773f",
+    "contract_path": "geometry/utility_access_panel_review_atlas_directional_sampling_001.json",
+    "contract_blob_sha": "498fdc5251a7393bc38aa14910678c3650ad5ddb",
+    "required_pattern": "OWNER_BOUND_REVIEW_ATLAS_ACTIVE_REGION_TO_PHYSICAL_UV_SAMPLING_WITHOUT_GLTF_EVIDENCE_TRANSFER",
+    "required_result": "PASS_BUILDING_REVIEW_ATLAS_DIRECTIONAL_SAMPLING_INTERFACE__HOLD_EMBEDDED_GLB_OBSERVER"
+  },
+  "review_texture": {
+    "representation": "SELF_AUTHORED_SERIALIZED_PNG_REVIEW_ARTIFACT",
+    "format": "RGBA8",
+    "image_size_px": [512, 512],
+    "active_region_origin_px": [80, 16],
+    "active_region_px": [352, 480],
+    "active_uv_span": [0.6875, 0.9375],
+    "checker_period_px": 16,
+    "checker_period_m": 0.05,
+    "directional_texels_per_m_by_chart_axis": [320.0, 320.0],
+    "anisotropy_ratio": 1.0,
+    "mipmap_policy": "REGENERATE_FROM_SERIALIZED_BASE_LEVEL_IN_RECEIVER",
+    "purpose": "Freeze the exact Materials review checker base level into portable PNG bytes and prove that reloading those bytes preserves the existing bounded lookdev response before any Technical Art GLB packaging is attempted."
+  },
+  "comparison": {
+    "contexts": ["front_service", "east_service", "three_quarter"],
+    "in_memory_vs_serialized_expected": "PIXEL_IDENTICAL",
+    "retain_aspect_blind_negative": true,
+    "negative_id": "FULL_SQUARE_NORMALIZED_CHART_IGNORES_SOURCE_METRIC_ASPECT"
+  },
+  "handoff_boundary": {
+    "materials_owns_serialized_review_texture": true,
+    "technical_art_owns_material_bearing_glb_packaging": true,
+    "uc_glb_observer_consumed_here": false,
+    "material_bearing_glb_bound_here": false,
+    "embedded_glb_directional_density_measured_here": false,
+    "automatic_technical_art_adoption": false,
+    "automatic_runtime_adoption": false
+  },
+  "provenance": {
+    "authoring": "AXM self-authored deterministic Materials review texture; no external texture or material asset",
+    "external_textures": [],
+    "external_material_assets": [],
+    "source_method": "Serialize the exact existing Godot review checker base level as PNG, reload it, regenerate mipmaps, and compare against the in-memory source under unchanged geometry/material/camera/light."
+  },
+  "truth_boundary": {
+    "source_geometry_changed": false,
+    "uv_chart_changed": false,
+    "review_texel_density_changed": false,
+    "material_scalars_changed": false,
+    "production_uv_adopted": false,
+    "production_texel_density_adopted": false,
+    "production_texture_authored": false,
+    "production_atlas_adopted": false,
+    "material_bearing_glb_authored": false,
+    "technical_art_transport_acceptance": false,
+    "runtime_storage_selected": false,
+    "environment_adoption": false,
+    "art_direction_acceptance": false,
+    "visual_qa_acceptance": false,
+    "canon": false,
+    "production_ready": false
+  }
+}

@@ -1,0 +1,170 @@
+name: Building material current-source rebind evidence
+
+on:
+  push:
+    branches: [main, studio/materials-pavilion-surface-001]
+  pull_request:
+    paths:
+      - "lookdev/**"
+      - "lookdev-proof/**"
+      - "tests/test_materials_lookdev.py"
+      - "tests/test_building_materials_tool.py"
+      - "tools/build_building_material_lookdev_evidence.py"
+      - "tools/run_building_materials_tool.py"
+      - "tooling/**"
+      - ".github/workflows/building-material-lookdev.yml"
+      - "assets/service_pavilion_001.json"
+      - "assets/utility_access_panel_001.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-building-lookdev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      ACCEPTED_BUILDING_MAIN: adae0a212a0790a433b388e2bb8aba5f5856d604
+      MATERIALS_LINEAGE_HEAD: eb31efc1639f58f2797bac44ce7f1bad774841ef
+    steps:
+      - name: Checkout exact integrated Building head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - name: Bind current Building source and retained Materials lineage
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$ACCEPTED_BUILDING_MAIN" HEAD
+          git merge-base --is-ancestor "$MATERIALS_LINEAGE_HEAD" HEAD
+          test "$(git rev-parse "$ACCEPTED_BUILDING_MAIN:assets/utility_access_panel_001.json")" = "51b7fa61dd87934a89e033a2fdf5cc3b99992454"
+          test "$(git rev-parse HEAD:assets/utility_access_panel_001.json)" = "51b7fa61dd87934a89e033a2fdf5cc3b99992454"
+          test "$(git rev-parse HEAD:lookdev/building_material_profile_001.json)" = "$(git rev-parse "$MATERIALS_LINEAGE_HEAD:lookdev/building_material_profile_001.json")"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile and run focused Materials tests
+        run: |
+          python -m compileall -q tools/build_building_material_lookdev_evidence.py tools/run_building_materials_tool.py tests/test_materials_lookdev.py tests/test_building_materials_tool.py
+          python -m unittest -v tests.test_materials_lookdev tests.test_building_materials_tool
+
+      - name: Rebind Materials payload to exact current Building source
+        run: |
+          python tools/build_building_material_lookdev_evidence.py \
+            --source-root . \
+            --source-head "$EXACT_HEAD"
+
+      - name: Validate structural material payload
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-proof/generated')
+          r=json.loads((root/'build_receipt.json').read_text())
+          p=json.loads((root/'building_material_payload.json').read_text())
+          assert r['result']=='PASS_SOURCE_BOUND_BUILDING_SURFACE_PAYLOAD',r
+          assert r['hard_surface_source_head']==__import__('os').environ['EXACT_HEAD'],r
+          assert r['source_schema']=='axm.building-hard-surface/v0.2',r
+          assert r['source_revision']=='service-pavilion-001/closed-outward-box-shells-002',r
+          assert r['box_topology_revision']=='closed-outward-12-triangle-v1',r
+          assert r['topology_summary']['outward_triangle_count']==228,r
+          assert r['topology_summary']['inward_triangle_count']==0,r
+          assert r['structural_prerequisite']['result']=='PASS_BUILDING_PANEL_RECEIVER_PATTERN_PROOF',r
+          assert {row['interface_id']:row['panel_center_local_m'] for row in r['structural_prerequisite']['receiver_fit_results']}=={
+            'front-utility-bay':[-2.45,-1.1,1.65],
+            'east-utility-bay':[3.9,0.1,1.65],
+          },r
+          assert all(abs(row['body_clearance_beyond_plate_m']-0.02)<1e-12 for row in r['structural_prerequisite']['receiver_fit_results']),r
+          assert p['truth_boundary']['same_geometry_baseline_candidate'] is True,p
+          assert p['truth_boundary']['source_receiver_frames_preserved'] is True,p
+          assert p['truth_boundary']['textures'] is False,p
+          assert len(p['components'])==r['component_count']==19,(r,p)
+          assert set(p['contexts'])=={'front_service','east_service','three_quarter'},p
+          print(json.dumps(r,indent=2))
+          PY
+
+      - name: Download pinned Godot 4.7.2
+        if: matrix.python-version == '3.11'
+        env:
+          GODOT_URL: https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          GODOT_SHA256: cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          curl --fail --location --retry 3 --retry-delay 2 "$GODOT_URL" --output .godot-bin/godot.zip
+          echo "$GODOT_SHA256  .godot-bin/godot.zip" | sha256sum --check --strict
+          unzip -q .godot-bin/godot.zip -d .godot-bin
+          chmod +x .godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          .godot-bin/Godot_v4.7.2-stable_linux.x86_64 --version
+
+      - name: Install virtual display when needed
+        if: matrix.python-version == '3.11'
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y xvfb
+          fi
+
+      - name: Render exact baseline and candidate in three contexts
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          rm -f lookdev-proof/material-lookdev-runtime-receipt.json lookdev-proof/*.png
+          xvfb-run --auto-servernum --server-args="-screen 0 1100x820x24" \
+            .godot-bin/Godot_v4.7.2-stable_linux.x86_64 \
+            --display-driver x11 \
+            --rendering-method gl_compatibility \
+            --path lookdev-proof \
+            --script observe.gd
+
+      - name: Validate target-host A/B evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('lookdev-proof')
+          r=json.loads((root/'material-lookdev-runtime-receipt.json').read_text())
+          assert r['state']=='PASS_TARGET_HOST_BUILDING_SURFACE_AB_READY',r
+          assert r['promotion_effect']=='NONE',r
+          assert set(r['contexts'])=={'front_service','east_service','three_quarter'},r
+          for context,row in r['contexts'].items():
+            assert row['baseline']['state']=='PASS',(context,row)
+            assert row['candidate']['state']=='PASS',(context,row)
+            assert row['baseline']['component_count']==row['candidate']['component_count']==19,(context,row)
+            assert row['pixel_difference']['changed_pixels']>0,(context,row)
+            assert row['pixel_difference']['changed_fraction']>0.005,(context,row)
+            for prefix in ('baseline','candidate'):
+              path=root/f'{prefix}-{context}.png'
+              assert path.stat().st_size>2000,path
+          print(json.dumps(r,indent=2))
+          PY
+
+      - name: Retain exact Building material comparison evidence
+        if: matrix.python-version == '3.11' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-material-lookdev-current-integrated-source-${{ env.EXACT_HEAD }}
+          path: |
+            lookdev/building_material_profile_001.json
+            lookdev-proof/generated/building_material_payload.json
+            lookdev-proof/generated/build_receipt.json
+            lookdev-proof/material-lookdev-runtime-receipt.json
+            lookdev-proof/baseline-front_service.png
+            lookdev-proof/candidate-front_service.png
+            lookdev-proof/baseline-east_service.png
+            lookdev-proof/candidate-east_service.png
+            lookdev-proof/baseline-three_quarter.png
+            lookdev-proof/candidate-three_quarter.png
+          if-no-files-found: warn
+          retention-days: 30

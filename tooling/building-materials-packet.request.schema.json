@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://axm.invalid/schemas/building-materials-packet-request.v0.1.json",
+  "title": "AXM Building Materials packet request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source_root",
+    "source_head",
+    "material_profile",
+    "output_directory"
+  ],
+  "properties": {
+    "schema": {"const": "axm.building-materials-tool-request/v0.1"},
+    "source_root": {"type": "string", "minLength": 1},
+    "source_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "material_profile": {"type": "string", "minLength": 1},
+    "output_directory": {"type": "string", "minLength": 1},
+    "replace_existing": {"type": "boolean", "default": false}
+  }
+}

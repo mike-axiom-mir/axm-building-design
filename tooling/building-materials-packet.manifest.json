@@ -1,0 +1,79 @@
+{
+  "schema": "axm.specialist-tool-manifest/v0.1",
+  "tool_id": "axm.building.materials.packet",
+  "status": "HOLD",
+  "owner": {
+    "specialist": "Materials / Lookdev",
+    "repository": "mike-axiom-mir/axm-building-design"
+  },
+  "implementation": {
+    "repository": "mike-axiom-mir/axm-building-design",
+    "identity_policy": "receipt_exact_git_head",
+    "entrypoint": "tools/run_building_materials_tool.py"
+  },
+  "invocation": {
+    "mode": "non_interactive",
+    "command": [
+      "python",
+      "tools/run_building_materials_tool.py",
+      "--request",
+      "<request.json>"
+    ],
+    "network_required": false
+  },
+  "contracts": {
+    "request_schema": "tooling/building-materials-packet.request.schema.json",
+    "result_schema": "tooling/building-materials-packet.result.schema.json",
+    "receipt_schema": "axm.building-material-lookdev-build-receipt/v0.1"
+  },
+  "determinism": {
+    "declared": true,
+    "seed_policy": "No stochastic operation is permitted in v0.1.",
+    "runtime_assumptions": [
+      "Python 3.11 or 3.13",
+      "requested source_head equals the clean source checkout HEAD",
+      "profile and source assets are tracked by that checkout"
+    ]
+  },
+  "dependencies": [
+    {
+      "repository": "mike-axiom-mir/axm-building-design",
+      "exact_identity": "request.source_head",
+      "role": "Building source geometry and receiver authority",
+      "authority": "owner"
+    }
+  ],
+  "evidence_scopes": [
+    "structural"
+  ],
+  "authority": {
+    "owns": [
+      "bounded Building material family values",
+      "source-component material assignments",
+      "deterministic material packet and structural receipt"
+    ],
+    "does_not_own": [
+      "Building source geometry or receiver placement",
+      "art-direction or visual acceptance",
+      "environment adoption",
+      "target-device runtime acceptance"
+    ]
+  },
+  "hold_conditions": [
+    "source_head differs from the checked-out Building source",
+    "tracked source files are dirty",
+    "profile or source topology validation fails",
+    "remote current-source rebind workflows have not passed at the exact candidate head"
+  ],
+  "nonclaims": [
+    "No visual or art-direction acceptance",
+    "No physical material validation",
+    "No environment or gameplay adoption",
+    "No production-runtime or target-device acceptance"
+  ],
+  "layers": {
+    "ai": "candidate",
+    "human": "absent",
+    "intent": "absent"
+  }
+}

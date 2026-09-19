@@ -1,0 +1,71 @@
+{
+  "schema": "axm.building-utility-panel-production-surface-clearance-successor-review/v0.1",
+  "asset_id": "utility-access-panel-001",
+  "surface_id": "utility_panel_outer_service_surface",
+  "surface_recipe": {
+    "path": "lookdev/utility_panel_production_surface_001.json",
+    "git_blob_sha": "48e530af8174b3aa119a4b03f41ac72cc4d0a6cd",
+    "expected_png_sha256": "fdf56d0c0b2e65a181a23cb5db4067555f188cce28ef2479fd5a71c8e11d220c",
+    "expected_rgba8_sha256": "408a6eaecf99fa328487785f85d089c93da2b84c3ae9ead0bf6e1f8d2a0bdcad",
+    "metallic": 0.18,
+    "roughness": 0.62,
+    "art_direction_result": "PASS_ART_DIRECTION_BUILDING_UTILITY_PANEL_PRODUCTION_SURFACE_SUCCESSOR_001_043",
+    "art_direction_packet_commit": "fe39317b1e32f38a52994bb7ae40a8a8a0c42c67",
+    "variant_search_requested": false
+  },
+  "hard_surface_owner": {
+    "pr": 17,
+    "current_evidence_head": "fbfa3b47048755b45dac91451171d5511c8d4f47",
+    "semantic_source_head_consumed_by_geometry": "32bbdd54f00aaac87ba8139bf932d8aff6109a66",
+    "panel_path": "assets/utility_access_panel_001.json",
+    "panel_git_blob_sha": "51b7fa61dd87934a89e033a2fdf5cc3b99992454",
+    "service_surface_path": "assets/utility_access_panel_001_service_surface_domain.json",
+    "service_surface_git_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919",
+    "pavilion_path": "assets/service_pavilion_001.json",
+    "pavilion_git_blob_sha": "5a5ec3ce6ee4e9b111db086ba93038a75c482a2e"
+  },
+  "geometry_owner": {
+    "pr": 18,
+    "current_head": "02944a9f10528a051603df3a6fd7b3183730773f",
+    "chart_path": "geometry/utility_access_panel_service_surface_chart_001.json",
+    "chart_git_blob_sha": "08431f75edff5ae7d8b8c32468190e7a1b81d526",
+    "chart_id": "utility-panel-outer-service-surface-chart-001"
+  },
+  "procedural_owner": {
+    "pr": 4,
+    "current_head": "588350afba56dd1aa0417148f03e12c6cfc81610",
+    "required_result": "PASS_BOUNDED_BUILDING_UTILITY_PANEL_CLEARANCE_REBIND_FAMILY",
+    "required_decision": "PASS_DERIVED_CLEARANCE_SUCCESSOR_REBIND_ONLY__NO_SOURCE_REWRITE_OR_RECEIVER_ADOPTION"
+  },
+  "comparison": {
+    "historical_standoff_m": 0.08,
+    "successor_standoff_m": 0.10,
+    "body_depth_m": 0.08,
+    "required_body_gap_m": 0.02,
+    "review_texel_density_px_per_m": 320,
+    "texture_dimensions_px": [512, 512],
+    "expected_review_uv_extent": [0.6875, 0.9375],
+    "contexts": ["front_service", "east_service", "three_quarter"],
+    "variants": ["historical_lit", "successor_lit", "successor_unshaded"]
+  },
+  "receiving_policy": "REBIND_ART_ACCEPTED_SURFACE_BYTES_TO_EXACT_CLEARANCE_SUCCESSOR_AND_CURRENT_SOURCE_CHART_WITHOUT_REAUTHORING_THE_SURFACE_OR_GRANTING_WORLD_ADOPTION",
+  "renderer_boundary": "Godot 4.7.2 GL Compatibility / X11 / Mesa llvmpipe proof host. The render is a Building-local receiver review of the two exact source-owned panel frames, not a Map/Environment scene replacement and not an arbitrary-renderer equivalence claim.",
+  "truth_boundary": {
+    "material_scalars_changed": false,
+    "production_surface_bytes_changed": false,
+    "source_geometry_changed_by_materials": false,
+    "source_clearance_rederived_by_materials": false,
+    "geometry_chart_reauthored_by_materials": false,
+    "review_texel_density_promoted_to_production": false,
+    "atlas_layout_selected": false,
+    "normal_map_authored": false,
+    "wear_or_damage_authored": false,
+    "environment_adoption": false,
+    "runtime_acceptance": false,
+    "target_device_acceptance": false,
+    "art_direction_reacceptance": false,
+    "visual_qa_acceptance": false,
+    "canon": false,
+    "production_ready": false
+  }
+}

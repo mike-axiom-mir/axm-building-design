@@ -23,6 +23,8 @@ jobs:
       SOURCE_REBIND_HEAD: fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e
       PREDECESSOR_HEAD: 97120eb78a72b0a07aff1c65b9b92229d0a42aff
       STICKER_HEAD: 3aa93b0132eea9becefb20c716c6ec1a023ad28b
+      ACCEPTED_BUILDING_MAIN: adae0a212a0790a433b388e2bb8aba5f5856d604
+      MATERIALS_LINEAGE_HEAD: eb31efc1639f58f2797bac44ce7f1bad774841ef
       AXM_CLEARANCE_DONOR_ROOT: ${{ github.workspace }}/external/hard-surface-clearance
       AXM_STICKER_FABRIC_ROOT: ${{ github.workspace }}/external/axm-sticker-fabric
     steps:
@@ -58,12 +60,15 @@ jobs:
           git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
           git merge-base --is-ancestor "$SOURCE_OWNER_HEAD" HEAD
           git merge-base --is-ancestor "$SOURCE_REBIND_HEAD" HEAD
+          git merge-base --is-ancestor "$ACCEPTED_BUILDING_MAIN" HEAD
+          git merge-base --is-ancestor "$MATERIALS_LINEAGE_HEAD" HEAD
           test "$(git rev-parse "$SOURCE_OWNER_HEAD:assets/utility_access_panel_001.json")" = "51b7fa61dd87934a89e033a2fdf5cc3b99992454"
           test "$(git rev-parse "$PREDECESSOR_HEAD:assets/utility_access_panel_001.json")" = "4da242e35a84b20a80f4acf28146be613624e734"
           test "$(git rev-parse "$SOURCE_OWNER_HEAD:assets/utility_access_panel_001_service_surface_domain.json")" = "8b4484d4ccbd500e58910a2835d8780112489919"
           test "$(git rev-parse "$PREDECESSOR_HEAD:assets/utility_access_panel_001_service_surface_domain.json")" = "14037a0fb939104ea319c9ac96fbe9fdaa949a18"
           test "$(git -C "$AXM_CLEARANCE_DONOR_ROOT" rev-parse HEAD)" = "$SOURCE_OWNER_HEAD"
           test "$(git -C "$AXM_STICKER_FABRIC_ROOT" rev-parse HEAD)" = "$STICKER_HEAD"
+          test "$(git rev-parse HEAD:lookdev/building_material_profile_001.json)" = "$(git rev-parse "$MATERIALS_LINEAGE_HEAD:lookdev/building_material_profile_001.json")"
 
       - name: Compile current integrated implementation
         run: python -m compileall tools tests
@@ -73,7 +78,7 @@ jobs:
         run: |
           set -o pipefail
           python -m unittest discover -s tests -v 2>&1 | tee /tmp/building-tests.txt
-          grep -Eq '^Ran 173 tests in ' /tmp/building-tests.txt
+          grep -Eq '^Ran 190 tests in ' /tmp/building-tests.txt
           grep -Fx 'OK' /tmp/building-tests.txt
 
       - name: Rebuild current receiver dependency chain
@@ -96,6 +101,11 @@ jobs:
             --donor-root "$AXM_CLEARANCE_DONOR_ROOT" \
             --output evidence/building-current-integrated/clearance-rebind.json \
             >/dev/null
+          python tools/build_building_material_lookdev_evidence.py \
+            --source-root . \
+            --source-head "$EXACT_HEAD" \
+            --out evidence/building-current-integrated/materials \
+            >/dev/null
 
       - name: Truth-gate current receiver dependency chain
         run: |
@@ -109,6 +119,7 @@ jobs:
           surfaces = json.loads((root / 'service-surfaces/summary.json').read_text())
           axes = json.loads((root / 'mount-axis/summary.json').read_text())
           clearance = json.loads((root / 'clearance-rebind.json').read_text())
+          materials = json.loads((root / 'materials/build_receipt.json').read_text())
 
           assert placements['result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
           assert {row['receiver_id']: row['center_m'] for row in placements['placements']} == {
@@ -125,16 +136,28 @@ jobs:
           assert clearance['result'] == 'PASS_BOUNDED_BUILDING_UTILITY_PANEL_CLEARANCE_REBIND_FAMILY'
           assert clearance['predecessor_standoff_m'] == 0.08
           assert clearance['successor_standoff_m'] == 0.10
+          assert materials['result'] == 'PASS_SOURCE_BOUND_BUILDING_SURFACE_PAYLOAD'
+          assert materials['hard_surface_source_head'] == os.environ['EXACT_HEAD']
+          assert materials['component_count'] == 19
+          assert materials['topology_summary']['outward_triangle_count'] == 228
+          assert materials['topology_summary']['inward_triangle_count'] == 0
+          assert all(
+              abs(row['body_clearance_beyond_plate_m'] - 0.02) < 1e-12
+              for row in materials['structural_prerequisite']['receiver_fit_results']
+          )
 
           receipt = {
-              'schema': 'axm.building-current-integrated-evidence/v0.1',
-              'result': 'PASS_CURRENT_INTEGRATED_BUILDING_STRUCTURAL_AND_RECEIVER_PROVENANCE',
+              'schema': 'axm.building-current-integrated-evidence/v0.2',
+              'result': 'PASS_CURRENT_INTEGRATED_BUILDING_STRUCTURAL_RECEIVER_AND_MATERIAL_PROVENANCE',
               'exact_head': os.environ['EXACT_HEAD'],
               'source_owner_head': os.environ['SOURCE_OWNER_HEAD'],
               'source_rebind_head': os.environ['SOURCE_REBIND_HEAD'],
               'predecessor_head': os.environ['PREDECESSOR_HEAD'],
               'sticker_head': os.environ['STICKER_HEAD'],
-              'test_count': 173,
+              'accepted_building_main': os.environ['ACCEPTED_BUILDING_MAIN'],
+              'materials_lineage_head': os.environ['MATERIALS_LINEAGE_HEAD'],
+              'test_count': 190,
+              'materials_structural_rebind': True,
               'visual_acceptance': False,
               'target_device_runtime_acceptance': False,
               'materials_acceptance': False,
