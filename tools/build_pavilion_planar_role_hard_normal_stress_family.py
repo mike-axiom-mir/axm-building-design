@@ -23,12 +23,13 @@ GEOMETRY_POLICY_PATH = ROOT / "assets" / "service_pavilion_001_planar_role_norma
 GEOMETRY_TOOL_PATH = ROOT / "tools" / "analyze_service_pavilion_planar_role_normal_boundary_quotient.py"
 
 EXPECTED_HARD_SURFACE_HEAD = "7b86b1a9da1ef8dc670ca01cf4918728e68ece92"
-EXPECTED_HARD_SURFACE_POLICY_BLOB = "826cc61a2e9fc172db5025f5b3ace6f566d5125a"
+EXPECTED_HARD_SURFACE_POLICY_BLOB = "598d06f09b7e0c05690e38b9cb12300132498ea2"
 EXPECTED_HARD_SURFACE_RESULT = "PASS_SOURCE_OWNED_PLANAR_ROLE_HARD_NORMAL_AUTHORITY_BOUNDARY"
 EXPECTED_GEOMETRY_HEAD = "7dfb1153dc5f80bcbf1b48803f044236d4ebb030"
-EXPECTED_GEOMETRY_POLICY_BLOB = "82253e1491f1e21de4be733919762924fa6610f1"
-EXPECTED_GEOMETRY_TOOL_BLOB = "922d3baf55de2fb55b224d3bddbb18272bf4e174"
-EXPECTED_GEOMETRY_QUOTIENT_SHA256 = "7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f"
+EXPECTED_GEOMETRY_POLICY_BLOB = "e66d3704a908f191fc959422818899556d432511"
+EXPECTED_GEOMETRY_TOOL_BLOB = "f3ce268cc0d25fa1ced48053416c60f1208cf4ba"
+EXPECTED_SOURCE_REBIND_HEAD = "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e"
+EXPECTED_GEOMETRY_QUOTIENT_SHA256 = "3ab469a8033f139370f278b8b4940512594262ea5291991ff086952a5959989e"
 EXPECTED_GEOMETRY_RESULT = "PASS_HARD_NORMAL_IDENTITY_REMOVAL_YIELDS_EXACT_312_GROUP_STRUCTURAL_QUOTIENT"
 EXPECTED_RESULT = "PASS_BOUNDED_PLANAR_ROLE_HARD_NORMAL_STRESS_FAMILY"
 EXPECTED_DECISION = "PASS_DIAGNOSTIC_STRESS_COHORT_FAMILY_ONLY__NO_RECEIVER_OR_SOURCE_ADOPTION"
@@ -85,6 +86,8 @@ def validate_policy(policy: dict) -> None:
         raise ValueError("Procedural family identity/owner drift")
 
     authority = policy.get("source_authority", {})
+    if authority.get("source_rebind_head") != EXPECTED_SOURCE_REBIND_HEAD:
+        raise ValueError("source-rebind identity drift")
     if authority.get("hard_surface_pr") != 14 or authority.get("hard_surface_head") != EXPECTED_HARD_SURFACE_HEAD:
         raise ValueError("Hard Surface authority identity drift")
     if authority.get("hard_surface_policy_git_blob_sha") != EXPECTED_HARD_SURFACE_POLICY_BLOB:
@@ -148,6 +151,8 @@ def validate_donors(hard_surface_evidence: dict, geometry_evidence: dict) -> Non
         raise ValueError("Hard Surface authority references a different Geometry diagnostic")
     if hard_surface_evidence.get("geometry_quotient_sha256") != EXPECTED_GEOMETRY_QUOTIENT_SHA256:
         raise ValueError("Hard Surface authority quotient digest drift")
+    if hard_surface_evidence.get("geometry_source_rebind_head") != EXPECTED_SOURCE_REBIND_HEAD:
+        raise ValueError("Hard Surface source-rebind identity drift")
     classification = hard_surface_evidence.get("classification", {})
     if classification.get("source_604") != "SOURCE_AUTHORIZED_RENDER_EQUIVALENCE":
         raise ValueError("Hard Surface 604-class authority weakened")
@@ -158,6 +163,8 @@ def validate_donors(hard_surface_evidence: dict, geometry_evidence: dict) -> Non
         raise ValueError("Geometry quotient evidence is not the pinned PASS")
     if geometry_evidence.get("parent_geometry_head") != "b9b4ab63e23b9756ab79597e86ecc41ea75ea8b7":
         raise ValueError("Geometry parent indexed-domain identity drift")
+    if geometry_evidence.get("parent_geometry_source_rebind_head") != EXPECTED_SOURCE_REBIND_HEAD:
+        raise ValueError("Geometry source-rebind identity drift")
     if geometry_evidence.get("quotient_sha256") != EXPECTED_GEOMETRY_QUOTIENT_SHA256:
         raise ValueError("Geometry quotient digest drift")
     metrics = geometry_evidence.get("metrics", {})
@@ -358,6 +365,7 @@ def build_evidence(exact_head: str) -> tuple[dict[str, dict], dict]:
         "hard_surface_authority_head": EXPECTED_HARD_SURFACE_HEAD,
         "hard_surface_authority_result": hard_surface_evidence["result"],
         "geometry_diagnostic_head": EXPECTED_GEOMETRY_HEAD,
+        "source_rebind_head": EXPECTED_SOURCE_REBIND_HEAD,
         "geometry_diagnostic_result": geometry_evidence["result"],
         "geometry_quotient_sha256": geometry_evidence["quotient_sha256"],
         "source_authorized_render_identity_count": 604,

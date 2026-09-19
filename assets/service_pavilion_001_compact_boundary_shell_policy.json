@@ -19,8 +19,9 @@
     "schema": "axm.building-boundary-shell-conforming-compaction/v0.2",
     "representation_id": "boundary-only-union-shell-conforming-compact-v2-001",
     "geometry_evidence_head": "16253e7dd2f8cd590667f9631e4b50fdfcc7280d",
+    "source_rebind_head": "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
     "donor_representation_id": "boundary-only-union-shell-001",
-    "expected_payload_sha256": "d51d853ce95216ad66f6ce88cf5bca6aecfa19e22e5e8ce4045cf481b719936a",
+    "expected_payload_sha256": "904ca8b5dc4a96677ce9f6ea4910e04f8aa4f100fc567a083cbe83d47516b16b",
     "status": "SOURCE_OWNED_DERIVED_COMPACT_RECEIVING_OPTION_NOT_DEFAULT",
     "allowed_roles": [
       "render_receiving_candidate",

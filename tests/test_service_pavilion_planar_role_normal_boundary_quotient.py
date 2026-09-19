@@ -28,6 +28,14 @@ class ServicePavilionPlanarRoleNormalBoundaryQuotientTests(unittest.TestCase):
         self.assertEqual(metrics["triangle_count"], 336)
         self.assertEqual(metrics["material_role_count"], 5)
         self.assertEqual(metrics["removed_source_vertex_identities"], 292)
+        self.assertEqual(
+            self.evidence["parent_geometry_source_rebind_head"],
+            "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
+        )
+        self.assertEqual(
+            self.evidence["parent_candidate_sha256"],
+            "9b1a13be7287f56ed5a23a4880a12544befcf458fe72b67847c8f319d65c0980",
+        )
 
     def test_hard_normal_boundary_loss_is_explicit(self):
         metrics = self.evidence["metrics"]

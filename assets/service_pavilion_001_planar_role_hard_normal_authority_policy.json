@@ -20,11 +20,12 @@
   "geometry_diagnostic_donor": {
     "pr": 13,
     "head": "7dfb1153dc5f80bcbf1b48803f044236d4ebb030",
+    "source_rebind_head": "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
     "policy_path": "assets/service_pavilion_001_planar_role_normal_boundary_quotient_policy.json",
-    "policy_git_blob_sha": "82253e1491f1e21de4be733919762924fa6610f1",
+    "policy_git_blob_sha": "e66d3704a908f191fc959422818899556d432511",
     "diagnostic_id": "source-intent-hard-normal-to-role-position-quotient-001",
     "required_result": "PASS_HARD_NORMAL_IDENTITY_REMOVAL_YIELDS_EXACT_312_GROUP_STRUCTURAL_QUOTIENT",
-    "quotient_sha256": "7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f"
+    "quotient_sha256": "3ab469a8033f139370f278b8b4940512594262ea5291991ff086952a5959989e"
   },
   "observed_identity_boundary": {
     "source_intent_render_vertex_count": 604,

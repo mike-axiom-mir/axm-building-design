@@ -50,6 +50,15 @@ class UtilityPanelServiceSurfaceReceiverFamilyTests(unittest.TestCase):
     def test_profile_binds_exact_owner_and_previous_family(self):
         profile = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
         module.verify_profile(profile)
+        self.assertEqual(profile["source_surface"]["pr"], 17)
+        self.assertEqual(
+            profile["source_surface"]["head"],
+            "fbfa3b47048755b45dac91451171d5511c8d4f47",
+        )
+        self.assertEqual(
+            profile["source_surface"]["contract_blob_sha"],
+            "8b4484d4ccbd500e58910a2835d8780112489919",
+        )
 
     def test_front_surface_uses_exact_source_domain(self):
         output = module.derive_surface(self.front, self.domain)

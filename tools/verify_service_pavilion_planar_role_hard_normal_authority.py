@@ -21,9 +21,10 @@ GEOMETRY_POLICY_PATH = ROOT / "assets" / "service_pavilion_001_planar_role_norma
 GEOMETRY_TOOL_PATH = ROOT / "tools" / "analyze_service_pavilion_planar_role_normal_boundary_quotient.py"
 
 EXPECTED_SOURCE_SPLIT_BLOB = "5f2130d6286e2ee1b67395b1a753fbfc3eac22ea"
-EXPECTED_GEOMETRY_POLICY_BLOB = "82253e1491f1e21de4be733919762924fa6610f1"
+EXPECTED_GEOMETRY_POLICY_BLOB = "e66d3704a908f191fc959422818899556d432511"
 EXPECTED_GEOMETRY_HEAD = "7dfb1153dc5f80bcbf1b48803f044236d4ebb030"
-EXPECTED_QUOTIENT_SHA256 = "7d9e0babf605e31ecb3e4edc92d06bd5460cf52a27f02ccbf32bbae44464688f"
+EXPECTED_SOURCE_REBIND_HEAD = "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e"
+EXPECTED_QUOTIENT_SHA256 = "3ab469a8033f139370f278b8b4940512594262ea5291991ff086952a5959989e"
 EXPECTED_RESULT = "PASS_SOURCE_OWNED_PLANAR_ROLE_HARD_NORMAL_AUTHORITY_BOUNDARY"
 
 
@@ -84,6 +85,8 @@ def validate_policy(policy: dict, source_split: dict, geometry_policy: dict, geo
     donor = policy.get("geometry_diagnostic_donor", {})
     if donor.get("pr") != 13 or donor.get("head") != EXPECTED_GEOMETRY_HEAD:
         raise ValueError("Geometry diagnostic donor identity drift")
+    if donor.get("source_rebind_head") != EXPECTED_SOURCE_REBIND_HEAD:
+        raise ValueError("Geometry diagnostic source-rebind identity drift")
     if donor.get("policy_git_blob_sha") != EXPECTED_GEOMETRY_POLICY_BLOB:
         raise ValueError("declared Geometry policy blob drift")
     if git_blob_sha1(GEOMETRY_POLICY_PATH) != EXPECTED_GEOMETRY_POLICY_BLOB:
@@ -96,6 +99,8 @@ def validate_policy(policy: dict, source_split: dict, geometry_policy: dict, geo
         raise ValueError("Geometry diagnostic result is not the pinned PASS")
     if geometry_evidence.get("quotient_sha256") != EXPECTED_QUOTIENT_SHA256:
         raise ValueError("rebuilt Geometry quotient digest drift")
+    if geometry_evidence.get("parent_geometry_source_rebind_head") != EXPECTED_SOURCE_REBIND_HEAD:
+        raise ValueError("rebuilt Geometry source-rebind identity drift")
 
     boundary = policy.get("observed_identity_boundary", {})
     metrics = geometry_evidence.get("metrics", {})
@@ -207,6 +212,7 @@ def build_evidence(exact_head: str) -> dict:
         "source_render_split_policy_git_blob_sha": git_blob_sha1(SOURCE_SPLIT_PATH),
         "geometry_diagnostic_policy_git_blob_sha": git_blob_sha1(GEOMETRY_POLICY_PATH),
         "geometry_diagnostic_head": EXPECTED_GEOMETRY_HEAD,
+        "geometry_source_rebind_head": EXPECTED_SOURCE_REBIND_HEAD,
         "geometry_quotient_sha256": geometry_evidence["quotient_sha256"],
         "metrics": {
             "source_intent_render_vertices": 604,

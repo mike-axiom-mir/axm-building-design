@@ -21,7 +21,8 @@ COMPACTION_TOOL = ROOT / "tools" / "build_service_pavilion_boundary_shell_compac
 REFERENCE_GEOMETRY_HEAD = "b6d14d48c59859ae6ff2aaed7dea86b4e00a5402"
 REFERENCE_POLICY_HEAD = "4f223e95fa95a8eb2e07d24ab1a2f4d3db70df55"
 COMPACTION_GEOMETRY_HEAD = "16253e7dd2f8cd590667f9631e4b50fdfcc7280d"
-EXPECTED_COMPACT_PAYLOAD = "d51d853ce95216ad66f6ce88cf5bca6aecfa19e22e5e8ce4045cf481b719936a"
+SOURCE_REBIND_HEAD = "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e"
+EXPECTED_COMPACT_PAYLOAD = "904ca8b5dc4a96677ce9f6ea4910e04f8aa4f100fc567a083cbe83d47516b16b"
 EPS = 1e-9
 
 
@@ -83,6 +84,8 @@ def verify_policy(policy: dict, candidate_mesh: dict, geometry_result: dict) -> 
         raise ValueError("compact representation identity drift")
     if compact.get("geometry_evidence_head") != COMPACTION_GEOMETRY_HEAD:
         raise ValueError("compact Geometry evidence head drift")
+    if compact.get("source_rebind_head") != SOURCE_REBIND_HEAD:
+        raise ValueError("compact source-rebind head drift")
     if compact.get("donor_representation_id") != reference["representation_id"]:
         raise ValueError("compact donor representation drift")
     if compact.get("expected_payload_sha256") != EXPECTED_COMPACT_PAYLOAD:
@@ -247,6 +250,8 @@ def build_receipt(exact_head: str) -> dict:
     bad_semantic["semantic_source"]["variant_id"] = "base-closed-outward-19"
     bad_compact_head = copy.deepcopy(policy)
     bad_compact_head["compact_representation"]["geometry_evidence_head"] = "0" * 40
+    bad_source_rebind = copy.deepcopy(policy)
+    bad_source_rebind["compact_representation"]["source_rebind_head"] = "0" * 40
     bad_adoption = copy.deepcopy(policy)
     bad_adoption["compact_representation"]["status"] = "SOURCE_ADOPTED_DEFAULT"
     bad_fallback = copy.deepcopy(policy)
@@ -264,9 +269,11 @@ def build_receipt(exact_head: str) -> dict:
     receipt["reference_geometry_head"] = REFERENCE_GEOMETRY_HEAD
     receipt["reference_policy_head"] = REFERENCE_POLICY_HEAD
     receipt["compaction_geometry_head"] = COMPACTION_GEOMETRY_HEAD
+    receipt["source_rebind_head"] = SOURCE_REBIND_HEAD
     receipt["negative_controls"] = {
         "semantic_source_variant_drift": rejected(lambda: verify_policy(bad_semantic, candidate_mesh, geometry_result)),
         "compaction_geometry_head_drift": rejected(lambda: verify_policy(bad_compact_head, candidate_mesh, geometry_result)),
+        "source_rebind_head_drift": rejected(lambda: verify_policy(bad_source_rebind, candidate_mesh, geometry_result)),
         "automatic_compact_adoption": rejected(lambda: verify_policy(bad_adoption, candidate_mesh, geometry_result)),
         "implicit_receiving_fallback": rejected(lambda: verify_policy(bad_fallback, candidate_mesh, geometry_result)),
         "cross_representation_pass_transfer": rejected(lambda: verify_policy(bad_transfer, candidate_mesh, geometry_result)),
