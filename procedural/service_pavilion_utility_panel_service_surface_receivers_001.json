@@ -3,17 +3,17 @@
   "family_id": "axm.building-utility-panel-service-surface-receiver-family/v0.1",
   "source_surface": {
     "owner": "Building Hard Surface",
-    "pr": 15,
-    "head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+    "pr": 17,
+    "head": "fbfa3b47048755b45dac91451171d5511c8d4f47",
     "contract_path": "assets/utility_access_panel_001_service_surface_domain.json",
-    "contract_blob_sha": "14037a0fb939104ea319c9ac96fbe9fdaa949a18",
+    "contract_blob_sha": "8b4484d4ccbd500e58910a2835d8780112489919",
     "required_schema": "axm.building-utility-panel-service-surface-domain/v0.1",
     "required_surface_id": "utility_panel_outer_service_surface"
   },
   "placement_family": {
     "owner": "Building Procedural Design",
     "profile_path": "procedural/service_pavilion_utility_panel_receivers_001.json",
-    "profile_blob_sha": "1554fbd63f2896ec213142e7374f56d6a57070ea",
+    "profile_blob_sha": "15eabddc462989a4edc9dca2b0465c65c77267fa",
     "required_schema": "axm.building-utility-panel-receiver-placement-family/v0.1",
     "required_result": "PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY"
   },

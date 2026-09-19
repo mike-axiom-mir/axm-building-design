@@ -6,8 +6,9 @@
   "parent_geometry": {
     "pr": 12,
     "head": "b9b4ab63e23b9756ab79597e86ecc41ea75ea8b7",
+    "source_rebind_head": "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
     "candidate_id": "boundary-only-planar-role-source-intent-indexed-001",
-    "candidate_sha256": "f6a831058de66901fd42704b1d8c1cf187b13a0919ae3719c03c4369f107e6c0",
+    "candidate_sha256": "9b1a13be7287f56ed5a23a4880a12544befcf458fe72b67847c8f319d65c0980",
     "policy_path": "assets/service_pavilion_001_planar_role_indexed_geometry_policy.json",
     "policy_git_blob_sha": "ec1c7d39baa606ba02ebcfbd21cf3b3b5b7ed11c"
   },

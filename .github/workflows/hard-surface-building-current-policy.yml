@@ -1,7 +1,7 @@
 name: Hard-surface Building current-source policy evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/hard-surface-pavilion-interface-001

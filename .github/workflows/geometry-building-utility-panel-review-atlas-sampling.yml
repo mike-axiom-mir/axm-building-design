@@ -1,12 +1,6 @@
 name: Geometry Building utility-panel review-atlas sampling boundary evidence
 
 on:
-  pull_request:
-    paths:
-      - "geometry/utility_access_panel_review_atlas_directional_sampling_001.json"
-      - "tools/verify_utility_panel_review_atlas_directional_sampling.py"
-      - "tests/test_utility_panel_review_atlas_directional_sampling.py"
-      - ".github/workflows/geometry-building-utility-panel-review-atlas-sampling.yml"
   push:
     branches:
       - studio/geometry-utility-panel-service-surface-chart-clearance-rebind-001

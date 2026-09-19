@@ -100,6 +100,10 @@ def verify_profile(pavilion, panel, profile, observed_pavilion_sha256, observed_
         raise ValueError("panel asset identity drift")
     if profile.get("panel_schema") != panel.get("schema"):
         raise ValueError("panel schema drift")
+    if profile.get("source_owner_head") != "fbfa3b47048755b45dac91451171d5511c8d4f47":
+        raise ValueError("panel source owner head drift")
+    if profile.get("source_rebind_head") != "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e":
+        raise ValueError("panel source rebind head drift")
     if profile.get("panel_sha256") != observed_panel_sha256:
         raise ValueError("panel source SHA-256 drift")
     if profile.get("required_orientation_contract") != panel.get("orientation_contract"):

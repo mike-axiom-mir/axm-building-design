@@ -36,6 +36,10 @@ class PlanarRoleHardNormalStressFamilyTests(unittest.TestCase):
             self.evidence["canonical_replay_under_reversed_input_order"],
             "PASS_EXACT_COHORT_DIGESTS_REPRODUCED",
         )
+        self.assertEqual(
+            self.evidence["source_rebind_head"],
+            "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
+        )
 
     def test_expected_cohort_sizes_are_retained(self):
         expected = {

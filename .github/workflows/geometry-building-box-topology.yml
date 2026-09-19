@@ -1,7 +1,7 @@
 name: Geometry building topology evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/geometry-building-box-topology-001

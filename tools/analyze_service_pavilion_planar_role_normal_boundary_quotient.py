@@ -23,7 +23,8 @@ POLICY_PATH = ROOT / "assets" / "service_pavilion_001_planar_role_normal_boundar
 PARENT_POLICY_PATH = ROOT / "assets" / "service_pavilion_001_planar_role_indexed_geometry_policy.json"
 PARENT_TOOL_PATH = ROOT / "tools" / "build_service_pavilion_planar_role_indexed_geometry.py"
 EXPECTED_PARENT_HEAD = "b9b4ab63e23b9756ab79597e86ecc41ea75ea8b7"
-EXPECTED_PARENT_CANDIDATE_SHA = "f6a831058de66901fd42704b1d8c1cf187b13a0919ae3719c03c4369f107e6c0"
+EXPECTED_SOURCE_REBIND_HEAD = "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e"
+EXPECTED_PARENT_CANDIDATE_SHA = "9b1a13be7287f56ed5a23a4880a12544befcf458fe72b67847c8f319d65c0980"
 EXPECTED_PARENT_POLICY_BLOB = "ec1c7d39baa606ba02ebcfbd21cf3b3b5b7ed11c"
 EXPECTED_RESULT = "PASS_HARD_NORMAL_IDENTITY_REMOVAL_YIELDS_EXACT_312_GROUP_STRUCTURAL_QUOTIENT"
 
@@ -57,6 +58,8 @@ def load_policy() -> dict:
     parent = policy.get("parent_geometry", {})
     if parent.get("pr") != 12 or parent.get("head") != EXPECTED_PARENT_HEAD:
         raise ValueError("parent Geometry identity drift")
+    if parent.get("source_rebind_head") != EXPECTED_SOURCE_REBIND_HEAD:
+        raise ValueError("parent Geometry source-rebind identity drift")
     if parent.get("candidate_id") != "boundary-only-planar-role-source-intent-indexed-001":
         raise ValueError("parent candidate identity drift")
     if parent.get("candidate_sha256") != EXPECTED_PARENT_CANDIDATE_SHA:
@@ -329,6 +332,7 @@ def build_evidence(exact_head: str) -> tuple[dict, dict]:
         "asset_id": "service-pavilion-001",
         "diagnostic_id": quotient["diagnostic_id"],
         "parent_geometry_head": EXPECTED_PARENT_HEAD,
+        "parent_geometry_source_rebind_head": EXPECTED_SOURCE_REBIND_HEAD,
         "parent_candidate_id": candidate["candidate_id"],
         "parent_candidate_sha256": EXPECTED_PARENT_CANDIDATE_SHA,
         "quotient_sha256": canonical_sha256(quotient),

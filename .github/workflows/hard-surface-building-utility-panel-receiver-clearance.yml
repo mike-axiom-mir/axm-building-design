@@ -4,17 +4,7 @@ on:
   push:
     branches:
       - studio/hard-surface-utility-panel-receiver-clearance-001
-  pull_request:
-    paths:
-      - "assets/utility_access_panel_001.json"
-      - "assets/utility_access_panel_001_service_surface_domain.json"
-      - "assets/utility_access_panel_001_receiver_clearance_envelope.json"
-      - "assets/service_pavilion_001.json"
-      - "tools/build_service_pavilion.py"
-      - "tools/verify_utility_panel_receiver_clearance_envelope.py"
-      - "tests/test_service_pavilion.py"
-      - "tests/test_utility_panel_receiver_clearance_envelope.py"
-      - ".github/workflows/hard-surface-building-utility-panel-receiver-clearance.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -27,6 +27,10 @@ class ServicePavilionPlanarRoleHardNormalAuthorityTests(unittest.TestCase):
         self.assertFalse(self.evidence["product_312_mesh_emitted"])
         self.assertFalse(self.evidence["consumer_adoption"])
         self.assertFalse(self.evidence["uc_or_profession_fabric_changed"])
+        self.assertEqual(
+            self.evidence["geometry_source_rebind_head"],
+            "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
+        )
 
     def test_604_and_312_remain_distinct_authority_classes(self):
         metrics = self.evidence["metrics"]

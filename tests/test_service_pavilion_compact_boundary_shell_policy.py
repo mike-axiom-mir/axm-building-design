@@ -54,6 +54,12 @@ class ServicePavilionCompactBoundaryShellPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "compact Geometry evidence head drift"):
             module.verify_policy(policy, copy.deepcopy(self.candidate_mesh), copy.deepcopy(self.geometry_result))
 
+    def test_source_rebind_head_drift_fails_closed(self):
+        policy = copy.deepcopy(self.policy)
+        policy["compact_representation"]["source_rebind_head"] = "0" * 40
+        with self.assertRaisesRegex(ValueError, "compact source-rebind head drift"):
+            module.verify_policy(policy, copy.deepcopy(self.candidate_mesh), copy.deepcopy(self.geometry_result))
+
     def test_automatic_compact_adoption_fails_closed(self):
         policy = copy.deepcopy(self.policy)
         policy["compact_representation"]["status"] = "SOURCE_ADOPTED_DEFAULT"

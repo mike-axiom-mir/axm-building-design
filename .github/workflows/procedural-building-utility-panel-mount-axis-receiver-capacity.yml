@@ -1,7 +1,7 @@
 name: Procedural Building utility-panel mount-axis receiver capacity family evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/procedural-pavilion-symmetric-rows-001

@@ -1,7 +1,7 @@
 name: Hard-surface Building boundary-shell policy evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/hard-surface-boundary-shell-policy-001

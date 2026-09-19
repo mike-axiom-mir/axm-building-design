@@ -77,10 +77,10 @@ def verify_profile(profile):
     source = profile.get("source_surface", {})
     if source.get("owner") != "Building Hard Surface":
         raise ValueError("source-surface owner drift")
-    if source.get("pr") != 15:
+    if source.get("pr") != 17:
         raise ValueError("source-surface PR identity drift")
     donor_head = source.get("head")
-    if donor_head != "97120eb78a72b0a07aff1c65b9b92229d0a42aff":
+    if donor_head != "fbfa3b47048755b45dac91451171d5511c8d4f47":
         raise ValueError("source-surface donor head drift")
     if source.get("contract_path") != DOMAIN.relative_to(ROOT).as_posix():
         raise ValueError("source-surface contract path drift")

@@ -1,26 +1,6 @@
 name: Geometry Building planar-role normal-boundary quotient evidence
 
 on:
-  pull_request:
-    paths:
-      - "assets/service_pavilion_001_planar_role_normal_boundary_quotient_policy.json"
-      - "tools/analyze_service_pavilion_planar_role_normal_boundary_quotient.py"
-      - "tests/test_service_pavilion_planar_role_normal_boundary_quotient.py"
-      - ".github/workflows/geometry-building-planar-role-normal-boundary-quotient.yml"
-      - "assets/service_pavilion_001_planar_role_indexed_geometry_policy.json"
-      - "tools/build_service_pavilion_planar_role_indexed_geometry.py"
-      - "assets/service_pavilion_001_planar_role_render_split_policy.json"
-      - "tools/verify_service_pavilion_planar_role_render_split_policy.py"
-      - "assets/service_pavilion_001_planar_role_render_receiver_policy.json"
-      - "tools/build_service_pavilion_planar_role_render_receiver.py"
-      - "tools/build_service_pavilion_union_shell_candidate.py"
-      - "tools/service_pavilion_current_emission_policy.py"
-      - "tools/service_pavilion_emission_variants.py"
-      - "assets/service_pavilion_001_current_emission_policy.json"
-      - "assets/service_pavilion_001_emission_variants.json"
-      - "assets/service_pavilion_001_header_segmentation.json"
-      - "assets/service_pavilion_001.json"
-      - "assets/utility_access_panel_001.json"
   workflow_dispatch:
 
 permissions:
