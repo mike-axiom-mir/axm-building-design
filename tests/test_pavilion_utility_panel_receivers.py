@@ -54,17 +54,17 @@ class UtilityPanelReceiverPlacementTests(unittest.TestCase):
         by_id = {item["receiver_id"]: item for item in self.summary["placements"]}
         front = by_id["front-utility-bay"]
         east = by_id["east-utility-bay"]
-        self.assertEqual(front["center_m"], [-2.45, -1.08, 1.65])
-        self.assertEqual(east["center_m"], [3.88, 0.1, 1.65])
+        self.assertEqual(front["center_m"], [-2.45, -1.1, 1.65])
+        self.assertEqual(east["center_m"], [3.9, 0.1, 1.65])
         self.assertEqual(front["basis_normal_lateral_up"][0], [0.0, -1.0, 0.0])
         self.assertEqual(east["basis_normal_lateral_up"][0], [1.0, 0.0, 0.0])
         self.assertEqual(
             front["mesh_digest"],
-            "dcadb6a7e938557c866259ed4a3ca7febb32b593b68b22073adc2617d63ef5c0",
+            "f46432e7f282fbe383a42c0c54081453e949f91650b17942dbab6f5284450b33",
         )
         self.assertEqual(
             east["mesh_digest"],
-            "95bbe7d3feebcaeebdaa285ea2f69ee24989d16f140ef59abf08f4725d77a904",
+            "412f246d41dc271cc947c4205462bfee8a09c36e10d0b65463cb03c622b184a6",
         )
         self.assertNotEqual(front["mesh_digest"], east["mesh_digest"])
         self.assertNotEqual(front["placement_digest"], east["placement_digest"])
@@ -73,7 +73,7 @@ class UtilityPanelReceiverPlacementTests(unittest.TestCase):
         for placement in self.summary["placements"]:
             self.assertAlmostEqual(placement["mount_pattern_residual_m"], 0.0, places=12)
             self.assertEqual(placement["footprint_margin_m"], [0.09999999999999987, 0.10000000000000009])
-            self.assertAlmostEqual(placement["body_clearance_beyond_plate_m"], 0.04, places=12)
+            self.assertAlmostEqual(placement["body_clearance_beyond_plate_m"], 0.02, places=12)
             self.assertEqual(placement["scale"], [1.0, 1.0, 1.0])
             self.assertEqual(placement["extra_rotation_deg"], [0.0, 0.0, 0.0])
 

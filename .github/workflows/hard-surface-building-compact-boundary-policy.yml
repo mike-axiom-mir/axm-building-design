@@ -1,7 +1,7 @@
 name: Hard-surface Building compact boundary-shell policy evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/hard-surface-boundary-shell-compaction-policy-001

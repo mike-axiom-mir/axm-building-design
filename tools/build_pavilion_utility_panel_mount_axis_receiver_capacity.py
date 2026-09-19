@@ -19,8 +19,8 @@ CAPACITY_PATH = "assets/utility_panel_mount_axis_clearance_capacity_001.json"
 CAPACITY_BLOB = "e8efe188156f4a0e09706d7d2a45b0723b1d3920"
 PANEL_PATH = "assets/utility_access_panel_001.json"
 PANEL_BLOB = "4da242e35a84b20a80f4acf28146be613624e734"
-SURFACE_PROFILE_BLOB = "fdf9a1933e928959fe6477f83e2b017ea481249d"
-SURFACE_BUILDER_BLOB = "7d196565d3c97368fbe5e701fd1c93d223a73cff"
+SURFACE_PROFILE_BLOB = "863da59755466a0589c29b70cbad89a2b29672ee"
+SURFACE_BUILDER_BLOB = "4220348bcdb2a65588052412421a2ec2a88cde31"
 
 RESULT = "PASS_BOUNDED_UTILITY_PANEL_MOUNT_AXIS_RECEIVER_CAPACITY_FAMILY"
 DECISION = "PASS_DERIVED_WORLD_MOUNT_AXIS_CAPACITY_FAMILY_ONLY__NO_RESERVATION_FASTENER_TOOLING_OR_ADOPTION"
@@ -125,6 +125,8 @@ def verify_profile(profile):
     surface = profile.get("receiver_surface_family", {})
     if surface.get("owner") != "Building Procedural Design":
         raise ValueError("receiver surface-family owner drift")
+    if surface.get("source_rebind_head") != "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e":
+        raise ValueError("receiver surface-family source rebind drift")
     if surface.get("profile_path") != SURFACE_PROFILE.relative_to(ROOT).as_posix():
         raise ValueError("receiver surface profile path drift")
     if surface.get("profile_blob_sha") != SURFACE_PROFILE_BLOB:

@@ -97,6 +97,10 @@ class UtilityPanelMountAxisReceiverCapacityTests(unittest.TestCase):
             side_effect=[module.CAPACITY_BLOB, module.PANEL_BLOB],
         ):
             module.verify_profile(profile)
+        surface = profile["receiver_surface_family"]
+        self.assertEqual(surface["source_rebind_head"], "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e")
+        self.assertEqual(surface["profile_blob_sha"], module.SURFACE_PROFILE_BLOB)
+        self.assertEqual(surface["builder_blob_sha"], module.SURFACE_BUILDER_BLOB)
 
     def test_source_capacity_is_recomputed_without_selecting_radius(self):
         self.assertAlmostEqual(self.capacity["closed_common_reservation_tangency_cap_m"], 0.05, places=12)

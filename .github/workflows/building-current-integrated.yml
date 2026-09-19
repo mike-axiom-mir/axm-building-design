@@ -1,0 +1,152 @@
+name: Building current integrated evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      SOURCE_OWNER_HEAD: fbfa3b47048755b45dac91451171d5511c8d4f47
+      SOURCE_REBIND_HEAD: fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e
+      PREDECESSOR_HEAD: 97120eb78a72b0a07aff1c65b9b92229d0a42aff
+      STICKER_HEAD: 3aa93b0132eea9becefb20c716c6ec1a023ad28b
+      AXM_CLEARANCE_DONOR_ROOT: ${{ github.workspace }}/external/hard-surface-clearance
+      AXM_STICKER_FABRIC_ROOT: ${{ github.workspace }}/external/axm-sticker-fabric
+    steps:
+      - name: Checkout exact integrated head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - name: Checkout exact clearance source owner
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-building-design
+          ref: ${{ env.SOURCE_OWNER_HEAD }}
+          path: external/hard-surface-clearance
+          fetch-depth: 1
+
+      - name: Checkout exact shared rigid-frame donor
+        uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-sticker-fabric
+          ref: ${{ env.STICKER_HEAD }}
+          path: external/axm-sticker-fabric
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bind current and historical provenance
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$PREDECESSOR_HEAD" HEAD
+          git merge-base --is-ancestor "$SOURCE_OWNER_HEAD" HEAD
+          git merge-base --is-ancestor "$SOURCE_REBIND_HEAD" HEAD
+          test "$(git rev-parse "$SOURCE_OWNER_HEAD:assets/utility_access_panel_001.json")" = "51b7fa61dd87934a89e033a2fdf5cc3b99992454"
+          test "$(git rev-parse "$PREDECESSOR_HEAD:assets/utility_access_panel_001.json")" = "4da242e35a84b20a80f4acf28146be613624e734"
+          test "$(git rev-parse "$SOURCE_OWNER_HEAD:assets/utility_access_panel_001_service_surface_domain.json")" = "8b4484d4ccbd500e58910a2835d8780112489919"
+          test "$(git rev-parse "$PREDECESSOR_HEAD:assets/utility_access_panel_001_service_surface_domain.json")" = "14037a0fb939104ea319c9ac96fbe9fdaa949a18"
+          test "$(git -C "$AXM_CLEARANCE_DONOR_ROOT" rev-parse HEAD)" = "$SOURCE_OWNER_HEAD"
+          test "$(git -C "$AXM_STICKER_FABRIC_ROOT" rev-parse HEAD)" = "$STICKER_HEAD"
+
+      - name: Compile current integrated implementation
+        run: python -m compileall tools tests
+
+      - name: Run complete suite with exact donors
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests -v 2>&1 | tee /tmp/building-tests.txt
+          grep -Eq '^Ran 173 tests in ' /tmp/building-tests.txt
+          grep -Fx 'OK' /tmp/building-tests.txt
+
+      - name: Rebuild current receiver dependency chain
+        run: |
+          mkdir -p evidence/building-current-integrated
+          python tools/build_pavilion_utility_panel_receivers.py \
+            --sticker-root "$AXM_STICKER_FABRIC_ROOT" \
+            --output-dir evidence/building-current-integrated/placements \
+            >/dev/null
+          python tools/build_pavilion_utility_panel_service_surface_receivers.py \
+            --sticker-root "$AXM_STICKER_FABRIC_ROOT" \
+            --output-dir evidence/building-current-integrated/service-surfaces \
+            >/dev/null
+          python tools/build_pavilion_utility_panel_mount_axis_receiver_capacity.py \
+            --sticker-root "$AXM_STICKER_FABRIC_ROOT" \
+            --output-dir evidence/building-current-integrated/mount-axis \
+            --exact-head "$EXACT_HEAD" \
+            >/dev/null
+          python tools/build_pavilion_utility_panel_clearance_rebind_family.py \
+            --donor-root "$AXM_CLEARANCE_DONOR_ROOT" \
+            --output evidence/building-current-integrated/clearance-rebind.json \
+            >/dev/null
+
+      - name: Truth-gate current receiver dependency chain
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path('evidence/building-current-integrated')
+          placements = json.loads((root / 'placements/summary.json').read_text())
+          surfaces = json.loads((root / 'service-surfaces/summary.json').read_text())
+          axes = json.loads((root / 'mount-axis/summary.json').read_text())
+          clearance = json.loads((root / 'clearance-rebind.json').read_text())
+
+          assert placements['result'] == 'PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY'
+          assert {row['receiver_id']: row['center_m'] for row in placements['placements']} == {
+              'front-utility-bay': [-2.45, -1.1, 1.65],
+              'east-utility-bay': [3.9, 0.1, 1.65],
+          }
+          assert surfaces['result'] == 'PASS_SOURCE_OWNED_UTILITY_PANEL_SERVICE_SURFACE_RECEIVER_FAMILY'
+          assert {row['receiver_id']: row['world_origin_m'] for row in surfaces['outputs']} == {
+              'east-utility-bay': [3.94, 0.1, 1.65],
+              'front-utility-bay': [-2.45, -1.1400000000000001, 1.65],
+          }
+          assert axes['result'] == 'PASS_BOUNDED_UTILITY_PANEL_MOUNT_AXIS_RECEIVER_CAPACITY_FAMILY'
+          assert axes['world_axis_count'] == 8
+          assert clearance['result'] == 'PASS_BOUNDED_BUILDING_UTILITY_PANEL_CLEARANCE_REBIND_FAMILY'
+          assert clearance['predecessor_standoff_m'] == 0.08
+          assert clearance['successor_standoff_m'] == 0.10
+
+          receipt = {
+              'schema': 'axm.building-current-integrated-evidence/v0.1',
+              'result': 'PASS_CURRENT_INTEGRATED_BUILDING_STRUCTURAL_AND_RECEIVER_PROVENANCE',
+              'exact_head': os.environ['EXACT_HEAD'],
+              'source_owner_head': os.environ['SOURCE_OWNER_HEAD'],
+              'source_rebind_head': os.environ['SOURCE_REBIND_HEAD'],
+              'predecessor_head': os.environ['PREDECESSOR_HEAD'],
+              'sticker_head': os.environ['STICKER_HEAD'],
+              'test_count': 173,
+              'visual_acceptance': False,
+              'target_device_runtime_acceptance': False,
+              'materials_acceptance': False,
+          }
+          (root / 'receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          PY
+          git diff --check
+
+      - name: Retain current integrated evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-current-integrated-${{ env.EXACT_HEAD }}
+          path: evidence/building-current-integrated
+          if-no-files-found: error

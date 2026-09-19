@@ -38,12 +38,12 @@ class UtilityPanelServiceSurfaceReceiverFamilyTests(unittest.TestCase):
         self.domain = json.loads(DOMAIN_PATH.read_text(encoding="utf-8"))
         self.front = placement(
             "front-utility-bay",
-            [-2.45, -1.08, 1.65],
+            [-2.45, -1.1, 1.65],
             [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
         )
         self.east = placement(
             "east-utility-bay",
-            [3.88, 0.1, 1.65],
+            [3.9, 0.1, 1.65],
             [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
         )
 
@@ -62,30 +62,30 @@ class UtilityPanelServiceSurfaceReceiverFamilyTests(unittest.TestCase):
 
     def test_front_surface_uses_exact_source_domain(self):
         output = module.derive_surface(self.front, self.domain)
-        self.assertEqual(output["world_origin_m"], [-2.45, -1.12, 1.65])
+        self.assertEqual(output["world_origin_m"], [-2.45, -1.1400000000000001, 1.65])
         self.assertEqual(output["world_outward_axis"], [0.0, -1.0, 0.0])
         self.assertEqual(
             output["corners_m"],
             [
-                [-3.0, -1.12, 0.8999999999999999],
-                [-1.9000000000000001, -1.12, 0.8999999999999999],
-                [-1.9000000000000001, -1.12, 2.4],
-                [-3.0, -1.12, 2.4],
+                [-3.0, -1.1400000000000001, 0.8999999999999999],
+                [-1.9000000000000001, -1.1400000000000001, 0.8999999999999999],
+                [-1.9000000000000001, -1.1400000000000001, 2.4],
+                [-3.0, -1.1400000000000001, 2.4],
             ],
         )
         self.assertAlmostEqual(output["area_m2"], 1.65, places=12)
 
     def test_east_surface_is_materially_different_orientation(self):
         output = module.derive_surface(self.east, self.domain)
-        self.assertEqual(output["world_origin_m"], [3.92, 0.1, 1.65])
+        self.assertEqual(output["world_origin_m"], [3.94, 0.1, 1.65])
         self.assertEqual(output["world_outward_axis"], [1.0, 0.0, 0.0])
         self.assertEqual(
             output["corners_m"],
             [
-                [3.92, -0.45000000000000007, 0.8999999999999999],
-                [3.92, 0.65, 0.8999999999999999],
-                [3.92, 0.65, 2.4],
-                [3.92, -0.45000000000000007, 2.4],
+                [3.94, -0.45000000000000007, 0.8999999999999999],
+                [3.94, 0.65, 0.8999999999999999],
+                [3.94, 0.65, 2.4],
+                [3.94, -0.45000000000000007, 2.4],
             ],
         )
         front = module.derive_surface(self.front, self.domain)

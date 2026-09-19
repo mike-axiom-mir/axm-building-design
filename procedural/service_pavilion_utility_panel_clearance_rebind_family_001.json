@@ -14,6 +14,7 @@
     "required_result": "PASS_SOURCE_OWNED_BUILDING_UTILITY_PANEL_RECEIVER_CLEARANCE_ENVELOPE"
   },
   "predecessor": {
+    "head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
     "panel_path": "assets/utility_access_panel_001.json",
     "panel_blob_sha": "4da242e35a84b20a80f4acf28146be613624e734",
     "standoff_m": 0.08,

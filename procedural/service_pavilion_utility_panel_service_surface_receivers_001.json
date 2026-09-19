@@ -13,7 +13,7 @@
   "placement_family": {
     "owner": "Building Procedural Design",
     "profile_path": "procedural/service_pavilion_utility_panel_receivers_001.json",
-    "profile_blob_sha": "1554fbd63f2896ec213142e7374f56d6a57070ea",
+    "profile_blob_sha": "15eabddc462989a4edc9dca2b0465c65c77267fa",
     "required_schema": "axm.building-utility-panel-receiver-placement-family/v0.1",
     "required_result": "PASS_EXACT_UTILITY_PANEL_RECEIVER_PLACEMENT_FAMILY"
   },

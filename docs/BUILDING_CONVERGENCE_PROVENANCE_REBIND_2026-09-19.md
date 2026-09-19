@@ -33,6 +33,17 @@ Equal structural counts were not used as provenance substitution. Each affected 
 records `fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e` as the exact combined source-rebind head while
 retaining the original specialist owner PR/head separately.
 
+The receiver-surface rebind also invalidated the downstream mount-axis receiver-capacity
+family's profile and builder blob pins. Those pins now name the rebound receiver artifacts
+exactly while preserving the original Hard-Surface capacity owner.
+
+An exact-donor run then exposed two additional integration assumptions that the donor-skipping
+suite could not exercise: the clearance rebind read its predecessor from current `HEAD`, and the
+receiver-placement family still pinned the predecessor panel payload. The clearance family now
+loads its predecessor explicitly from head `97120eb78a72b0a07aff1c65b9b92229d0a42aff`; the current
+placement, service-surface, and mount-axis families bind the accepted PR #17 panel source and its
+derived world frames. Historical predecessor centers remain evidence, not current placement data.
+
 ## Repair boundary
 
 The repair changes only exact owner/rebind heads, Git-blob identities, derived payload digests,
@@ -40,17 +51,25 @@ and fail-closed regression assertions. It does not alter Building source geometr
 placement, materials, UV intent, normal policy, Procedural authority, Map adoption, runtime
 policy, visual acceptance, UC, or Profession Fabric.
 
-## Local verification
+## Verification
 
-On Python 3.12.14, the repaired combined branch completed:
+The first repaired, donor-skipping run on Python 3.12.14 completed 160 tests with two explicit
+dependency skips. After exact checkouts of Building Hard Surface head
+`fbfa3b47048755b45dac91451171d5511c8d4f47` and Sticker Fabric head
+`3aa93b0132eea9becefb20c716c6ec1a023ad28b`, the stronger local gate completed:
 
 - `python -m compileall tools tests` — PASS;
-- `python -m unittest discover -s tests -v` — 160 PASS, 2 dependency-gated skips;
+- `python -m unittest discover -s tests -v` — 173 PASS, no skips;
+- current receiver placement, service-surface, mount-axis, and historical-to-current clearance
+  rebuilds — PASS;
 - `git diff --check` — PASS.
 
-The two skips require exact external donor checkouts and remain workflow gates; this local result
-does not replace them. GitHub exact-head workflow state is recorded separately on the integration
-PR.
+The first remote integration head also proved that the 22 inherited specialist workflows were
+global PR gates with single-experiment, pre-convergence lineage assumptions. Their failed runs are
+retained on the integration PR. They are now scoped to their original push branches and manual
+historical replay, and one current integrated workflow replaces them as the PR/main gate. That
+workflow reruns both Python versions with both exact donors and retains one current receipt. Its
+exact-head result is recorded on the integration PR; a local PASS does not substitute for it.
 
 ## Rollback
 

@@ -37,6 +37,19 @@ def git_blob(root, relpath):
     ).strip()
 
 
+def git_blob_at(root, revision, relpath):
+    return subprocess.check_output(
+        ["git", "-C", str(root), "rev-parse", f"{revision}:{relpath}"], text=True
+    ).strip()
+
+
+def git_json_at(root, revision, relpath):
+    payload = subprocess.check_output(
+        ["git", "-C", str(root), "show", f"{revision}:{relpath}"]
+    )
+    return json.loads(payload.decode("utf-8"))
+
+
 def add(a, b):
     return [float(x) + float(y) for x, y in zip(a, b)]
 
@@ -104,9 +117,11 @@ def verify_profile(profile, donor_root):
             raise ValueError(f"Hard Surface donor blob drift: {source[path_key]}")
 
     predecessor = profile.get("predecessor", {})
-    if git_blob(ROOT, predecessor.get("panel_path")) != predecessor.get("panel_blob_sha"):
+    if predecessor.get("head") != "97120eb78a72b0a07aff1c65b9b92229d0a42aff":
+        raise ValueError("predecessor head identity drift")
+    if git_blob_at(ROOT, predecessor["head"], predecessor.get("panel_path")) != predecessor.get("panel_blob_sha"):
         raise ValueError("predecessor panel identity drift")
-    if git_blob(ROOT, "assets/utility_access_panel_001_service_surface_domain.json") != predecessor.get("service_surface_blob_sha"):
+    if git_blob_at(ROOT, predecessor["head"], "assets/utility_access_panel_001_service_surface_domain.json") != predecessor.get("service_surface_blob_sha"):
         raise ValueError("predecessor service-surface identity drift")
     if not approx(predecessor.get("standoff_m"), 0.08):
         raise ValueError("predecessor standoff truth drift")
@@ -264,8 +279,13 @@ def build(donor_root):
     receipt = donor_receipt(profile, donor_root)
 
     pavilion = load(PAVILION_PATH)
-    predecessor_panel = load(PREDECESSOR_PANEL_PATH)
-    predecessor_domain = load(PREDECESSOR_DOMAIN_PATH)
+    predecessor = profile["predecessor"]
+    predecessor_panel = git_json_at(ROOT, predecessor["head"], predecessor["panel_path"])
+    predecessor_domain = git_json_at(
+        ROOT,
+        predecessor["head"],
+        "assets/utility_access_panel_001_service_surface_domain.json",
+    )
     donor_panel = load(donor_root / profile["source_authority"]["panel_path"])
     donor_domain = load(donor_root / profile["source_authority"]["service_surface_path"])
 

@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - studio/procedural-pavilion-symmetric-rows-001
-  pull_request:
-    branches:
-      - studio/hard-surface-pavilion-interface-001
+  workflow_dispatch:
 
 permissions:
   contents: read

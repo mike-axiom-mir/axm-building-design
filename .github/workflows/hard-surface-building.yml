@@ -1,7 +1,7 @@
 name: Hard-surface building evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/hard-surface-pavilion-interface-001

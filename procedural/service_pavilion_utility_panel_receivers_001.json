@@ -7,7 +7,9 @@
   "source_pavilion_sha256": "5f89ec4109d48f452f9e887ad5ca5449e1d0f6d6ee4b1896be6f25bc0a80736a",
   "panel_asset_id": "utility-access-panel-001",
   "panel_schema": "axm.building-utility-panel/v0.1",
-  "panel_sha256": "df59fa135abc89f8c85317db1d6b9ce3d03920efc91271de61bfb6289a24c253",
+  "source_owner_head": "fbfa3b47048755b45dac91451171d5511c8d4f47",
+  "source_rebind_head": "fcf3c2a0d3f2f7ee973fb0d7f090f65abf9b8c4e",
+  "panel_sha256": "1615251d5e4f0a236db27827338320a8a7e25f009149511b1150de2f367b7cde",
   "receiver_ids": [
     "front-utility-bay",
     "east-utility-bay"

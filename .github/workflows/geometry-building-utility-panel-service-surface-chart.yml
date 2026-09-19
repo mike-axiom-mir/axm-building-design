@@ -1,7 +1,7 @@
 name: Geometry Building utility-panel UV-ready chart successor evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/geometry-utility-panel-service-surface-chart-clearance-rebind-001

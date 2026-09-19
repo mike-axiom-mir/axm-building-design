@@ -1,7 +1,7 @@
 name: Procedural building symmetric-row evidence
 
 on:
-  pull_request:
+  workflow_dispatch:
   push:
     branches:
       - studio/procedural-pavilion-symmetric-rows-001
