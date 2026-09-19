@@ -6,7 +6,8 @@
   "orientation_contract": "panel local +X maps to receiver outward normal; local +Y maps receiver lateral; local +Z maps receiver up",
   "interface_footprint_m": [1.10, 1.50],
   "body_depth_m": 0.08,
-  "standoff_from_receiver_origin_m": 0.08,
+  "standoff_from_receiver_origin_m": 0.10,
+  "standoff_semantics": "Under the exact service-pavilion receiver-fit convention, this is the receiver-normal distance from interface origin to panel body center. Physical body gap beyond the receiver plate is standoff - plate_thickness - 0.5 * body_depth.",
   "required_body_clearance_beyond_plate_m": 0.02,
   "mount_points_local_m": [[-0.50, -0.70], [0.50, -0.70], [0.50, 0.70], [-0.50, 0.70]],
   "proof_geometry": {
@@ -15,7 +16,9 @@
   },
   "provenance": {
     "authoring": "AXM self-authored deterministic source",
-    "relationship": "separate receiving part for service-pavilion-001 receiver-frame test"
+    "relationship": "separate receiving part for service-pavilion-001 receiver-frame test",
+    "clearance_successor_of_head": "97120eb78a72b0a07aff1c65b9b92229d0a42aff",
+    "clearance_successor_change": "correct standoff 0.08 -> 0.10 m so the full 0.08 m body, not only its center, preserves the declared 0.02 m body gap beyond the 0.04 m receiver plate"
   },
-  "truth_boundary": "This panel is sparse evidence geometry for repeated receiver-frame fit. It does not establish hinges, latches, fasteners, seals, engineering loads, materials, UVs, runtime attachment, collision or final visual quality."
+  "truth_boundary": "This panel is sparse evidence geometry for repeated receiver-frame fit. The corrected standoff proves only the exact source-local receiver-normal body gap under the declared service-pavilion receiver-fit convention. It does not establish hinges, latches, fasteners, seals, engineering loads, materials, UVs, runtime attachment, collision or final visual quality."
 }
