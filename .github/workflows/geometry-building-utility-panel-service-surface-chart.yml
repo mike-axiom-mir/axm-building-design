@@ -1,0 +1,113 @@
+name: Geometry Building utility-panel UV-ready chart successor evidence
+
+on:
+  pull_request:
+  push:
+    branches:
+      - studio/geometry-utility-panel-service-surface-chart-clearance-rebind-001
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    env:
+      EXACT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      HARD_SURFACE_HEAD: 32bbdd54f00aaac87ba8139bf932d8aff6109a66
+      HARD_SURFACE_DOMAIN_BLOB: 8b4484d4ccbd500e58910a2835d8780112489919
+      HARD_SURFACE_VERIFIER_BLOB: 433e7ac713cc07b30a1f2b6e8f59aa78aa9068a9
+      HISTORICAL_GEOMETRY_HEAD: 79e09f68a05770eb6dabbbbbb3b008fc8e050aa0
+      HISTORICAL_CHART_BLOB: 56f1964b3360e371ac8c39d547cb300cd14fb997
+    steps:
+      - name: Checkout exact Geometry head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXACT_HEAD }}
+          fetch-depth: 0
+
+      - name: Bind exact Hard Surface successor without source rewrite
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXACT_HEAD"
+          git merge-base --is-ancestor "$HARD_SURFACE_HEAD" HEAD
+          test "$(git rev-parse HEAD:assets/utility_access_panel_001_service_surface_domain.json)" = "$HARD_SURFACE_DOMAIN_BLOB"
+          test "$(git rev-parse HEAD:tools/verify_utility_panel_service_surface_domain.py)" = "$HARD_SURFACE_VERIFIER_BLOB"
+          test "$(git rev-parse "$HISTORICAL_GEOMETRY_HEAD:geometry/utility_access_panel_service_surface_chart_001.json")" = "$HISTORICAL_CHART_BLOB"
+          git diff --exit-code "$HARD_SURFACE_HEAD" HEAD -- \
+            assets/utility_access_panel_001.json \
+            assets/utility_access_panel_001_service_surface_domain.json \
+            assets/utility_access_panel_001_receiver_clearance_envelope.json \
+            tools/verify_utility_panel_service_surface_domain.py \
+            tools/verify_utility_panel_receiver_clearance_envelope.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile
+        run: python -m compileall tools tests
+
+      - name: Run complete Building repository suite
+        run: python -m unittest discover -s tests -v
+
+      - name: Build exact Geometry successor-rebind evidence
+        run: |
+          mkdir -p evidence/utility-panel-service-surface-chart-001
+          python tools/verify_utility_panel_service_surface_chart.py \
+            --exact-head "$EXACT_HEAD" \
+            --output evidence/utility-panel-service-surface-chart-001/receipt.json
+
+      - name: Truth-gate bounded successor rebind
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path("evidence/utility-panel-service-surface-chart-001")
+          receipt = json.loads((root / "receipt.json").read_text())
+          assert receipt["exact_geometry_head"] == os.environ["EXACT_HEAD"]
+          assert receipt["result"] == "PASS_BUILDING_UTILITY_PANEL_UV_READY_SOURCE_FRAME_CHART_SUCCESSOR_REBIND"
+          assert receipt["decision"] == "PASS_DERIVED_GEOMETRY_CHART_REBOUND_TO_CLEARANCE_SUCCESSOR__NO_TEXEL_DENSITY_ATLAS_MATERIAL_RECEIVER_OR_VISUAL_ADOPTION"
+          assert receipt["pattern"] == "DERIVED_CHART_MUST_REBIND_TO_EXACT_SOURCE_SUCCESSOR_BEFORE_EVIDENCE_TRANSFER"
+          assert receipt["source_surface_pr"] == 17
+          assert receipt["source_surface_head"] == os.environ["HARD_SURFACE_HEAD"]
+          assert receipt["source_surface_contract_blob_sha"] == os.environ["HARD_SURFACE_DOMAIN_BLOB"]
+          assert receipt["source_surface_verifier_blob_sha"] == os.environ["HARD_SURFACE_VERIFIER_BLOB"]
+          assert receipt["historical_geometry_pr"] == 16
+          assert receipt["historical_geometry_head"] == os.environ["HISTORICAL_GEOMETRY_HEAD"]
+          assert receipt["historical_geometry_chart_blob_sha"] == os.environ["HISTORICAL_CHART_BLOB"]
+          assert receipt["historical_pass_transferred"] is False
+          assert receipt["vertex_count"] == 4
+          assert receipt["triangle_count"] == 2
+          assert receipt["boundary_edge_count"] == 4
+          assert receipt["internal_edge_count"] == 1
+          assert receipt["unreferenced_chart_vertex_count"] == 0
+          assert abs(receipt["metric_area_m2"] - 1.65) <= 1e-12
+          assert abs(receipt["normalized_chart_area"] - 1.0) <= 1e-12
+          assert receipt["max_source_reconstruction_residual_m"] <= 1e-12
+          assert receipt["max_metric_projection_residual_m"] <= 1e-12
+          assert receipt["max_normalized_mapping_residual"] <= 1e-12
+          assert receipt["source_geometry_changed"] is False
+          assert receipt["production_uv_adopted"] is False
+          assert receipt["downstream_adoption_authorized"] is False
+          assert all(value.startswith("REJECTED:") for value in receipt["negative_controls"].values())
+          PY
+
+      - name: Retain exact Geometry successor evidence
+        if: matrix.python-version == '3.11'
+        run: |
+          cp geometry/utility_access_panel_service_surface_chart_001.json evidence/utility-panel-service-surface-chart-001/chart-contract.json
+          cp assets/utility_access_panel_001_service_surface_domain.json evidence/utility-panel-service-surface-chart-001/source-surface-domain.json
+          printf '%s\n' "$EXACT_HEAD" > evidence/utility-panel-service-surface-chart-001/exact-head.txt
+          printf '%s\n' "$HARD_SURFACE_HEAD" > evidence/utility-panel-service-surface-chart-001/source-successor-head.txt
+          printf '%s\n' "$HISTORICAL_GEOMETRY_HEAD" > evidence/utility-panel-service-surface-chart-001/historical-geometry-head.txt
+
+      - name: Upload retained evidence
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: building-utility-panel-service-surface-chart-successor-${{ env.EXACT_HEAD }}
+          path: evidence/utility-panel-service-surface-chart-001
+          if-no-files-found: error
+          retention-days: 30
