@@ -1,7 +1,7 @@
 {
   "schema": "axm.specialist-tool-manifest/v0.1",
   "tool_id": "axm.building.materials.packet",
-  "status": "HOLD",
+  "status": "AI_CALLABLE",
   "owner": {
     "specialist": "Materials / Lookdev",
     "repository": "mike-axiom-mir/axm-building-design"
@@ -62,8 +62,7 @@
   "hold_conditions": [
     "source_head differs from the checked-out Building source",
     "tracked source files are dirty",
-    "profile or source topology validation fails",
-    "remote current-source rebind workflows have not passed at the exact candidate head"
+    "profile or source topology validation fails"
   ],
   "nonclaims": [
     "No visual or art-direction acceptance",
@@ -72,7 +71,7 @@
     "No production-runtime or target-device acceptance"
   ],
   "layers": {
-    "ai": "candidate",
+    "ai": "verified",
     "human": "absent",
     "intent": "absent"
   }

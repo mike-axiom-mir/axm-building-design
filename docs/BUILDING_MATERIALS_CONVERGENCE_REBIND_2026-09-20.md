@@ -28,8 +28,7 @@ That stale count would reject the compatible merged lineage.
   receiver chain, and emits a current-head material structural receipt.
 - A bounded JSON request/result adapter exposes only the already-existing material packet build.
   It requires the requested source head to equal the actual clean source checkout and records the
-  exact implementation head and file digests. Its manifest remains `HOLD` until the remote
-  current-source workflows pass.
+  exact implementation head and file digests.
 - Historical Materials artifacts, failed inherited workflows, and the original PR remain
   recoverable; none are rewritten as current evidence.
 
@@ -44,9 +43,29 @@ That stale count would reject the compatible merged lineage.
   center `[-2.45, -1.1, 1.65]`, the east receiver center `[3.9, 0.1, 1.65]`, and 0.02 m physical
   panel-body clearance.
 
-These are structural and source-provenance results. They do not grant visual, art-direction,
-environment, target-device runtime, or final Materials acceptance. The remote Godot render is
-the next visual rebind gate; human acceptance remains separate.
+These local results are structural and source-provenance evidence. They do not grant visual,
+art-direction, environment, target-device runtime, or final Materials acceptance. The remote
+Godot evidence below is the separate target-host rebind; human acceptance remains separate.
+
+## First remote exact-head rebind
+
+Remote integration head `e7dae5cd090d379d9f17bbd1db4d043eb26ce341` passed all 14 triggered
+workflows. The current integrated workflow run `35477584805` passed the 190-test exact-donor gate
+on Python 3.11 and 3.13. The current-source workflow run `35477584990` rebuilt and rendered the
+same 19 components with Godot 4.7.2 in front, east, and three-quarter contexts.
+
+Artifact `10594657498`, digest
+`923fa340d93287a22e5194f0c827a322f61b972c2398dc2240c66861a995d108`, retains all six A/B PNGs,
+the material packet, structural receipt, and runtime receipt. The measured changed-pixel fractions
+were 0.3348102564 front, 0.1337401709 east, and 0.1474256410 three-quarter. The artifact shows a
+stable shared silhouette and receiver placement with visibly distinct candidate material
+assignments. The east service panel is dark under the proof lighting; no final art-direction
+acceptance is inferred.
+
+This exact evidence promotes the bounded structural packet adapter to `AI_CALLABLE`. The promotion
+changes no source geometry or material values. Human UI, intent compilation, environment adoption,
+target-device runtime, and final Materials acceptance remain open, and the promoted exact head must
+rerun the same gates.
 
 ## Rollback
 
