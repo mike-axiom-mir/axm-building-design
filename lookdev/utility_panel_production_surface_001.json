@@ -1,0 +1,42 @@
+{
+  "schema": "axm.building.utility-panel-production-surface/v0.1",
+  "surface_id": "utility_panel_ochre_production_surface_001",
+  "intent": "manufactured_coated_ochre_broad_medium_variation_without_authored_seams_fasteners_damage_decals_or_wear",
+  "base_srgb8": [111, 90, 58],
+  "dimensions_px": [512, 512],
+  "alpha_policy": "fully_opaque_255",
+  "generator": {
+    "algorithm": "deterministic_fixed_point_value_noise",
+    "seed": 421705,
+    "octaves": [
+      {"cell_px": 128, "amplitude_lsb": 6, "offset_px": [37, 19], "seed_offset": 11},
+      {"cell_px": 64, "amplitude_lsb": 3, "offset_px": [11, 43], "seed_offset": 23},
+      {"cell_px": 32, "amplitude_lsb": 1, "offset_px": [29, 7], "seed_offset": 47}
+    ],
+    "chroma_field": {"cell_px": 96, "offset_px": [53, 31], "seed_offset": 71}
+  },
+  "expected_png_sha256": "fdf56d0c0b2e65a181a23cb5db4067555f188cce28ef2479fd5a71c8e11d220c",
+  "expected_rgba8_sha256": "408a6eaecf99fa328487785f85d089c93da2b84c3ae9ead0bf6e1f8d2a0bdcad",
+  "materials_predecessor_head": "0ae911792929eaa38b2c2f32239ebfdce8967251",
+  "technical_art_head": "1434bc4a64faa04db10f47723c37ab7925aaa163",
+  "environment_head": "595df99daf866b5e3dcaa4be87eeb650af637919",
+  "art_direction": {
+    "packet_commit": "413dfa87216c48b13f503c86483132784fb861f0",
+    "decision": "REQUEST_ONE_MATERIALS_OWNED_PRODUCTION_SURFACE_SUCCESSOR",
+    "checker_role": "diagnostic_control_only"
+  },
+  "frozen_material_scalars": {
+    "metallic": 0.18,
+    "roughness": 0.62
+  },
+  "holds": {
+    "environment_adoption": false,
+    "runtime_acceptance": false,
+    "art_direction_acceptance": false,
+    "visual_qa_acceptance": false,
+    "production_uv_policy": false,
+    "canon": false,
+    "production_readiness": false
+  },
+  "truth_boundary": "One Materials-owned production-intent albedo successor for the existing Building utility-panel service surface. It preserves the proven Technical-Art UV/image receiver, scalar metallic/roughness values, current Environment geometry/world/cameras/lights and historical checker diagnostic. It does not invent seams, fasteners, damage, decals, wear or geometry facts and does not grant Environment, Runtime, Art Direction, independent QA, CANON or production acceptance."
+}

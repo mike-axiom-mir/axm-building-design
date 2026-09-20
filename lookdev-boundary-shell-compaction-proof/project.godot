@@ -1,0 +1,10 @@
+[application]
+config/name="AXM Building Boundary Shell Compaction Materials Proof"
+
+[display]
+window/size/viewport_width=1000
+window/size/viewport_height=760
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
